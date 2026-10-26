@@ -232,9 +232,22 @@ class BattleScene extends Phaser.Scene {
       .clearTint();
   }
 
+  private resolveAnimName(name: string): string {
+    if (name.startsWith('boss')) return 'boss';
+    if (name.startsWith('orc')) return 'orc';
+    if (name.startsWith('skeleton')) return 'skeleton';
+    if (name === 'zombie') return 'skeleton';
+    if (name.startsWith('woma') || name.startsWith('zuma')) return 'orc';
+    if (name === 'maggot') return 'cat';
+    if (name === 'spider') return 'scarecrow';
+    if (name === 'shinsu') return 'beast';
+    return name;
+  }
+
   private actor(key: string, name: string, motion: string, dir: number, x: number, y: number, time: number, depth: number, alpha = 1, scale = 1) {
     if (this.useSprites && assets) {
-      const frames = assets.animations[`${name}/${motion}/${dir}`] ?? assets.animations[`${name}/idle/${dir}`];
+      const mapped = this.resolveAnimName(name);
+      const frames = assets.animations[`${mapped}/${motion}/${dir}`] ?? assets.animations[`${mapped}/idle/${dir}`];
       if (frames?.length) {
         this.draw(key, frames[Math.floor(time * 9) % frames.length], x, y, depth, alpha, scale);
         return;
