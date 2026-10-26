@@ -36,6 +36,8 @@ export function App() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [selectedClass, setSelectedClass] = useState<HeroClass>('wizard');
   const [selectedChapter, setSelectedChapter] = useState<MapChapter>('bichon');
+  const [customSeed, setCustomSeed] = useState('');
+  const [copiedSeed, setCopiedSeed] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showTalents, setShowTalents] = useState(false);
 
@@ -59,7 +61,14 @@ export function App() {
   };
 
   const handleStart = (mode: Mode) => {
-    game.start(selectedClass, selectedChapter, mode, undefined, profile || undefined);
+    const seedNum = customSeed.trim() ? parseInt(customSeed.trim(), 10) : undefined;
+    game.start(
+      selectedClass,
+      selectedChapter,
+      mode,
+      isNaN(seedNum!) ? undefined : seedNum,
+      profile || undefined
+    );
   };
 
   const handleUpgradeTalent = async (key: TalentKey) => {
@@ -159,6 +168,18 @@ export function App() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* SEED INPUT */}
+            <div className="seed-input-row">
+              <span className="seed-label">🎲 随机种子:</span>
+              <input
+                type="text"
+                placeholder="留空随机，或输入数字种子如 176"
+                value={customSeed}
+                onChange={(e) => setCustomSeed(e.target.value.replace(/\D/g, ''))}
+                className="seed-input"
+              />
             </div>
 
             {/* START BUTTONS */}
@@ -630,6 +651,23 @@ export function App() {
               {g.result.skills.map((s, i) => (
                 <span key={i} className="skill-pill">{s}</span>
               ))}
+            </div>
+
+            {/* Seed Replay Row */}
+            <div className="seed-replay-row">
+              <span className="seed-code-text">本局随机种子: <code>{g.result.seed}</code></span>
+              <button
+                className="copy-seed-btn"
+                onClick={() => {
+                  if (navigator.clipboard) {
+                    navigator.clipboard.writeText(String(g.result?.seed));
+                    setCopiedSeed(true);
+                    setTimeout(() => setCopiedSeed(false), 2000);
+                  }
+                }}
+              >
+                {copiedSeed ? '✓ 种子已复制' : '📋 复制种子'}
+              </button>
             </div>
 
             <div className="result-actions">

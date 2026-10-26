@@ -633,6 +633,15 @@ class BattleScene extends Phaser.Scene {
       // Base ring
       this.gfx.lineStyle(1.5, 0xd4af37, 0.7).strokeEllipse(game.player.x, game.player.y + 3, 30, 15);
 
+      // Render Touch Joystick if active
+      if (this.drag && this.input.activePointer.isDown) {
+        const wp = this.cameras.main.getWorldPoint(this.drag.x, this.drag.y);
+        const cur = this.cameras.main.getWorldPoint(this.input.activePointer.x, this.input.activePointer.y);
+        this.gfx.lineStyle(2, 0xd4af37, 0.65).strokeCircle(wp.x, wp.y, 40);
+        this.gfx.fillStyle(0x0a0c0a, 0.35).fillCircle(wp.x, wp.y, 40);
+        this.gfx.fillStyle(0xfacc15, 0.85).fillCircle(cur.x, cur.y, 16);
+      }
+
       // Floating Labels
       for (const f of game.floating) {
         let label = this.labels.get(f.id);

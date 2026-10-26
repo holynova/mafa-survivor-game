@@ -1249,6 +1249,75 @@ body, html {
   color: #818cf8;
 }
 
+/* Seed Input & Replay */
+.seed-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #141d16;
+  border: 1px solid #28372b;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.seed-label {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.seed-input {
+  flex: 1;
+  background: #0f1611;
+  border: 1px solid #334436;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #fef08a;
+  font-size: 13px;
+  font-family: monospace;
+  outline: none;
+}
+
+.seed-input:focus {
+  border-color: #facc15;
+}
+
+.seed-replay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #141c15;
+  border: 1px solid #28372b;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.seed-replay-row code {
+  color: #facc15;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.copy-seed-btn {
+  background: #253328;
+  border: 1px solid #485f4c;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-seed-btn:hover {
+  border-color: #facc15;
+  color: #facc15;
+}
+
 /* Responsiveness */
 @media (max-width: 768px) {
   .talents-grid {

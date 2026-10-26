@@ -6,7 +6,15 @@ export default defineConfig({
     port: 5180,
   },
   build: {
-    chunkSizeWarningLimit: 1600,
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          phaser: ['phaser'],
+          react: ['react', 'react-dom'],
+        },
+      },
+    },
   },
   test: {
     environment: 'node',
