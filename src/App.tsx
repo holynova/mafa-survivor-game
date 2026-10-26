@@ -28,9 +28,60 @@ import type {
   TalentKey,
   Upgrade,
 } from './types';
+import { assets, setAssetManifest, type Manifest } from './renderer';
+
+let framePositions: Record<string, { x: number; y: number }> = {};
+let assetManifest: Manifest | null = null;
+
+export async function loadArtPositions() {
+  try {
+    const r = await fetch('/assets/mir/manifest.json');
+    if (!r.ok) return;
+    const manifest = (await r.json()) as Manifest;
+    assetManifest = manifest;
+    setAssetManifest(manifest);
+    framePositions = {};
+    await Promise.all(
+      manifest.pages.map(async (page) => {
+        try {
+          const resp = await fetch('/assets/mir/' + page.data);
+          if (!resp.ok) return;
+          const atlas = await resp.json();
+          for (const [key, val] of Object.entries(atlas.frames)) {
+            framePositions[key] = (val as { frame: { x: number; y: number } }).frame;
+          }
+        } catch {}
+      })
+    );
+  } catch (e) {
+    console.warn('loadArtPositions warning:', e);
+  }
+}
+
+export function Icon({ frame, className = '' }: { frame?: string; className?: string }) {
+  const f = frame && (assetManifest ?? assets)?.frames[frame];
+  const position = frame && framePositions[frame];
+  const page = f && (assetManifest ?? assets)?.pages?.find((p) => p.key === f.texture);
+
+  return (
+    <span className={`icon-box ${className}`} aria-hidden="true">
+      {f && position && page ? (
+        <svg viewBox={`0 0 ${f.width} ${f.height}`} preserveAspectRatio="xMidYMid meet">
+          <svg width={f.width} height={f.height} viewBox={`${position.x} ${position.y} ${f.width} ${f.height}`} overflow="hidden">
+            <image width={page.width} height={page.height} href={'/assets/mir/' + page.image} />
+          </svg>
+        </svg>
+      ) : (
+        <span className="art-empty">◇</span>
+      )}
+    </span>
+  );
+}
 
 export function App() {
-  const g = useSyncExternalStore(game.subscribe, () => game);
+  useSyncExternalStore(game.subscribe, () => game.version);
+  const g = game;
+
   const [muted, setMuted] = useState(sound.isMuted());
   const [runs, setRuns] = useState<RunResult[]>([]);
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -61,6 +112,7 @@ export function App() {
   };
 
   const handleStart = (mode: Mode) => {
+    sound.playClick();
     const seedNum = customSeed.trim() ? parseInt(customSeed.trim(), 10) : undefined;
     game.start(
       selectedClass,
@@ -72,11 +124,13 @@ export function App() {
   };
 
   const handleUpgradeTalent = async (key: TalentKey) => {
+    sound.playClick();
     const next = await upgradeTalent(key);
     setProfile(next);
   };
 
   const handleResetTalents = async () => {
+    sound.playClick();
     const next = await resetTalents();
     setProfile(next);
   };
@@ -89,7 +143,7 @@ export function App() {
         onClick={toggleSound}
         title={muted ? '开启音效' : '静音'}
       >
-        {muted ? '🔇' : '🔊'}
+        {muted ? '静音' : '音效'}
       </button>
 
       {/* LOBBY VIEW */}
@@ -103,7 +157,7 @@ export function App() {
 
               {profile && (
                 <div className="crystal-badge">
-                  💎 玛法结晶: <strong>{profile.crystals}</strong>
+                  玛法结晶: <strong>{profile.crystals}</strong>
                 </div>
               )}
             </div>
@@ -113,16 +167,21 @@ export function App() {
               {(['wizard', 'taoist', 'warrior'] as HeroClass[]).map((cls) => {
                 const base = CLASS_BASES[cls];
                 const active = selectedClass === cls;
+                const iconFrame =
+                  cls === 'wizard' ? 'item/海魂' : cls === 'taoist' ? 'item/降魔' : 'item/斩马刀';
                 return (
                   <button
                     key={cls}
                     className={`class-tab ${active ? 'active' : ''}`}
-                    onClick={() => setSelectedClass(cls)}
+                    onClick={() => {
+                      sound.playClick();
+                      setSelectedClass(cls);
+                    }}
                   >
                     <div className="class-tab-icon">
-                      {cls === 'wizard' ? '🧙‍♂️' : cls === 'taoist' ? '☯️' : '⚔️'}
+                      <Icon frame={iconFrame} />
                     </div>
-                    <div className="class-tab-name">{base.name}</div>
+                    <div className="class-tab-name">【{base.name}】</div>
                   </button>
                 );
               })}
@@ -132,8 +191,16 @@ export function App() {
             {CLASS_BASES[selectedClass] && (
               <div className="hero-card">
                 <div className="hero-avatar">
-                  <div className="wizard-icon">
-                    {selectedClass === 'wizard' ? '🧙‍♂️' : selectedClass === 'taoist' ? '☯️' : '⚔️'}
+                  <div className="hero-icon-display">
+                    <Icon
+                      frame={
+                        selectedClass === 'wizard'
+                          ? 'item/海魂'
+                          : selectedClass === 'taoist'
+                            ? 'item/降魔'
+                            : 'item/斩马刀'
+                      }
+                    />
                   </div>
                   <div className="hero-role">{CLASS_BASES[selectedClass].role}</div>
                 </div>
@@ -161,7 +228,10 @@ export function App() {
                   <button
                     key={chapKey}
                     className={`chap-btn ${active ? 'active' : ''}`}
-                    onClick={() => setSelectedChapter(chapKey)}
+                    onClick={() => {
+                      sound.playClick();
+                      setSelectedChapter(chapKey);
+                    }}
                   >
                     <span className="chap-name">{chap.name}</span>
                     <span className="chap-boss">({chap.bossName})</span>
@@ -172,7 +242,7 @@ export function App() {
 
             {/* SEED INPUT */}
             <div className="seed-input-row">
-              <span className="seed-label">🎲 随机种子:</span>
+              <span className="seed-label">随机种子:</span>
               <input
                 type="text"
                 placeholder="留空随机，或输入数字种子如 176"
@@ -188,14 +258,14 @@ export function App() {
                 className="mode-btn primary-btn"
                 onClick={() => handleStart('normal')}
               >
-                <div className="btn-title">⚔️ 标准远征 (Normal)</div>
+                <div className="btn-title">标准远征 (Normal)</div>
                 <div className="btn-desc">12 波次 × 75 秒 · 15 分钟决战章节 Boss</div>
               </button>
               <button
                 className="mode-btn secondary-btn"
                 onClick={() => handleStart('trial')}
               >
-                <div className="btn-title">⚡ 快速试炼 (Trial)</div>
+                <div className="btn-title">快速试炼 (Trial)</div>
                 <div className="btn-desc">3 波次 × 35 秒 · 快速测试流派构筑</div>
               </button>
             </div>
@@ -204,15 +274,21 @@ export function App() {
               <div className="lobby-actions-row">
                 <button
                   className="crystal-shrine-btn"
-                  onClick={() => setShowTalents(true)}
+                  onClick={() => {
+                    sound.playClick();
+                    setShowTalents(true);
+                  }}
                 >
-                  🏛️ 结晶祭坛 / 永久天赋
+                  结晶祭坛 · 永久天赋
                 </button>
                 <button
                   className="text-btn"
-                  onClick={() => setShowHistory(!showHistory)}
+                  onClick={() => {
+                    sound.playClick();
+                    setShowHistory(!showHistory);
+                  }}
                 >
-                  📜 历次远征战绩 ({runs.length})
+                  历次远征战绩 ({runs.length})
                 </button>
               </div>
               <div className="controls-hint">
@@ -230,7 +306,7 @@ export function App() {
                   <div className="history-list">
                     {runs.map((r, i) => (
                       <div key={i} className={`history-item ${r.won ? 'won' : 'lost'}`}>
-                        <span className="hist-status">{r.won ? '👑 胜利' : '💀 阵亡'}</span>
+                        <span className="hist-status">{r.won ? '胜利' : '阵亡'}</span>
                         <span className="hist-mode">
                           {CLASS_BASES[r.heroClass]?.name ?? '法师'} · {CHAPTERS[r.chapter]?.name ?? '比奇'} · {r.mode === 'normal' ? '标准' : '试炼'}
                         </span>
@@ -253,10 +329,10 @@ export function App() {
         <div className="modal-container talent-modal">
           <div className="panel gold-panel talent-panel">
             <div className="talent-header">
-              <h2>🏛️ 玛法结晶祭坛 · 永久天赋</h2>
+              <h2>玛法结晶祭坛 · 永久天赋</h2>
               <p>消耗每局击杀 Boss 与通关获得的玛法结晶，永久强化战力</p>
               <div className="crystal-balance">
-                持有结晶: <strong>💎 {profile.crystals}</strong>
+                持有结晶: <strong>{profile.crystals}</strong>
               </div>
             </div>
 
@@ -283,7 +359,7 @@ export function App() {
                           disabled={!canAfford}
                           onClick={() => handleUpgradeTalent(t.key)}
                         >
-                          加点 (💎 {cost})
+                          加点 (结晶 {cost})
                         </button>
                       )}
                     </div>
@@ -298,11 +374,14 @@ export function App() {
                 onClick={handleResetTalents}
                 title="全额返还已加点的全部结晶"
               >
-                🔄 重置天赋 (全额返还)
+                重置天赋 (全额返还)
               </button>
               <button
                 className="primary-btn"
-                onClick={() => setShowTalents(false)}
+                onClick={() => {
+                  sound.playClick();
+                  setShowTalents(false);
+                }}
               >
                 完成退出
               </button>
@@ -356,14 +435,17 @@ export function App() {
 
             {/* Gold & Kills */}
             <div className="hud-box counters-box">
-              <span className="counter-item">💰 {g.gold}</span>
-              <span className="counter-item">💀 {g.kills}</span>
+              <span className="counter-item">金币: {g.gold}</span>
+              <span className="counter-item">击杀: {g.kills}</span>
               <button
                 className="pause-hud-btn"
-                onClick={() => game.pause()}
+                onClick={() => {
+                  sound.playClick();
+                  game.pause();
+                }}
                 title="暂停游戏 (ESC)"
               >
-                ⏸️
+                {g.phase === 'paused' ? '继续' : '暂停'}
               </button>
             </div>
           </header>
@@ -377,7 +459,7 @@ export function App() {
                   return (
                     <div key={slotIdx} className="skill-slot empty-slot">
                       <span className="slot-num">{slotIdx + 1}</span>
-                      <span className="slot-empty-icon">➕</span>
+                      <span className="slot-empty-icon">空</span>
                     </div>
                   );
                 }
@@ -390,9 +472,12 @@ export function App() {
 
                 return (
                   <div key={slotIdx} className={`skill-slot active-slot skill-${skill.id}`}>
-                    <span className="slot-num">{slotIdx + 1}</span>
-                    <span className="skill-rank">Lv.{skill.rank}</span>
-                    <div className="skill-name">{def.name}</div>
+                    <Icon frame={def.asset} />
+                    <div className="skill-slot-info">
+                      <span className="slot-num">{slotIdx + 1}</span>
+                      <span className="skill-rank">Lv.{skill.rank}</span>
+                      <div className="skill-name">{def.name}</div>
+                    </div>
                     {skill.cd > 0 && (
                       <div
                         className="cd-sweep"
@@ -421,12 +506,20 @@ export function App() {
                 <div
                   key={c.id}
                   className="choice-card"
-                  onClick={() => game.choose(c.id)}
+                  onClick={() => {
+                    sound.playClick();
+                    game.choose(c.id);
+                  }}
                 >
                   <div className="card-key-tag">[{idx + 1}]</div>
                   <div className={`card-type-tag ${c.kind}`}>
-                    {c.kind === 'skill' ? (c.id.startsWith('learn-') ? '★ 领悟新技能' : '▲ 技能进阶') : '◆ 属性增幅'}
+                    {c.kind === 'skill' ? (c.id.startsWith('learn-') ? '领悟新技能' : '技能进阶') : '属性增幅'}
                   </div>
+                  {c.skill && (
+                    <div className="choice-icon-wrap">
+                      <Icon frame={getSkill(c.skill).asset} />
+                    </div>
+                  )}
                   <h3 className="card-title">{c.name}</h3>
                   <p className="card-desc">{c.description}</p>
                   <button className="card-select-btn">选择此项</button>
@@ -444,7 +537,7 @@ export function App() {
             <div className="shop-header">
               <h2>第 {g.wave} 波清剿完成 · 比奇行脚商人</h2>
               <div className="shop-gold-info">
-                <span>当前持有金币: <strong>💰 {g.gold}</strong></span>
+                <span>当前持有金币: <strong>金币 {g.gold}</strong></span>
                 <span>本波收益: +{g.lastWaveGold} (含未拾取50%折算)</span>
               </div>
             </div>
@@ -457,8 +550,11 @@ export function App() {
                 return (
                   <div key={o.id} className={`offer-card ${o.sold ? 'sold' : ''} ${o.locked ? 'locked' : ''}`}>
                     <div className="offer-header">
-                      <span className={`item-tier tier-${item.tier}`}>{item.name}</span>
-                      <span className="item-price">💰 {o.price}</span>
+                      <Icon frame={item.icon} />
+                      <div className="offer-meta">
+                        <span className={`item-tier tier-${item.tier}`}>{item.name}</span>
+                        <span className="item-price">金币 {o.price}</span>
+                      </div>
                     </div>
                     <div className="item-type-tag">
                       {item.kind === 'equipment' ? '装备' : item.kind === 'passive' ? '被动道具' : '恢复品'}
@@ -473,15 +569,21 @@ export function App() {
                           <button
                             className="buy-btn"
                             disabled={!canAfford}
-                            onClick={() => game.buy(o.id)}
+                            onClick={() => {
+                              sound.playGem();
+                              game.buy(o.id);
+                            }}
                           >
                             购买
                           </button>
                           <button
                             className={`lock-btn ${o.locked ? 'active' : ''}`}
-                            onClick={() => game.lock(o.id)}
+                            onClick={() => {
+                              sound.playClick();
+                              game.lock(o.id);
+                            }}
                           >
-                            {o.locked ? '🔒 已锁定' : '🔓 锁定'}
+                            {o.locked ? '已锁定' : '锁定'}
                           </button>
                         </>
                       )}
@@ -503,11 +605,15 @@ export function App() {
                       <div className="slot-title">{SLOT_NAMES[slot]}</div>
                       {item ? (
                         <div className="slot-item-info">
+                          <Icon frame={item.icon} />
                           <span className="item-name">{item.name}</span>
                           <button
                             className="sell-btn"
-                            onClick={() => game.sell(slot)}
-                            title={`折价变卖 (返还 💰${sellPrice(eq!.paid, item.price)})`}
+                            onClick={() => {
+                              sound.playGem();
+                              game.sell(slot);
+                            }}
+                            title={`折价变卖 (返还金币 ${sellPrice(eq!.paid, item.price)})`}
                           >
                             卖出
                           </button>
@@ -526,15 +632,21 @@ export function App() {
               <button
                 className="reroll-btn"
                 disabled={g.gold < g.cooldownCost}
-                onClick={() => game.reroll()}
+                onClick={() => {
+                  sound.playClick();
+                  game.reroll();
+                }}
               >
-                🔄 刷新货架 ({g.freeRerolls > 0 ? `免费 (${g.freeRerolls})` : `💰 ${g.cooldownCost}`})
+                刷新货架 ({g.freeRerolls > 0 ? `免费 (${g.freeRerolls})` : `金币 ${g.cooldownCost}`})
               </button>
               <button
                 className="next-wave-btn primary-btn"
-                onClick={() => game.nextWave()}
+                onClick={() => {
+                  sound.playClick();
+                  game.nextWave();
+                }}
               >
-                ⚔️ 进入第 {g.wave + 1} 波
+                进入第 {g.wave + 1} 波
               </button>
             </div>
           </div>
@@ -553,20 +665,33 @@ export function App() {
               <p>玩家生命: {Math.round(g.player.hp)} / {g.maxHP}</p>
             </div>
             <div className="pause-actions">
-              <button className="primary-btn" onClick={() => game.pause()}>
-                ▶️ 继续战斗
+              <button
+                className="primary-btn"
+                onClick={() => {
+                  sound.playClick();
+                  game.pause();
+                }}
+              >
+                继续战斗
               </button>
               <button
                 className="secondary-btn"
-                onClick={() => game.start(g.heroClass, g.chapter, g.mode, g.seed, profile || undefined)}
+                onClick={() => {
+                  sound.playClick();
+                  game.start(g.heroClass, g.chapter, g.mode, g.seed, profile || undefined);
+                }}
               >
-                🔄 重开本局 (相同种子)
+                重开本局 (相同种子)
               </button>
               <button
                 className="danger-btn"
-                onClick={() => { game.phase = 'lobby'; game.emit(); }}
+                onClick={() => {
+                  sound.playClick();
+                  game.phase = 'lobby';
+                  game.emit();
+                }}
               >
-                🚪 放弃并返回营地
+                放弃并返回营地
               </button>
             </div>
           </div>
@@ -580,8 +705,8 @@ export function App() {
             <div className="result-header">
               <h1>
                 {g.result.won
-                  ? `👑 玛法凯旋 · 诛灭 ${CHAPTERS[g.chapter]?.bossName}`
-                  : '💀 喋血荒野 · 试炼落幕'}
+                  ? `玛法凯旋 · 诛灭 ${CHAPTERS[g.chapter]?.bossName}`
+                  : '喋血荒野 · 试炼落幕'}
               </h1>
               <p className="result-subtitle">
                 {g.result.won
@@ -609,7 +734,7 @@ export function App() {
               </div>
               <div className="stat-card crystal-highlight">
                 <span className="label">获得结晶</span>
-                <span className="val">💎 +{g.result.crystals}</span>
+                <span className="val">+{g.result.crystals} 结晶</span>
               </div>
             </div>
 
@@ -659,6 +784,7 @@ export function App() {
               <button
                 className="copy-seed-btn"
                 onClick={() => {
+                  sound.playClick();
                   if (navigator.clipboard) {
                     navigator.clipboard.writeText(String(g.result?.seed));
                     setCopiedSeed(true);
@@ -666,7 +792,7 @@ export function App() {
                   }
                 }}
               >
-                {copiedSeed ? '✓ 种子已复制' : '📋 复制种子'}
+                {copiedSeed ? '种子已复制' : '复制种子'}
               </button>
             </div>
 
@@ -675,13 +801,17 @@ export function App() {
                 className="primary-btn"
                 onClick={() => handleStart(g.mode)}
               >
-                ⚔️ 再次出征
+                再次出征
               </button>
               <button
                 className="secondary-btn"
-                onClick={() => { game.phase = 'lobby'; game.emit(); }}
+                onClick={() => {
+                  sound.playClick();
+                  game.phase = 'lobby';
+                  game.emit();
+                }}
               >
-                🏠 返回大厅
+                返回大厅
               </button>
             </div>
           </div>

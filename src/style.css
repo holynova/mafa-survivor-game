@@ -1336,3 +1336,59 @@ body, html {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* Authentic Mir 2 Pixel Art & Icon Box */
+.art {
+  display: inline-block;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.art-empty {
+  font-family: Georgia, serif;
+  color: #9b8958;
+  font-size: 18px;
+}
+
+.icon-box {
+  height: 48px;
+  width: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.icon-box > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 48px;
+  max-height: 48px;
+  image-rendering: pixelated;
+  overflow: hidden;
+}
+
+.skill-slot .icon-box {
+  width: 32px;
+  height: 32px;
+}
+
+.upgrade-card .icon-box {
+  margin: 6px auto 10px;
+  height: 48px;
+  width: 48px;
+}
+
+.shop-card .icon-box {
+  margin: 6px auto 6px;
+  height: 44px;
+  width: 44px;
+}
+
+.equipment-slot .icon-box {
+  height: 30px;
+  width: 30px;
+}

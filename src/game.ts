@@ -116,6 +116,8 @@ export class Game {
   private hash = new SpatialHash<Enemy>();
   private waveKills = 0;
 
+  version = 0;
+
   subscribe = (f: () => void) => {
     this.listeners.add(f);
     return () => {
@@ -124,6 +126,7 @@ export class Game {
   };
 
   emit() {
+    this.version++;
     for (const f of this.listeners) f();
   }
 
@@ -375,7 +378,7 @@ export class Game {
         id: ++this.id,
         x: this.player.x,
         y: this.player.y - 100,
-        text: `⚠️ 首领降临: ${chap.bossName}！`,
+        text: `【首领降临】${chap.bossName}！`,
         color: '#ef4444',
         life: 2.5,
       });
@@ -1186,7 +1189,7 @@ export class Game {
         id: ++this.id,
         x: e.x,
         y: e.y - 60,
-        text: '⚡ 麻痹',
+        text: '【麻痹】',
         color: '#fbbf24',
         life: 0.75,
       });
@@ -1287,7 +1290,7 @@ export class Game {
           id: ++this.id,
           x: this.player.x,
           y: this.player.y - 80,
-          text: '✨ 涅槃复活！',
+          text: '【涅槃复活】',
           color: '#facc15',
           life: 1.5,
         });

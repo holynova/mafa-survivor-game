@@ -1255,7 +1255,7 @@ export const ITEMS: Item[] = [
     tier: 1,
     stats: {},
     maxCount: null,
-    icon: 'item/金创药',
+    icon: 'item/金创药（小）',
     description: '立刻恢复 35 点生命值。',
   },
   {
@@ -1266,7 +1266,7 @@ export const ITEMS: Item[] = [
     tier: 2,
     stats: {},
     maxCount: null,
-    icon: 'item/强效金创药',
+    icon: 'item/魔法药（小）',
     description: '立刻恢复 75 点生命值。',
   },
 ];
@@ -1381,3 +1381,15 @@ export const getItem = (id: string): Item => {
   if (!item) throw new Error(`Unknown item: ${id}`);
   return item;
 };
+
+export const SCENERY = [
+  { id: 'deadwood', x: 780, y: 580, r: 15 },
+  { id: 'deadwood', x: 1460, y: 920, r: 15 },
+  { id: 'deadwood', x: 1740, y: 420, r: 15 },
+  { id: 'deadwood', x: 360, y: 1100, r: 15 },
+  { id: 'sign', x: 1180, y: 470, r: 12 },
+  { id: 'shrub', x: 920, y: 840, r: 12 },
+  { id: 'shrub', x: 620, y: 320, r: 12 },
+  { id: 'shrub', x: 1580, y: 1200, r: 12 },
+];
+

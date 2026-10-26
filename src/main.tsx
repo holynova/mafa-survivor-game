@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
+import { App, loadArtPositions } from './App';
 import { boot } from './renderer';
 import './style.css';
 
@@ -10,4 +10,9 @@ if (container) {
   root.render(<App />);
 }
 
-boot();
+loadArtPositions()
+  .then(() => boot())
+  .catch((e) => {
+    console.warn('Could not preload art positions, booting anyway:', e);
+    boot();
+  });

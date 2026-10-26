@@ -1,14 +1,36 @@
 import Phaser from 'phaser';
 import { game, WORLD } from './game';
+import { SCENERY } from './content';
 import type { Enemy, Fx, Minion, Projectile } from './types';
 
 export interface Manifest {
+  pages: {
+    key: string;
+    image: string;
+    data: string;
+    width: number;
+    height: number;
+  }[];
   animations: Record<string, string[]>;
-  frames: Record<string, { dx: number; dy: number; width: number; height: number }>;
+  frames: Record<
+    string,
+    {
+      dx: number;
+      dy: number;
+      width: number;
+      height: number;
+      texture: string;
+      originX: number;
+      originY: number;
+    }
+  >;
   rightsStatus?: string;
 }
 
 export let assets: Manifest | null = null;
+export function setAssetManifest(m: Manifest) {
+  assets = m;
+}
 let rendererReady = false;
 export const readyListeners = new Set<() => void>();
 export const isReady = () => rendererReady;
@@ -36,24 +58,25 @@ class BattleScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.atlas('mir', '/assets/mir/atlas.png', '/assets/mir/atlas.json');
-    this.load.json('manifest', '/assets/mir/manifest.json');
+    if (assets?.pages) {
+      for (const page of assets.pages) {
+        this.load.atlas(page.key, '/assets/mir/' + page.image, '/assets/mir/' + page.data);
+      }
+    } else {
+      this.load.json('manifest', '/assets/mir/manifest.json');
+    }
 
     this.load.on('loaderror', (file: any) => {
-      if (file.key === 'mir' || file.key === 'manifest') {
-        this.useSprites = false;
-      }
+      console.warn('Load error for asset:', file?.key);
     });
   }
 
   create() {
-    const cachedManifest = this.cache.json.get('manifest');
-    if (cachedManifest && this.textures.exists('mir')) {
-      assets = cachedManifest;
-      this.useSprites = true;
-    } else {
-      this.useSprites = false;
+    if (!assets) {
+      const cached = this.cache.json.get('manifest');
+      if (cached) assets = cached;
     }
+    this.useSprites = !!assets;
 
     this.cameras.main.setBounds(0, 0, WORLD.w, WORLD.h);
     this.cameras.main.setZoom(this.zoom());
@@ -134,59 +157,58 @@ class BattleScene extends Phaser.Scene {
 
   paintGround() {
     this.groundGfx.clear();
-    const tileSize = 64;
-    const chap = game.chapter;
+    const fallback = 'ground/3';
+    if (this.useSprites && assets?.frames[fallback]) {
+      const tile = assets.frames[fallback];
+      const w = tile.width;
+      const h = tile.height;
+      for (let y = 0; y < WORLD.h; y += h) {
+        for (let x = 0; x < WORLD.w; x += w) {
+          this.add
+            .image(x, y, tile.texture, fallback)
+            .setOrigin(0)
+            .setDepth(-100);
+        }
+      }
 
-    if (this.useSprites && assets) {
-      const grass = ['ground/100', 'ground/150', 'ground/200', 'ground/250'].filter(
-        (x) => assets!.frames[x]
-      );
-      const fallback = 'ground/3';
-      const frameKey = grass[0] ?? fallback;
-      const tile = assets.frames[frameKey];
-      if (tile) {
-        const w = tile.width;
-        const h = tile.height;
-        for (let y = 0; y < WORLD.h; y += h) {
-          for (let x = 0; x < WORLD.w; x += w) {
-            const key = grass[(Math.floor(x / w) * 13 + Math.floor(y / h) * 7) % grass.length] ?? fallback;
-            this.add.image(x, y, 'mir', key).setOrigin(0).setDepth(-100);
-          }
+      for (const object of SCENERY) {
+        const frame = 'scenery/' + object.id;
+        const f = assets.frames[frame];
+        if (f) {
+          this.add
+            .image(object.x, object.y, f.texture, frame)
+            .setOrigin(0.5, 1)
+            .setDepth(object.y);
         }
       }
     } else {
-      // Procedural themed tilemap based on chapter
+      const tileSize = 64;
+      const chap = game.chapter;
       for (let y = 0; y < WORLD.h; y += tileSize) {
         for (let x = 0; x < WORLD.w; x += tileSize) {
           const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
           const noise = hash - Math.floor(hash);
-
-          let color = 0x1f2b21;
-          let dotColor = 0x2f3d32;
-
-          if (chap === 'bichon') {
-            color = noise > 0.7 ? 0x243026 : noise > 0.35 ? 0x1f2b21 : 0x1a241c;
-            dotColor = 0x2f3d32;
-          } else if (chap === 'mine') {
-            color = noise > 0.7 ? 0x2a2a2e : noise > 0.35 ? 0x212124 : 0x19191c;
-            dotColor = 0x3d3d45;
-          } else {
-            // temple
-            color = noise > 0.7 ? 0x331e1e : noise > 0.35 ? 0x291818 : 0x1f1212;
-            dotColor = 0x522929;
-          }
-
+          const color =
+            chap === 'temple'
+              ? noise > 0.6
+                ? 0x2e1a1a
+                : 0x221313
+              : chap === 'mine'
+                ? noise > 0.6
+                  ? 0x28282b
+                  : 0x1e1e21
+                : noise > 0.6
+                  ? 0x253227
+                  : 0x1d271f;
           this.groundGfx.fillStyle(color, 1);
           this.groundGfx.fillRect(x, y, tileSize, tileSize);
-          this.groundGfx.fillStyle(dotColor, 0.3);
-          this.groundGfx.fillRect(x + 2, y + 2, 2, 2);
         }
       }
     }
 
-    // World Boundary Border
-    const borderColor = chap === 'temple' ? 0xef4444 : chap === 'mine' ? 0x94a3b8 : 0xc49e54;
-    this.groundGfx.lineStyle(3, borderColor, 0.65);
+    const chap = game.chapter;
+    const borderColor = chap === 'temple' ? 0xd87864 : chap === 'mine' ? 0x94a3b8 : 0xd8c894;
+    this.groundGfx.lineStyle(2, borderColor, 0.5);
     this.groundGfx.strokeRect(20, 30, WORLD.w - 40, WORLD.h - 50);
   }
 
@@ -194,16 +216,16 @@ class BattleScene extends Phaser.Scene {
     if (!this.useSprites || !assets?.frames[frame]) return;
     this.seen.add(key);
     let image = this.bodies.get(key);
+    const f = assets.frames[frame];
     if (!image) {
-      image = this.pool.pop() ?? this.add.image(0, 0, 'mir', frame);
+      image = this.pool.pop() ?? this.add.image(0, 0, f.texture, frame);
       this.bodies.set(key, image);
     }
-    const f = assets.frames[frame];
     image
-      .setTexture('mir', frame)
+      .setTexture(f.texture, frame)
       .setVisible(true)
       .setOrigin(offset ? 0 : 0.5)
-      .setPosition(offset ? x + (f.dx - 24) * scale : x, offset ? y + (f.dy - 16) * scale : y)
+      .setPosition(offset ? x + -f.originX * scale : x, offset ? y + -f.originY * scale : y)
       .setDepth(depth)
       .setAlpha(alpha)
       .setScale(scale)
