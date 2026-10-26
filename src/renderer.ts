@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { game, WORLD } from './game';
 import { SCENERY } from './content';
+import { sound } from './audio';
 import type { Enemy, Fx, Minion, Projectile } from './types';
 
 export interface Manifest {
@@ -93,6 +94,7 @@ class BattleScene extends Phaser.Scene {
 
     this.input.keyboard!.on('keydown-ESC', () => game.pause());
     this.input.keyboard!.on('keydown-P', () => game.pause());
+    this.input.keyboard!.on('keydown-M', () => sound.toggleMute());
 
     // Spacebar to trigger teleport (if Mage) or savage charge (if Warrior)
     this.spaceKey.on('down', () => {

@@ -262,7 +262,7 @@ export class Game {
   private listeners = new Set<() => void>();
   private id = 0;
   private spawnTimer = 0;
-  private spawned = 0;
+  spawned = 0;
   private nextUI = 0;
   private previous: Phase = 'battle';
   private hash = new SpatialHash<Enemy>();

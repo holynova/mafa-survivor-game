@@ -9,6 +9,9 @@ import {
   addCrystals,
   upgradeTalent,
   resetTalents,
+  validateAndRepairProfile,
+  exportSaveData,
+  importSaveData,
 } from '../src/save';
 
 describe('IndexedDB Save, Profile & Talent Shrine Persistence', () => {
@@ -97,5 +100,68 @@ describe('IndexedDB Save, Profile & Talent Shrine Persistence', () => {
     const prof = await getProfile();
     expect(prof.unlockedChapters).toContain('temple');
     expect(prof.crystals).toBe(8); // 20 - 12 = 8
+  });
+
+  it('safely repairs corrupted profile data without throwing', () => {
+    // Completely broken/corrupted payload
+    const corrupt = {
+      crystals: -50,
+      talents: { robustness: 999, unknownKey: 5 },
+      unlockedChapters: ['invalid_chap', 'bichon'],
+      unlockedClasses: 'not_an_array',
+      unlockedSkills: null,
+    };
+
+    const repaired = validateAndRepairProfile(corrupt);
+
+    // Crystals cannot be negative
+    expect(repaired.crystals).toBe(0);
+    // Robustness must be clamped to maxLevel (5)
+    expect(repaired.talents.robustness).toBe(5);
+    // Missing talents populated with 0
+    expect(repaired.talents.swiftness).toBe(0);
+    // Only valid chapters preserved
+    expect(repaired.unlockedChapters).toEqual(['bichon']);
+    // Fallback to all 3 classes
+    expect(repaired.unlockedClasses).toEqual(['wizard', 'taoist', 'warrior']);
+    // Fallback to base starting skills
+    expect(repaired.unlockedSkills?.length).toBeGreaterThan(0);
+  });
+
+  it('exports and imports save data cleanly', async () => {
+    const profBefore = await getProfile();
+    const expectedCrystals = profBefore.crystals;
+    const g = new Game();
+    g.start('taoist', 'bichon', 'trial', 176);
+    g.finish(true);
+    await saveRun(g.result!);
+
+    // Export save
+    const jsonStr = await exportSaveData();
+    expect(jsonStr).toContain('mafa-survivor');
+    expect(jsonStr).toContain('"profile"');
+
+    // Simulate clean state
+    await saveProfile({
+      crystals: 0,
+      talents: { robustness: 0, swiftness: 0, magnetism: 0, wealth: 0, enlightenment: 0, harmony: 0 },
+      unlockedChapters: ['bichon'],
+      unlockedClasses: ['wizard', 'taoist', 'warrior'],
+    });
+
+    let cleanProf = await getProfile();
+    expect(cleanProf.crystals).toBe(0);
+
+    // Import previously exported save
+    const importRes = await importSaveData(jsonStr);
+    expect(importRes.success).toBe(true);
+
+    const restoredProf = await getProfile();
+    expect(restoredProf.crystals).toBeGreaterThanOrEqual(expectedCrystals);
+
+    // Invalid JSON import test
+    const badRes = await importSaveData('{"invalid json');
+    expect(badRes.success).toBe(false);
+    expect(badRes.error).toBeDefined();
   });
 });

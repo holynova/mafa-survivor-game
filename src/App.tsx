@@ -21,6 +21,8 @@ import {
   upgradeTalent,
   unlockChapter,
   CHAPTER_UNLOCK_COSTS,
+  exportSaveData,
+  importSaveData,
 } from './save';
 import type {
   HeroClass,
@@ -108,6 +110,10 @@ export function App() {
   const [compendiumTab, setCompendiumTab] = useState<'skills' | 'equipments'>('skills');
   const [compSkillFilter, setCompSkillFilter] = useState<'all' | 'wizard' | 'taoist' | 'warrior'>('all');
   const [compEquipFilter, setCompEquipFilter] = useState<'all' | 'weapon' | 'armor' | 'helmet' | 'necklace' | 'bracelet' | 'ring'>('all');
+  const [showGuide, setShowGuide] = useState(false);
+  const [guideTab, setGuideTab] = useState<'rules' | 'classes' | 'stats' | 'controls'>('rules');
+  const [importText, setImportText] = useState('');
+  const [guideMsg, setGuideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [unlockModal, setUnlockModal] = useState<MapChapter | null>(null);
 
   useEffect(() => {
@@ -314,6 +320,15 @@ export function App() {
                   }}
                 >
                   玛法图鉴 · 藏经阁
+                </button>
+                <button
+                  className="guide-btn-lobby"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowGuide(true);
+                  }}
+                >
+                  玩法秘籍 · 键位
                 </button>
                 <button
                   className="text-btn"
@@ -752,6 +767,317 @@ export function App() {
         </div>
       )}
 
+      {/* GAMEPLAY GUIDE & SETTINGS MODAL (玩法秘籍 · 说明与键位) */}
+      {showGuide && (
+        <div className="modal-container guide-modal">
+          <div className="panel gold-panel guide-panel">
+            <div className="guide-header">
+              <div className="guide-title-row">
+                <h2>玛法秘籍 · 游戏说明</h2>
+                <span className="guide-subtitle">传奇 1.76 基础法则、职业精要与键位设置</span>
+              </div>
+              <button
+                className="guide-close-btn"
+                onClick={() => {
+                  sound.playClick();
+                  setShowGuide(false);
+                  setGuideMsg(null);
+                }}
+              >
+                返回
+              </button>
+            </div>
+
+            {/* GUIDE NAV TABS */}
+            <div className="guide-nav">
+              <button
+                className={`guide-tab-btn ${guideTab === 'rules' ? 'active' : ''}`}
+                onClick={() => {
+                  sound.playClick();
+                  setGuideTab('rules');
+                }}
+              >
+                基础规则
+              </button>
+              <button
+                className={`guide-tab-btn ${guideTab === 'classes' ? 'active' : ''}`}
+                onClick={() => {
+                  sound.playClick();
+                  setGuideTab('classes');
+                }}
+              >
+                三职精要
+              </button>
+              <button
+                className={`guide-tab-btn ${guideTab === 'stats' ? 'active' : ''}`}
+                onClick={() => {
+                  sound.playClick();
+                  setGuideTab('stats');
+                }}
+              >
+                属性与特戒
+              </button>
+              <button
+                className={`guide-tab-btn ${guideTab === 'controls' ? 'active' : ''}`}
+                onClick={() => {
+                  sound.playClick();
+                  setGuideTab('controls');
+                }}
+              >
+                操作键位与存档
+              </button>
+            </div>
+
+            {/* TAB: RULES */}
+            {guideTab === 'rules' && (
+              <div className="guide-content-scroll">
+                <div className="guide-section">
+                  <div className="guide-card">
+                    <h3>【远征目标与波次】</h3>
+                    <p>
+                      在比奇荒野、废弃矿洞、祖玛神庙等玛法古迹中生存。标准远征共 12 波次（每波 75 秒），试炼模式为 3 波次（每波 35 秒）。
+                    </p>
+                    <p>
+                      在最终波次将迎战章节霸主（骷髅精灵、尸王、沃玛教主）。斩杀最终 Boss 即可通关本章节，并赢取玛法结晶与解锁下一未知地图！
+                    </p>
+                  </div>
+
+                  <div className="guide-card">
+                    <h3>【升级领悟与技能槽位】</h3>
+                    <p>
+                      击杀魔物掉落晶石经验，累积经验升级时游戏自动暂停并提供 3 个参悟选项。
+                    </p>
+                    <p>
+                      最多可同时掌握 6 门技能。未满 6 槽时可领悟全新本职武学；已掌握技能可继续升级并选择进阶分支（最高 Lv.3）。
+                    </p>
+                  </div>
+
+                  <div className="guide-card">
+                    <h3>【波次补给与神兵掉落】</h3>
+                    <p>
+                      每波结束后自动结算剩余经验与回收折现金币，随后开启四格军备补给黑市，可购买或重掷装备首饰与无格被动秘宝。
+                    </p>
+                    <p>
+                      在战斗中击败精英怪与 Boss 必掉落冲天光柱（金色/紫色神兵）与黄金宝箱。角色走近即可吸附，若装备品质更优将自动替换并旧物折现！
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: CLASSES */}
+            {guideTab === 'classes' && (
+              <div className="guide-content-scroll">
+                <div className="guide-section">
+                  <div className="guide-card">
+                    <h3>【法师 · 元素与天雷的主宰】</h3>
+                    <p>
+                      初始技能为火球术。拥有抗拒火环、诱惑之光、火墙、雷电术、地狱雷光、冰咆哮、魔法盾等 14 门经典绝技。
+                    </p>
+                    <p>
+                      定位：超强全屏 AOE 与清场爆发。身板较脆但拥有魔法盾与瞬息移动保命，适合风筝走位和大范围火海封路。
+                    </p>
+                  </div>
+
+                  <div className="guide-card">
+                    <h3>【道士 · 精神力与通灵的大师】</h3>
+                    <p>
+                      初始技能为灵魂火符与治愈术。拥有召唤变异骷髅、烈焰神兽、施毒术、隐身术、幽灵盾、神圣战甲术等 13 门道术。
+                    </p>
+                    <p>
+                      定位：召唤仆从协同输出、持续绿毒腐蚀魔物双防与持久自愈。擅长以宠物吸引群怪火力并在安全距离输出。
+                    </p>
+                  </div>
+
+                  <div className="guide-card">
+                    <h3>【战士 · 刚猛无匹的钢铁先锋】</h3>
+                    <p>
+                      初始技能为攻杀与基本剑术。拥有刺杀剑术、半月弯刀、野蛮冲撞、烈火剑法等 6 大核心剑招。
+                    </p>
+                    <p>
+                      定位：拥有全职业最高的生命上限、重甲防御与正面扇形绞杀力。野蛮冲撞可强行推开迫近魔物，烈火剑法则能瞬间打出巨额单体暴击。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: STATS */}
+            {guideTab === 'stats' && (
+              <div className="guide-content-scroll">
+                <div className="guide-section">
+                  <div className="guide-card">
+                    <h3>【核心攻防属性】</h3>
+                    <p>
+                      <strong>DC (物理攻击)</strong>：决定战士全技能与通用近战武器的基础输出。
+                    </p>
+                    <p>
+                      <strong>MC (魔法攻击)</strong>：决定法师全技能的基础伤害与魔法盾吸伤上限。
+                    </p>
+                    <p>
+                      <strong>SC (道术攻击)</strong>：决定道士灵魂火符、施毒威力与骷髅/神兽的攻击和生命加成。
+                    </p>
+                    <p>
+                      <strong>DEF / MDEF (防御与魔防)</strong>：按 1.76 原版公式直接削减受到的物理与法系伤害。
+                    </p>
+                  </div>
+
+                  <div className="guide-card">
+                    <h3>【玛法三大传奇特戒】</h3>
+                    <p>
+                      <strong>复活戒指 (涅槃神力)</strong>：佩戴后受到致死伤害时免除阵亡，并立刻恢复 50% 最大生命值（每局可触发一次）。
+                    </p>
+                    <p>
+                      <strong>麻痹戒指 (石化神力)</strong>：近战物理攻击有概率彻底将目标敌人定身，使其无法移动与攻击。
+                    </p>
+                    <p>
+                      <strong>护身戒指 (魔力神盾)</strong>：受到的全类型伤害额外恒定减免 20%，极大增强生存能力。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: CONTROLS & SAVE */}
+            {guideTab === 'controls' && (
+              <div className="guide-content-scroll">
+                <div className="guide-section">
+                  <div className="guide-card">
+                    <h3>【操作键位对照表】</h3>
+                    <table className="guide-key-table">
+                      <thead>
+                        <tr>
+                          <th>操作动作</th>
+                          <th>键盘键位</th>
+                          <th>触屏/鼠标操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>移动走位</td>
+                          <td>
+                            <span className="key-badge">W</span> <span className="key-badge">A</span>{' '}
+                            <span className="key-badge">S</span> <span className="key-badge">D</span> 或{' '}
+                            <span className="key-badge">方向键</span>
+                          </td>
+                          <td>按住屏幕/鼠标拖拽滑动</td>
+                        </tr>
+                        <tr>
+                          <td>升级选技</td>
+                          <td>
+                            <span className="key-badge">1</span> <span className="key-badge">2</span>{' '}
+                            <span className="key-badge">3</span>
+                          </td>
+                          <td>点击对应卡片</td>
+                        </tr>
+                        <tr>
+                          <td>位移/冲撞</td>
+                          <td>
+                            <span className="key-badge">空格 Space</span>
+                          </td>
+                          <td>冷却完毕自动或点击技能槽</td>
+                        </tr>
+                        <tr>
+                          <td>游戏暂停</td>
+                          <td>
+                            <span className="key-badge">ESC</span> 或 <span className="key-badge">P</span>
+                          </td>
+                          <td>点击右上角 [暂停] 按钮</td>
+                        </tr>
+                        <tr>
+                          <td>静音开关</td>
+                          <td>
+                            <span className="key-badge">M</span>
+                          </td>
+                          <td>点击右上角 [静音] 按钮</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="guide-save-box">
+                    <h3>【存档导出与恢复管理】</h3>
+                    <p>
+                      游戏进度（结晶、天赋、图鉴点亮、解锁章节）自动双重保存在浏览器 IndexedDB 与 LocalStorage 中。
+                    </p>
+                    <div className="guide-save-actions">
+                      <button
+                        className="secondary-btn"
+                        onClick={async () => {
+                          sound.playClick();
+                          try {
+                            const data = await exportSaveData();
+                            navigator.clipboard.writeText(data);
+                            setGuideMsg({ type: 'success', text: '存档 JSON 已成功复制到剪贴板！' });
+                          } catch {
+                            setGuideMsg({ type: 'error', text: '复制失败，请手动在下方文本框全选复制。' });
+                          }
+                        }}
+                      >
+                        复制存档 JSON
+                      </button>
+                      <button
+                        className="secondary-btn"
+                        onClick={async () => {
+                          sound.playClick();
+                          const data = await exportSaveData();
+                          const blob = new Blob([data], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `mafa-survivor-save-${Date.now()}.json`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          setGuideMsg({ type: 'success', text: '存档文件下载完成！' });
+                        }}
+                      >
+                        下载存档文件 (.json)
+                      </button>
+                    </div>
+
+                    <textarea
+                      className="guide-textarea"
+                      placeholder="在此处粘贴存档 JSON 字符串以进行数据恢复..."
+                      value={importText}
+                      onChange={(e) => setImportText(e.target.value)}
+                    />
+
+                    <div>
+                      <button
+                        className="primary-btn"
+                        disabled={!importText.trim()}
+                        onClick={async () => {
+                          sound.playClick();
+                          const res = await importSaveData(importText.trim());
+                          if (res.success) {
+                            const prof = await getProfile();
+                            setProfile(prof);
+                            const r = await history();
+                            setRuns(r);
+                            setImportText('');
+                            setGuideMsg({ type: 'success', text: '存档恢复成功！已重新载入最新进度。' });
+                          } else {
+                            setGuideMsg({ type: 'error', text: res.error || '存档导入失败' });
+                          }
+                        }}
+                      >
+                        立即导入恢复存档
+                      </button>
+                    </div>
+
+                    {guideMsg && (
+                      <div className={guideMsg.type === 'success' ? 'guide-msg-success' : 'guide-msg-error'}>
+                        {guideMsg.text}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* IN-GAME BATTLE HUD */}
       {(g.phase === 'battle' || g.phase === 'upgrade' || g.phase === 'shop' || g.phase === 'paused') && (
         <div className="hud-container">
@@ -1122,6 +1448,15 @@ export function App() {
                 }}
               >
                 查阅图鉴
+              </button>
+              <button
+                className="secondary-btn"
+                onClick={() => {
+                  sound.playClick();
+                  setShowGuide(true);
+                }}
+              >
+                玩法秘籍
               </button>
               <button
                 className="primary-btn"

@@ -1873,3 +1873,223 @@ body, html {
   background: #54391a;
   border-color: #f59e0b;
 }
+
+/* ==========================================================================
+   Gameplay Guide & Settings Modal (玛法秘籍 · 游戏说明与键位)
+   ========================================================================== */
+.guide-modal {
+  z-index: 60;
+}
+
+.guide-panel {
+  max-width: 860px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+}
+
+.guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #5a4b2c;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.guide-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guide-title-row h2 {
+  font-size: 22px;
+  color: #facc15;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.guide-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.guide-close-btn {
+  background: #2a1f18;
+  border: 1px solid #78350f;
+  color: #fcd34d;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.guide-close-btn:hover {
+  background: #451a03;
+  border-color: #f59e0b;
+}
+
+.guide-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.guide-tab-btn {
+  flex: 1;
+  background: #1e1e24;
+  border: 1px solid #3f3f46;
+  color: #a1a1aa;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.guide-tab-btn:hover {
+  background: #27272a;
+  color: #f4f4f5;
+  border-color: #71717a;
+}
+
+.guide-tab-btn.active {
+  background: #3b2812;
+  border: 1px solid #f59e0b;
+  color: #fef08a;
+  box-shadow: inset 0 0 8px rgba(245, 158, 11, 0.25);
+}
+
+.guide-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  color: #e2e8f0;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guide-card {
+  background: #18191c;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.guide-card h3 {
+  color: #facc15;
+  font-size: 16px;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-card p {
+  color: #cbd5e1;
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.guide-key-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.guide-key-table th {
+  background: #27272a;
+  color: #facc15;
+  padding: 8px 12px;
+  text-align: left;
+  border: 1px solid #3f3f46;
+}
+
+.guide-key-table td {
+  padding: 8px 12px;
+  border: 1px solid #27272a;
+  color: #e2e8f0;
+}
+
+.key-badge {
+  display: inline-block;
+  background: #09090b;
+  border: 1px solid #71717a;
+  color: #fef08a;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  box-shadow: 0 2px 0 #3f3f46;
+}
+
+.guide-save-box {
+  background: #111413;
+  border: 1px solid #3b2812;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guide-save-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.guide-textarea {
+  width: 100%;
+  min-height: 80px;
+  background: #09090b;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 8px;
+  resize: vertical;
+}
+
+.guide-msg-success {
+  color: #86efac;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.guide-msg-error {
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.guide-btn-lobby {
+  background: #1c1917;
+  border: 1px solid #57534e;
+  color: #d6d3d1;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.guide-btn-lobby:hover {
+  background: #292524;
+  border-color: #a8a29e;
+  color: #fafaf9;
+}

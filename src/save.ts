@@ -21,6 +21,76 @@ const defaultProfile: ProfileData = {
   unlockedEquipments: ['wpn-wood', 'arm-cloth-m', 'arm-cloth-f'],
 };
 
+const LOCAL_STORAGE_KEY = 'mafa_survivor_profile_backup';
+
+export function validateAndRepairProfile(raw: any): ProfileData {
+  if (!raw || typeof raw !== 'object') {
+    return { ...defaultProfile };
+  }
+
+  const crystals =
+    typeof raw.crystals === 'number' && !isNaN(raw.crystals) && raw.crystals >= 0
+      ? Math.floor(raw.crystals)
+      : defaultProfile.crystals;
+
+  const talents = { ...defaultProfile.talents };
+  if (raw.talents && typeof raw.talents === 'object') {
+    for (const def of TALENTS) {
+      const val = raw.talents[def.key];
+      if (typeof val === 'number' && !isNaN(val)) {
+        talents[def.key] = Math.min(def.maxLevel, Math.max(0, Math.floor(val)));
+      }
+    }
+  }
+
+  const validChapters: MapChapter[] = ['bichon', 'mine', 'temple'];
+  let unlockedChapters: MapChapter[] = ['bichon'];
+  if (Array.isArray(raw.unlockedChapters)) {
+    const valid = raw.unlockedChapters.filter((c: any) => validChapters.includes(c));
+    if (valid.length > 0) {
+      unlockedChapters = Array.from(new Set(['bichon', ...valid]));
+    }
+  }
+
+  const validClasses: HeroClass[] = ['wizard', 'taoist', 'warrior'];
+  let unlockedClasses: HeroClass[] = ['wizard', 'taoist', 'warrior'];
+  if (Array.isArray(raw.unlockedClasses)) {
+    const valid = raw.unlockedClasses.filter((c: any) => validClasses.includes(c));
+    if (valid.length > 0) {
+      unlockedClasses = Array.from(new Set(valid));
+    }
+  }
+
+  let unlockedSkills: string[] = [...defaultProfile.unlockedSkills!];
+  if (Array.isArray(raw.unlockedSkills)) {
+    unlockedSkills = Array.from(
+      new Set([
+        ...unlockedSkills,
+        ...raw.unlockedSkills.filter((s: any) => typeof s === 'string'),
+      ])
+    );
+  }
+
+  let unlockedEquipments: string[] = [...defaultProfile.unlockedEquipments!];
+  if (Array.isArray(raw.unlockedEquipments)) {
+    unlockedEquipments = Array.from(
+      new Set([
+        ...unlockedEquipments,
+        ...raw.unlockedEquipments.filter((e: any) => typeof e === 'string'),
+      ])
+    );
+  }
+
+  return {
+    crystals,
+    talents,
+    unlockedChapters,
+    unlockedClasses,
+    unlockedSkills,
+    unlockedEquipments,
+  };
+}
+
 const db = () =>
   openDB(DB_NAME, DB_VERSION, {
     upgrade(database, oldVersion) {
@@ -39,26 +109,40 @@ export async function getProfile(): Promise<ProfileData> {
     const row = await database.get('profile', 'main');
     database.close();
     if (row && row.data) {
-      return {
-        ...defaultProfile,
-        ...row.data,
-        talents: { ...defaultProfile.talents, ...(row.data.talents || {}) },
-      };
+      return validateAndRepairProfile(row.data);
     }
-    return defaultProfile;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const local = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (local) {
+        return validateAndRepairProfile(JSON.parse(local));
+      }
+    }
+    return { ...defaultProfile };
   } catch {
-    return defaultProfile;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const local = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (local) return validateAndRepairProfile(JSON.parse(local));
+      }
+    } catch {}
+    return { ...defaultProfile };
   }
 }
 
 export async function saveProfile(data: ProfileData): Promise<void> {
+  const clean = validateAndRepairProfile(data);
   try {
     const database = await db();
-    await database.put('profile', { id: 'main', data });
+    await database.put('profile', { id: 'main', data: clean });
     database.close();
   } catch (err) {
     console.warn('Failed to save profile to IndexedDB:', err);
   }
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(clean));
+    }
+  } catch {}
 }
 
 export async function addCrystals(amount: number): Promise<ProfileData> {
@@ -205,5 +289,53 @@ export async function history(): Promise<RunResult[]> {
     return rows.sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0)).slice(0, 20);
   } catch {
     return [];
+  }
+}
+
+export async function exportSaveData(): Promise<string> {
+  const profile = await getProfile();
+  const runs = await history();
+  return JSON.stringify(
+    {
+      game: 'mafa-survivor',
+      version: DB_VERSION,
+      timestamp: Date.now(),
+      profile,
+      runs,
+    },
+    null,
+    2
+  );
+}
+
+export async function importSaveData(
+  jsonString: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (!parsed || typeof parsed !== 'object') {
+      return { success: false, error: '存档格式错误，无法解析' };
+    }
+    const profile = validateAndRepairProfile(parsed.profile ?? parsed);
+    await saveProfile(profile);
+
+    if (Array.isArray(parsed.runs)) {
+      try {
+        const database = await db();
+        const tx = database.transaction('runs', 'readwrite');
+        for (const run of parsed.runs) {
+          if (run && typeof run === 'object' && run.runId) {
+            await tx.store.put(run);
+          }
+        }
+        await tx.done;
+        database.close();
+      } catch (err) {
+        console.warn('Failed to restore runs from imported save:', err);
+      }
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: '存档 JSON 语法错误，导入失败' };
   }
 }
