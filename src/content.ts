@@ -1379,6 +1379,9 @@ export const getSkill = (id: SkillId): SkillDef => {
 export const getItem = (id: string): Item => {
   const item = ITEMS.find((x) => x.id === id);
   if (!item) throw new Error(`Unknown item: ${id}`);
+  if (!item.icon) {
+    return { ...item, icon: 'item/' + item.name };
+  }
   return item;
 };
 

@@ -47,6 +47,154 @@ import {
 
 export const WORLD = { w: 2208, h: 1536 };
 
+const SKILL_ENHANCEMENTS: Record<
+  string,
+  Array<{
+    suffix: string;
+    name: string;
+    desc: (r: number) => string;
+    field: 'power' | 'count' | 'radius' | 'duration' | 'localCDR' | 'shieldReduction' | 'summonLimit';
+    value: number;
+  }>
+> = {
+  // --- Wizard ---
+  fireball: [
+    { suffix: 'pwr', name: '纯阳真火', desc: (r) => `升至 Lv.${r}，火球术伤害提升 22%。`, field: 'power', value: 22 },
+    { suffix: 'cnt', name: '双火连珠', desc: (r) => `升至 Lv.${r}，额外发射 1 颗火球攻击不同目标。`, field: 'count', value: 1 },
+    { suffix: 'cdr', name: '迅捷凝气', desc: (r) => `升至 Lv.${r}，火球施法冷却缩减 15%。`, field: 'localCDR', value: 15 },
+  ],
+  lightning: [
+    { suffix: 'pwr', name: '九天神雷', desc: (r) => `升至 Lv.${r}，雷电术伤害提升 25%。`, field: 'power', value: 25 },
+    { suffix: 'cnt', name: '天雷连引', desc: (r) => `升至 Lv.${r}，每次雷击同时打击目标数 +1。`, field: 'count', value: 1 },
+    { suffix: 'cdr', name: '雷霆骤雨', desc: (r) => `升至 Lv.${r}，落雷冷却缩减 12%。`, field: 'localCDR', value: 12 },
+  ],
+  firewall: [
+    { suffix: 'dur', name: '炽焰长明', desc: (r) => `升至 Lv.${r}，火墙燃烧持续时间增加 30%。`, field: 'duration', value: 30 },
+    { suffix: 'rad', name: '火海蔓延', desc: (r) => `升至 Lv.${r}，火墙覆盖面积增加 25%。`, field: 'radius', value: 25 },
+  ],
+  shield: [
+    { suffix: 'red', name: '金刚不坏', desc: (r) => `升至 Lv.${r}，魔法盾减伤效果提升至更高阶（28%/35%）。`, field: 'shieldReduction', value: 8 },
+    { suffix: 'dur', name: '气脉悠长', desc: (r) => `升至 Lv.${r}，魔法盾持续时间由 6 秒增至 7 秒。`, field: 'duration', value: 16 },
+  ],
+  laser: [
+    { suffix: 'pwr', name: '极光贯日', desc: (r) => `升至 Lv.${r}，疾光电影光束伤害提升 25%。`, field: 'power', value: 25 },
+    { suffix: 'cdr', name: '瞬发雷光', desc: (r) => `升至 Lv.${r}，光束冷却缩减 12%。`, field: 'localCDR', value: 12 },
+  ],
+  ice_storm: [
+    { suffix: 'rad', name: '极地风暴', desc: (r) => `升至 Lv.${r}，冰暴判定半径扩大 20%。`, field: 'radius', value: 20 },
+    { suffix: 'pwr', name: '霜寒裂骨', desc: (r) => `升至 Lv.${r}，暴风雪伤害提升 20%。`, field: 'power', value: 20 },
+  ],
+  holy_word: [
+    { suffix: 'pwr', name: '天威神罚', desc: (r) => `升至 Lv.${r}，对不死生物秒杀率 +12%，对 Boss 伤害提升 20%。`, field: 'power', value: 12 },
+    { suffix: 'cnt', name: '双圣同降', desc: (r) => `升至 Lv.${r}，同时净化目标数 +1。`, field: 'count', value: 1 },
+  ],
+  entice: [
+    { suffix: 'cnt', name: '控兽群聚', desc: (r) => `升至 Lv.${r}，招募宠物上限由 2 增至 3 只。`, field: 'count', value: 1 },
+    { suffix: 'pwr', name: '灵兽狂化', desc: (r) => `升至 Lv.${r}，诱惑成功率 +15%，宠物伤害 +20%。`, field: 'power', value: 20 },
+  ],
+  ring_of_fire: [
+    { suffix: 'rad', name: '烈火震退', desc: (r) => `升至 Lv.${r}，近身击退半径增加 20%。`, field: 'radius', value: 20 },
+    { suffix: 'cdr', name: '灵巧御身', desc: (r) => `升至 Lv.${r}，抗拒火环冷却缩减 15%。`, field: 'localCDR', value: 15 },
+  ],
+  hellfire: [
+    { suffix: 'pwr', name: '地狱炽焰', desc: (r) => `升至 Lv.${r}，地狱火直线贯穿伤害提升 22%。`, field: 'power', value: 22 },
+    { suffix: 'rad', name: '火柱拓宽', desc: (r) => `升至 Lv.${r}，火焰宽度与射程增加 20%。`, field: 'radius', value: 20 },
+  ],
+  great_fireball: [
+    { suffix: 'pwr', name: '烈阳重鸣', desc: (r) => `升至 Lv.${r}，大火球伤害提升 25%。`, field: 'power', value: 25 },
+    { suffix: 'cnt', name: '双阳凌空', desc: (r) => `升至 Lv.${r}，额外发射 1 颗大火球攻击不同目标。`, field: 'count', value: 1 },
+  ],
+  teleport: [
+    { suffix: 'cdr', name: '虚空遁影', desc: (r) => `升至 Lv.${r}，瞬息移动冷却时间减少 20%。`, field: 'localCDR', value: 20 },
+  ],
+  firebang: [
+    { suffix: 'rad', name: '火海倾覆', desc: (r) => `升至 Lv.${r}，爆裂火焰判定半径增加 20%。`, field: 'radius', value: 20 },
+    { suffix: 'pwr', name: '炎火重击', desc: (r) => `升至 Lv.${r}，爆炸伤害提升 20%。`, field: 'power', value: 20 },
+  ],
+  thunderwave: [
+    { suffix: 'rad', name: '电芒扩散', desc: (r) => `升至 Lv.${r}，地狱雷光近身环形半径扩大 20%。`, field: 'radius', value: 20 },
+    { suffix: 'pwr', name: '雷光万钧', desc: (r) => `升至 Lv.${r}，环形雷击伤害提升 20%。`, field: 'power', value: 20 },
+  ],
+
+  // --- Taoist ---
+  soul_fireball: [
+    { suffix: 'cnt', name: '双符同掷', desc: (r) => `升至 Lv.${r}，同时掷出 2 道符咒攻击不同目标。`, field: 'count', value: 1 },
+    { suffix: 'pwr', name: '阴阳道力', desc: (r) => `升至 Lv.${r}，灵魂火符伤害提升 22%。`, field: 'power', value: 22 },
+    { suffix: 'cdr', name: '疾行催符', desc: (r) => `升至 Lv.${r}，符咒施法冷却缩减 12%。`, field: 'localCDR', value: 12 },
+  ],
+  summon_skeleton: [
+    { suffix: 'lim', name: '变异双骨', desc: (r) => `升至 Lv.${r}，变异骷髅召唤上限由 1 只提升至 2 只！`, field: 'summonLimit', value: 1 },
+    { suffix: 'pwr', name: '白骨狂暴', desc: (r) => `升至 Lv.${r}，变异骷髅攻击伤害提升 25%。`, field: 'power', value: 25 },
+  ],
+  summon_shinsu: [
+    { suffix: 'pwr', name: '烈焰圣兽', desc: (r) => `升至 Lv.${r}，神兽生命与喷火伤害提升 20%。`, field: 'power', value: 20 },
+    { suffix: 'rad', name: '炽天火浪', desc: (r) => `升至 Lv.${r}，神兽喷火覆盖范围扩大 20%。`, field: 'radius', value: 20 },
+  ],
+  poison: [
+    { suffix: 'dur', name: '蚀骨剧毒', desc: (r) => `升至 Lv.${r}，施毒损血持续时间延长 25%。`, field: 'duration', value: 25 },
+    { suffix: 'cnt', name: '漫天毒雾', desc: (r) => `升至 Lv.${r}，同时下毒目标数 +1。`, field: 'count', value: 1 },
+  ],
+  heal_self: [
+    { suffix: 'pwr', name: '灵泉回春', desc: (r) => `升至 Lv.${r}，治愈术治疗量提升 25%。`, field: 'power', value: 25 },
+    { suffix: 'cdr', name: '妙手回生', desc: (r) => `升至 Lv.${r}，自疗冷却时间缩减 15%。`, field: 'localCDR', value: 15 },
+  ],
+  holy_armor: [
+    { suffix: 'dur', name: '战神附体', desc: (r) => `升至 Lv.${r}，神圣战甲术持续时间延长 30%。`, field: 'duration', value: 30 },
+    { suffix: 'pwr', name: '固若金汤', desc: (r) => `升至 Lv.${r}，物理防御附加效果提高 20%。`, field: 'power', value: 20 },
+  ],
+  spirit_shield: [
+    { suffix: 'dur', name: '幽冥辟邪', desc: (r) => `升至 Lv.${r}，幽灵盾魔御持续时间延长 30%。`, field: 'duration', value: 30 },
+    { suffix: 'pwr', name: '玄罡护身', desc: (r) => `升至 Lv.${r}，魔法防御附加效果提高 20%。`, field: 'power', value: 20 },
+  ],
+  paralyze_charm: [
+    { suffix: 'rad', name: '定身禁制', desc: (r) => `升至 Lv.${r}，困魔咒定身范围增加 20%。`, field: 'radius', value: 20 },
+    { suffix: 'dur', name: '锁魔金链', desc: (r) => `升至 Lv.${r}，定身持续时间延长 25%。`, field: 'duration', value: 25 },
+  ],
+  mass_heal: [
+    { suffix: 'pwr', name: '普渡众生', desc: (r) => `升至 Lv.${r}，群体治疗量提高 25%。`, field: 'power', value: 25 },
+    { suffix: 'rad', name: '甘霖普降', desc: (r) => `升至 Lv.${r}，群疗覆盖半径扩大 25%。`, field: 'radius', value: 25 },
+  ],
+  spirit_combat: [
+    { suffix: 'pwr', name: '通玄战意', desc: (r) => `升至 Lv.${r}，精神力战法使道术威力与普攻伤害 +15%。`, field: 'power', value: 15 },
+  ],
+  stealth: [
+    { suffix: 'dur', name: '匿形遁影', desc: (r) => `升至 Lv.${r}，隐身术持续时间延长 30%。`, field: 'duration', value: 30 },
+    { suffix: 'cdr', name: '随影而行', desc: (r) => `升至 Lv.${r}，隐身术冷却缩短 15%。`, field: 'localCDR', value: 15 },
+  ],
+  mass_stealth: [
+    { suffix: 'dur', name: '集隐太虚', desc: (r) => `升至 Lv.${r}，集体隐身持续时间延长 25%。`, field: 'duration', value: 25 },
+  ],
+  mind_eye: [
+    { suffix: 'pwr', name: '天眼破妄', desc: (r) => `升至 Lv.${r}，暴击概率额外 +10%。`, field: 'power', value: 10 },
+  ],
+
+  // --- Warrior ---
+  half_moon: [
+    { suffix: 'rad', name: '刀芒破空', desc: (r) => `升至 Lv.${r}，半月扇形挥砍范围扩大 25%。`, field: 'radius', value: 25 },
+    { suffix: 'pwr', name: '狂龙卷刃', desc: (r) => `升至 Lv.${r}，半月剑气伤害提升 20%。`, field: 'power', value: 20 },
+    { suffix: 'cdr', name: '连环疾风', desc: (r) => `升至 Lv.${r}，半月挥砍冷却缩减 15%。`, field: 'localCDR', value: 15 },
+  ],
+  fire_swordplay: [
+    { suffix: 'pwr', name: '天火同焚', desc: (r) => `升至 Lv.${r}，烈火剑法爆发伤害提升 25%。`, field: 'power', value: 25 },
+    { suffix: 'cdr', name: '烈焰聚气', desc: (r) => `升至 Lv.${r}，烈火冷却时间缩短 15%。`, field: 'localCDR', value: 15 },
+  ],
+  piercing_swordplay: [
+    { suffix: 'pwr', name: '破甲贯日', desc: (r) => `升至 Lv.${r}，无视防御穿透伤害提升 20%。`, field: 'power', value: 20 },
+    { suffix: 'rad', name: '剑气延伸', desc: (r) => `升至 Lv.${r}，向前穿刺有效距离增加 25%。`, field: 'radius', value: 25 },
+  ],
+  slashing_swordplay: [
+    { suffix: 'pwr', name: '霸王劈山', desc: (r) => `升至 Lv.${r}，攻杀剑术附加伤害提升 20%。`, field: 'power', value: 20 },
+    { suffix: 'cdr', name: '迅影连环', desc: (r) => `升至 Lv.${r}，攻杀触发间隔缩短 15%。`, field: 'localCDR', value: 15 },
+  ],
+  savage_charge: [
+    { suffix: 'cdr', name: '疾风踏阵', desc: (r) => `升至 Lv.${r}，野蛮冲撞冷却缩减 20%。`, field: 'localCDR', value: 20 },
+    { suffix: 'rad', name: '移山倒海', desc: (r) => `升至 Lv.${r}，冲撞距离增加 20%。`, field: 'radius', value: 20 },
+  ],
+  basic_swordplay: [
+    { suffix: 'pwr', name: '返璞归真', desc: (r) => `升至 Lv.${r}，基础剑术使物理攻击伤害提升 15%。`, field: 'power', value: 15 },
+  ],
+};
+
 export class Game {
   phase: Phase = 'lobby';
   heroClass: HeroClass = 'wizard';
@@ -500,8 +648,76 @@ export class Game {
         continue;
       }
 
-      // Boss Summoner Behavior (Zombie King, Woma Master)
-      if (e.aiType === 'summoner' && e.shootCD <= 0) {
+      // Boss Distinct Combat AI
+      if (e.kind === 'boss_bichon') {
+        // Skull Elf: Enrage when HP < 50%
+        if (e.hp < e.maxHp * 0.5) {
+          e.speed = Math.max(e.speed, 75);
+        }
+      } else if (e.kind === 'boss_mine') {
+        // Corpse King: Earthquake slam and summons
+        if (e.shootCD <= 0) {
+          e.shootCD = 6.5;
+          sound.playHellfire();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 45,
+            text: '【尸王铁链地动】！',
+            color: '#f97316',
+            life: 1.5,
+          });
+          this.spawnEnemy('zombie');
+          this.spawnEnemy('maggot');
+          this.effects.push({
+            id: ++this.id,
+            kind: 'ring_of_fire',
+            x: e.x,
+            y: e.y,
+            life: 0.6,
+            total: 0.6,
+            radius: 240,
+          });
+          if (d < 240) {
+            this.hurt(Math.round(e.damage * 0.75));
+          }
+        }
+      } else if (e.kind === 'boss_temple') {
+        // Woma Leader: Teleport & 8-Direction Radial Lightning Arc
+        if (e.shootCD <= 0) {
+          e.shootCD = 5.5;
+          sound.playTeleport();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 45,
+            text: '【教主狂暴瞬移】！',
+            color: '#a855f7',
+            life: 1.5,
+          });
+          const ang = this.rng.next() * Math.PI * 2;
+          e.x = clamp(this.player.x + Math.cos(ang) * 160, 40, WORLD.w - 40);
+          e.y = clamp(this.player.y + Math.sin(ang) * 160, 60, WORLD.h - 40);
+          this.spawnEnemy('woma_warrior');
+          sound.playLightning();
+          const speed = 230;
+          for (let dir8 = 0; dir8 < 8; dir8++) {
+            const rad = (dir8 * Math.PI) / 4;
+            this.projectiles.push({
+              id: ++this.id,
+              kind: 'enemy_poison',
+              x: e.x,
+              y: e.y,
+              vx: Math.cos(rad) * speed,
+              vy: Math.sin(rad) * speed,
+              damage: Math.round(e.damage * 0.7),
+              life: 2.8,
+              dir: dir8 * 2,
+              isEnemy: true,
+            });
+          }
+        }
+      } else if (e.aiType === 'summoner' && e.shootCD <= 0) {
         e.shootCD = 7.0;
         sound.playSummon();
         this.spawnEnemy('zombie');
@@ -1345,34 +1561,27 @@ export class Game {
     // Offer skill enhancements for existing skills with rank < 3
     for (const s of this.skills.filter((s) => s.rank < 3)) {
       const def = getSkill(s.id);
-      candidates.push({
-        id: `${s.id}-power`,
-        kind: 'skill',
-        skill: s.id,
-        name: `${def.name} · 威力突破`,
-        description: `升至 Lv.${s.rank + 1}，技能伤害额外提高 25%。`,
-        field: 'power',
-        value: 25,
-      });
-      if (['fireball', 'lightning', 'soul_fireball'].includes(s.id)) {
+      const branches = SKILL_ENHANCEMENTS[s.id];
+      if (branches && branches.length) {
+        for (const b of branches) {
+          candidates.push({
+            id: `${s.id}-${b.suffix}`,
+            kind: 'skill',
+            skill: s.id,
+            name: `${def.name} · ${b.name}`,
+            description: b.desc(s.rank + 1),
+            field: b.field,
+            value: b.value,
+          });
+        }
+      } else {
         candidates.push({
-          id: `${s.id}-count`,
+          id: `${s.id}-power`,
           kind: 'skill',
           skill: s.id,
-          name: `${def.name} · 多重打击`,
-          description: `升至 Lv.${s.rank + 1}，攻击与弹道目标数 +1。`,
-          field: 'count',
-          value: 1,
-        });
-      }
-      if (['firewall', 'ice_storm', 'half_moon'].includes(s.id)) {
-        candidates.push({
-          id: `${s.id}-radius`,
-          kind: 'skill',
-          skill: s.id,
-          name: `${def.name} · 范围扩散`,
-          description: `升至 Lv.${s.rank + 1}，攻击范围与判定半径 +25%。`,
-          field: 'radius',
+          name: `${def.name} · 威力突破`,
+          description: `升至 Lv.${s.rank + 1}，技能伤害额外提高 25%。`,
+          field: 'power',
           value: 25,
         });
       }
@@ -1690,3 +1899,6 @@ export class Game {
 }
 
 export const game = new Game();
+if (typeof window !== 'undefined') {
+  (window as any).game = game;
+}

@@ -188,6 +188,10 @@ class SoundSystem {
     this.playSound('teleport.wav', 0.6);
   }
 
+  playTeleport() {
+    this.playSound('teleport.wav', 0.6);
+  }
+
   playClick() {
     this.playSound('ui_click.wav', 0.35);
   }

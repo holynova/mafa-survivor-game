@@ -61,9 +61,18 @@ export async function loadArtPositions() {
 }
 
 export function Icon({ frame, className = '' }: { frame?: string; className?: string }) {
-  const f = frame && (assetManifest ?? assets)?.frames[frame];
-  const position = frame && framePositions[frame];
-  const page = f && (assetManifest ?? assets)?.pages?.find((p) => p.key === f.texture);
+  const m = assetManifest ?? assets;
+  let targetFrame = frame;
+  if (targetFrame && m && !m.frames[targetFrame]) {
+    if (m.frames[targetFrame + '（男）']) {
+      targetFrame = targetFrame + '（男）';
+    } else if (m.frames['item/' + targetFrame]) {
+      targetFrame = 'item/' + targetFrame;
+    }
+  }
+  const f = targetFrame && m?.frames[targetFrame];
+  const position = targetFrame && framePositions[targetFrame];
+  const page = f && m?.pages?.find((p) => p.key === f.texture);
 
   return (
     <span className={`icon-box ${className}`} aria-hidden="true">

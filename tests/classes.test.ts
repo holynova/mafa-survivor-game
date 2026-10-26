@@ -104,6 +104,89 @@ describe('Three Classes & Complete Skill Pool Verification (GDD Spec)', () => {
 
       expect(cat.status.poisonedUntil).toBeGreaterThan(g.clock);
     });
+
+    it('upgrades summon skeleton with branch to summon 2 skeletons simultaneously', () => {
+      g.start('taoist', 'mine', 'trial', 176);
+      const skelSkill = g.newSkill('summon_skeleton');
+      g.skills.push(skelSkill);
+
+      // Choose upgrade branch: 变异双骨 (summonLimit + 1)
+      g.phase = 'upgrade';
+      g.choices = [
+        {
+          id: 'summon_skeleton-lim',
+          kind: 'skill',
+          skill: 'summon_skeleton',
+          name: '召唤骷髅 · 变异双骨',
+          description: '变异骷髅召唤上限由 1 只提升至 2 只！',
+          field: 'summonLimit',
+          value: 1,
+        },
+      ];
+      g.choose('summon_skeleton-lim');
+
+      expect(skelSkill.rank).toBe(2);
+      expect(skelSkill.summonLimit).toBe(2);
+
+      // Now cast twice to summon 2 skeletons
+      g.phase = 'battle';
+      g.cast(skelSkill);
+      skelSkill.cd = 0;
+      g.cast(skelSkill);
+
+      expect(g.minions.filter((m) => m.kind === 'skeleton')).toHaveLength(2);
+    });
+  });
+
+  describe('Chapter Boss Mechanics (Bichon, Mine, Temple)', () => {
+    it('Skull Elf (boss_bichon) enrages with increased speed when HP drops below 50%', () => {
+      g.start('wizard', 'bichon', 'trial', 176);
+      g.spawnEnemy('boss_bichon');
+      const boss = g.enemies.find((e) => e.kind === 'boss_bichon')!;
+      const baseSpeed = boss.speed;
+
+      // Drop HP to 40%
+      boss.hp = Math.round(boss.maxHp * 0.4);
+      g.step(0.1);
+
+      expect(boss.speed).toBeGreaterThan(baseSpeed);
+    });
+
+    it('Corpse King (boss_mine) triggers earthquake slam and summons zombie/maggot minions', () => {
+      g.start('taoist', 'mine', 'trial', 176);
+      g.spawnEnemy('boss_mine');
+      const boss = g.enemies.find((e) => e.kind === 'boss_mine')!;
+      boss.shootCD = 0; // ready to cast
+      boss.x = g.player.x + 100;
+      boss.y = g.player.y;
+
+      const playerStartHp = g.player.hp;
+      g.step(0.1);
+
+      // Boss casts earthquake slam damaging nearby player and summons minions
+      expect(g.player.hp).toBeLessThan(playerStartHp);
+      expect(g.enemies.some((e) => e.kind === 'zombie')).toBe(true);
+      expect(g.enemies.some((e) => e.kind === 'maggot')).toBe(true);
+    });
+
+    it('Woma Leader (boss_temple) teleports near player and radiates 8 lightning orbs', () => {
+      g.start('warrior', 'temple', 'trial', 176);
+      g.spawnEnemy('boss_temple');
+      const boss = g.enemies.find((e) => e.kind === 'boss_temple')!;
+      boss.shootCD = 0; // ready
+      boss.x = 200;
+      boss.y = 200;
+
+      g.step(0.1);
+
+      // Boss teleported close to player
+      const distToPlayer = Math.hypot(boss.x - g.player.x, boss.y - g.player.y);
+      expect(distToPlayer).toBeLessThan(300);
+
+      // Emitted 8 radial lightning projectiles
+      const enemyProjectiles = g.projectiles.filter((p) => p.isEnemy);
+      expect(enemyProjectiles.length).toBeGreaterThanOrEqual(8);
+    });
   });
 
   describe('Warrior (6 Skills)', () => {
