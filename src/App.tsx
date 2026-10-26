@@ -663,7 +663,86 @@ export function App() {
               <p>当前章节: {CHAPTERS[g.chapter]?.name} · 第 {g.wave} / {g.maxWaves} 波</p>
               <p>存活时间: {Math.round(g.clock)} 秒 · 击杀魔物: {g.kills} 只</p>
               <p>玩家生命: {Math.round(g.player.hp)} / {g.maxHP}</p>
+
+              {/* Combat Attributes Overview */}
+              <div className="pause-attributes-grid">
+                <div className="pause-attr-item">
+                  <span>物防:</span>
+                  <strong>{Math.round(g.stats.def_flat ?? 0)}</strong>
+                </div>
+                <div className="pause-attr-item">
+                  <span>魔御:</span>
+                  <strong>{Math.round(g.stats.mdef_flat ?? 0)}</strong>
+                </div>
+                <div className="pause-attr-item">
+                  <span>移速:</span>
+                  <strong>+{Math.round(g.stats.move_speed ?? 0)}%</strong>
+                </div>
+                <div className="pause-attr-item">
+                  <span>冷缩:</span>
+                  <strong>-{Math.round(g.stats.cooldown_reduction ?? 0)}%</strong>
+                </div>
+                <div className="pause-attr-item">
+                  <span>范围:</span>
+                  <strong>+{Math.round(g.stats.skill_radius ?? 0)}%</strong>
+                </div>
+                <div className="pause-attr-item">
+                  <span>暴击:</span>
+                  <strong>{Math.round(g.stats.crit_chance ?? 0)}%</strong>
+                </div>
+                <div className="pause-attr-item">
+                  <span>闪避:</span>
+                  <strong>{Math.round(5 + (g.stats.dodge ?? 0))}%</strong>
+                </div>
+                <div className="pause-attr-item">
+                  <span>金币:</span>
+                  <strong>+{Math.round(g.stats.gold_gain ?? 0)}%</strong>
+                </div>
+              </div>
             </div>
+
+            {/* Equipped Items Section */}
+            <div className="pause-equipped-section">
+              <h4>当前穿戴装备 (8槽)</h4>
+              <div className="equip-slots-grid">
+                {(['weapon', 'armor', 'helmet', 'necklace', 'braceletL', 'braceletR', 'ringL', 'ringR'] as Slot[]).map((slot) => {
+                  const eq = g.equipment[slot];
+                  const item = eq ? getItem(eq.itemId) : null;
+                  return (
+                    <div key={slot} className={`equip-slot-box ${item ? 'has-item' : 'empty'}`}>
+                      <div className="slot-title">{SLOT_NAMES[slot]}</div>
+                      {item ? (
+                        <div className="slot-item-info">
+                          <Icon frame={item.icon} />
+                          <span className="item-name">{item.name}</span>
+                        </div>
+                      ) : (
+                        <span className="slot-empty-text">空</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Passive Items Section */}
+            {Object.keys(g.passives).length > 0 && (
+              <div className="pause-passives-section">
+                <h4>持有被动道具</h4>
+                <div className="passives-list">
+                  {Object.entries(g.passives).map(([itemId, count]) => {
+                    const item = getItem(itemId);
+                    return (
+                      <div key={itemId} className="passive-badge">
+                        <Icon frame={item.icon} />
+                        <span>{item.name} ×{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="pause-actions">
               <button
                 className="primary-btn"

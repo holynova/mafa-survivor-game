@@ -1392,3 +1392,61 @@ body, html {
   height: 30px;
   width: 30px;
 }
+
+/* Pause Modal Details */
+.pause-attributes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  background: #111812;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #233025;
+}
+
+.pause-attr-item {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+}
+
+.pause-attr-item strong {
+  color: #fef08a;
+}
+
+.pause-equipped-section {
+  margin: 16px 0;
+  text-align: left;
+}
+
+.pause-equipped-section h4, .pause-passives-section h4 {
+  font-size: 14px;
+  color: #d4af37;
+  margin-bottom: 8px;
+}
+
+.passives-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.passive-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #18221a;
+  border: 1px solid #2e3e31;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.passive-badge .icon-box {
+  width: 24px;
+  height: 24px;
+}
