@@ -1,0 +1,15 @@
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  server: {
+    host: '127.0.0.1',
+    port: 5180,
+  },
+  build: {
+    chunkSizeWarningLimit: 1600,
+  },
+  test: {
+    environment: 'node',
+    globals: true,
+  },
+});
