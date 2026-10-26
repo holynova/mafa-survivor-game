@@ -1,8 +1,15 @@
+export type HeroClass = 'wizard' | 'taoist' | 'warrior';
+export type MapChapter = 'bichon' | 'mine' | 'temple';
+
 export type StatKey =
   | 'hp_max'
   | 'hp_regen'
+  | 'dc_flat'
+  | 'dc_bonus_pct'
   | 'mc_flat'
   | 'mc_bonus_pct'
+  | 'sc_flat'
+  | 'sc_bonus_pct'
   | 'def_flat'
   | 'mdef_flat'
   | 'move_speed'
@@ -15,11 +22,53 @@ export type StatKey =
   | 'crit_chance'
   | 'crit_mult'
   | 'dodge'
-  | 'projectile_speed';
+  | 'projectile_speed'
+  | 'summon_damage_pct'
+  | 'summon_hp_pct';
 
 export type Bonuses = Partial<Record<StatKey, number>>;
 
-export type SkillId = 'fireball' | 'lightning' | 'firewall' | 'shield';
+// All 1.76 Classic Skills across the 3 classes (14 Mage + 13 Taoist + 6 Warrior)
+export type WizardSkillId =
+  | 'fireball'
+  | 'ring_of_fire'
+  | 'entice'
+  | 'hellfire'
+  | 'lightning'
+  | 'great_fireball'
+  | 'teleport'
+  | 'firebang'
+  | 'firewall'
+  | 'laser'
+  | 'thunderwave'
+  | 'shield'
+  | 'holy_word'
+  | 'ice_storm';
+
+export type TaoistSkillId =
+  | 'heal_self'
+  | 'spirit_combat'
+  | 'poison'
+  | 'soul_fireball'
+  | 'summon_skeleton'
+  | 'stealth'
+  | 'mass_stealth'
+  | 'spirit_shield'
+  | 'holy_armor'
+  | 'mind_eye'
+  | 'paralyze_charm'
+  | 'mass_heal'
+  | 'summon_shinsu';
+
+export type WarriorSkillId =
+  | 'basic_swordplay'
+  | 'slashing_swordplay'
+  | 'piercing_swordplay'
+  | 'half_moon'
+  | 'savage_charge'
+  | 'fire_swordplay';
+
+export type SkillId = WizardSkillId | TaoistSkillId | WarriorSkillId;
 
 export type Phase = 'lobby' | 'battle' | 'upgrade' | 'shop' | 'paused' | 'won' | 'dead';
 export type Mode = 'normal' | 'trial';
@@ -42,8 +91,16 @@ export interface Entity {
   y: number;
 }
 
+export interface EnemyStatus {
+  poisonedUntil: number;
+  poisonDamage: number;
+  poisonDefDown: number;
+  paralyzedUntil: number;
+}
+
 export interface Enemy extends Entity {
   kind: string;
+  name: string;
   hp: number;
   maxHp: number;
   speed: number;
@@ -52,18 +109,39 @@ export interface Enemy extends Entity {
   dir: number;
   windup: number;
   attackCD: number;
+  shootCD: number;
   hitAt: number;
   burnAt: number;
   elite: boolean;
   born: number;
+  aiType: 'melee' | 'ranged' | 'charge' | 'summoner';
+  undead?: boolean;
+  status: EnemyStatus;
+}
+
+export interface Minion extends Entity {
+  kind: 'skeleton' | 'shinsu' | 'enticed';
+  name: string;
+  hp: number;
+  maxHp: number;
+  damage: number;
+  speed: number;
+  dir: number;
+  attackCD: number;
+  attackRange: number;
+  targetId: number | null;
+  breathUntil?: number;
 }
 
 export interface Projectile extends Entity {
+  kind?: 'fireball' | 'soul_fireball' | 'enemy_arrow' | 'enemy_poison' | 'shinsu_fire';
   vx: number;
   vy: number;
   damage: number;
   life: number;
   dir: number;
+  isEnemy?: boolean;
+  penetrate?: boolean;
 }
 
 export interface Drop extends Entity {
@@ -73,10 +151,25 @@ export interface Drop extends Entity {
 }
 
 export interface Fx extends Entity {
-  kind: 'lightning' | 'firewall' | 'hit' | 'cast';
+  kind:
+    | 'lightning'
+    | 'firewall'
+    | 'hit'
+    | 'cast'
+    | 'laser'
+    | 'ring_of_fire'
+    | 'ice_storm'
+    | 'holy_word'
+    | 'poison_cloud'
+    | 'heal_sparkle'
+    | 'half_moon_sweep'
+    | 'fire_slash'
+    | 'savage_trail';
   life: number;
   total: number;
   radius: number;
+  angle?: number;
+  width?: number;
 }
 
 export interface Floating extends Entity {
@@ -95,6 +188,9 @@ export interface Skill {
   duration: number;
   localCDR: number;
   shieldReduction: number;
+  healPower?: number;
+  poisonPower?: number;
+  summonLimit?: number;
 }
 
 export interface Upgrade {
@@ -103,7 +199,16 @@ export interface Upgrade {
   name: string;
   description: string;
   skill?: SkillId;
-  field?: 'power' | 'count' | 'radius' | 'duration' | 'localCDR' | 'shieldReduction';
+  field?:
+    | 'power'
+    | 'count'
+    | 'radius'
+    | 'duration'
+    | 'localCDR'
+    | 'shieldReduction'
+    | 'healPower'
+    | 'poisonPower'
+    | 'summonLimit';
   value: number;
   stat?: StatKey;
 }
@@ -119,6 +224,8 @@ export interface Item {
   maxCount: number | null;
   icon?: string;
   description: string;
+  classReq?: HeroClass;
+  special?: 'paralyze' | 'revive' | 'mana_shield';
 }
 
 export interface Offer {
@@ -136,6 +243,8 @@ export interface Equipped {
 
 export interface RunResult {
   runId: string;
+  heroClass: HeroClass;
+  chapter: MapChapter;
   mode: Mode;
   seed: number;
   won: boolean;
@@ -148,4 +257,29 @@ export interface RunResult {
   skillDamage: Record<string, number>;
   skills: string[];
   savedAt?: number;
+}
+
+export type TalentKey =
+  | 'robustness'
+  | 'swiftness'
+  | 'magnetism'
+  | 'wealth'
+  | 'enlightenment'
+  | 'harmony';
+
+export interface TalentDef {
+  key: TalentKey;
+  name: string;
+  description: string;
+  maxLevel: number;
+  costPerLevel: number;
+  stat: StatKey;
+  valuePerLevel: number;
+}
+
+export interface ProfileData {
+  crystals: number;
+  talents: Record<TalentKey, number>;
+  unlockedChapters: MapChapter[];
+  unlockedClasses: HeroClass[];
 }

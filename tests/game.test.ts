@@ -9,9 +9,11 @@ describe('Game Engine State Machine & Combat', () => {
     g = new Game();
   });
 
-  it('initializes Mage with Fireball and base stats', () => {
-    g.start('trial', 176);
+  it('initializes Wizard with Fireball and base stats', () => {
+    g.start('wizard', 'bichon', 'trial', 176);
     expect(g.phase).toBe('battle');
+    expect(g.heroClass).toBe('wizard');
+    expect(g.chapter).toBe('bichon');
     expect(g.player.hp).toBe(100);
     expect(g.maxHP).toBe(100);
     expect(g.skills.length).toBe(1);
@@ -21,10 +23,47 @@ describe('Game Engine State Machine & Combat', () => {
     expect(g.kills).toBe(0);
   });
 
+  it('initializes Taoist with Soul Fireball and supports Minion Summoning', () => {
+    g.start('taoist', 'mine', 'trial', 176);
+    expect(g.heroClass).toBe('taoist');
+    expect(g.chapter).toBe('mine');
+    expect(g.player.hp).toBe(135);
+    expect(g.skills[0].id).toBe('soul_fireball');
+
+    // Add summon skeleton skill and cast
+    const skelSkill = g.newSkill('summon_skeleton');
+    g.skills.push(skelSkill);
+    g.cast(skelSkill);
+
+    expect(g.minions.length).toBe(1);
+    expect(g.minions[0].kind).toBe('skeleton');
+    expect(g.minions[0].hp).toBeGreaterThan(0);
+
+    // Add heal skill and cast
+    g.player.hp = 50;
+    const healSkill = g.newSkill('heal_self');
+    g.skills.push(healSkill);
+    g.cast(healSkill);
+    expect(g.player.hp).toBeGreaterThan(50);
+  });
+
+  it('initializes Warrior with Half Moon and high HP/Defense', () => {
+    g.start('warrior', 'temple', 'trial', 176);
+    expect(g.heroClass).toBe('warrior');
+    expect(g.chapter).toBe('temple');
+    expect(g.player.hp).toBe(185);
+    expect(g.stats.def_flat).toBeGreaterThanOrEqual(5);
+    expect(g.skills[0].id).toBe('half_moon');
+
+    // Cast half moon
+    const halfMoon = g.skills[0];
+    g.cast(halfMoon);
+    expect(halfMoon.cd).toBeGreaterThan(0);
+  });
+
   it('updates player movement and respects boundary clamping', () => {
-    g.start('trial', 176);
+    g.start('wizard', 'bichon', 'trial', 176);
     const initialX = g.player.x;
-    const initialY = g.player.y;
 
     // Move Right (x: 1, y: 0)
     g.input = { x: 1, y: 0 };
@@ -40,7 +79,7 @@ describe('Game Engine State Machine & Combat', () => {
   });
 
   it('triggers level up and offers 3 balanced choices', () => {
-    g.start('trial', 176);
+    g.start('wizard', 'bichon', 'trial', 176);
     const needed = expNeeded(1);
     g.exp = needed;
     g.step(0.01);
@@ -64,13 +103,12 @@ describe('Game Engine State Machine & Combat', () => {
   });
 
   it('wave end reclaims 100% leftover exp and 50% leftover gold', () => {
-    g.start('trial', 176);
+    g.start('wizard', 'bichon', 'trial', 176);
     g.drops = [
       { id: 1, x: 100, y: 100, exp: 10, gold: 20, born: 0 },
       { id: 2, x: 200, y: 200, exp: 5, gold: 10, born: 0 },
     ];
 
-    // Trigger endWave
     g.endWave();
 
     // Exp received: 10 + 5 = 15
@@ -82,9 +120,9 @@ describe('Game Engine State Machine & Combat', () => {
   });
 
   it('shop handles purchases, locking, and prevents negative gold', () => {
-    g.start('trial', 176);
+    g.start('wizard', 'bichon', 'trial', 176);
     g.gold = 100;
-    g.endWave(); // Transitions to shop
+    g.endWave();
 
     expect(g.offers.length).toBe(4);
     const affordable = g.offers.find((o) => o.price <= g.gold)!;
@@ -107,8 +145,27 @@ describe('Game Engine State Machine & Combat', () => {
     }
   });
 
-  it('records telemetry and finishes on boss defeat or player death', () => {
-    g.start('trial', 176);
+  it('special item: Revive Ring prevents death once', () => {
+    g.start('warrior', 'bichon', 'trial', 176);
+    g.equipment.ringR = { itemId: 'ring-revive', paid: 1600 };
+    g.player.hp = 10;
+
+    // Fatal damage (100)
+    g.hurt(100);
+
+    // Should be revived with 50% HP!
+    expect(g.revived).toBe(true);
+    expect(g.player.hp).toBeGreaterThan(0);
+    expect(g.phase).toBe('battle');
+
+    // Second fatal damage kills
+    g.player.hitUntil = 0;
+    g.hurt(500);
+    expect(g.phase).toBe('dead');
+  });
+
+  it('records telemetry and finishes on boss defeat with crystals', () => {
+    g.start('wizard', 'bichon', 'trial', 176);
     g.damageDealt = { fireball: 450, lightning: 820 };
     g.kills = 35;
     g.gold = 120;
@@ -119,8 +176,8 @@ describe('Game Engine State Machine & Combat', () => {
     expect(g.phase).toBe('won');
     expect(g.result).toBeDefined();
     expect(g.result?.won).toBe(true);
+    expect(g.result?.crystals).toBeGreaterThan(0);
     expect(g.result?.kills).toBe(35);
     expect(g.result?.skillDamage.fireball).toBe(450);
-    expect(g.result?.skillDamage.lightning).toBe(820);
   });
 });

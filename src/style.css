@@ -1004,8 +1004,256 @@ body, html {
   font-size: 15px;
 }
 
+/* Crystal Badge & Class Selector */
+.crystal-badge {
+  display: inline-block;
+  background: #1e1b4b;
+  border: 1px solid #6366f1;
+  color: #c7d2fe;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-top: 6px;
+}
+
+.class-selector-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.class-tab {
+  flex: 1;
+  background: #1b261e;
+  border: 1.5px solid #334436;
+  border-radius: 8px;
+  padding: 10px 8px;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.class-tab:hover {
+  background: #253328;
+  color: #f8fafc;
+}
+
+.class-tab.active {
+  border-color: #facc15;
+  background: #27382b;
+  color: #fef08a;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.25);
+}
+
+.class-tab-icon {
+  font-size: 20px;
+}
+
+.class-tab-name {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Chapter Selector */
+.chapter-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: #141d16;
+  border: 1px solid #28372b;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.chapter-label {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.chap-btn {
+  flex: 1;
+  background: #1c261e;
+  border: 1px solid #3d4f40;
+  border-radius: 6px;
+  padding: 6px 4px;
+  color: #cbd5e1;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chap-btn:hover {
+  background: #28372b;
+}
+
+.chap-btn.active {
+  border-color: #38bdf8;
+  background: #1e3a5f;
+  color: #e0f2fe;
+}
+
+.chap-boss {
+  font-size: 10px;
+  color: #fca5a5;
+  margin-left: 4px;
+}
+
+/* Lobby Actions Row */
+.lobby-actions-row {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.crystal-shrine-btn {
+  background: #312e81;
+  border: 1px solid #6366f1;
+  color: #e0e7ff;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.crystal-shrine-btn:hover {
+  background: #3730a3;
+  transform: translateY(-1px);
+}
+
+/* Talent Shrine Modal */
+.talent-panel {
+  max-width: 720px;
+}
+
+.talent-header {
+  text-align: center;
+  border-bottom: 1px solid #334335;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.talent-header h2 {
+  font-size: 22px;
+  color: #fef08a;
+  margin-bottom: 4px;
+}
+
+.talent-header p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.crystal-balance {
+  font-size: 14px;
+  color: #a5b4fc;
+}
+
+.talents-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.talent-card {
+  background: #1b261e;
+  border: 1px solid #334436;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+}
+
+.talent-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.talent-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.talent-level {
+  font-size: 11px;
+  font-weight: 700;
+  color: #facc15;
+}
+
+.talent-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.talent-card-footer {
+  margin-top: 8px;
+}
+
+.upgrade-talent-btn {
+  width: 100%;
+  background: #4338ca;
+  border: 1px solid #6366f1;
+  color: #e0e7ff;
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.upgrade-talent-btn:disabled {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #71717a;
+  cursor: not-allowed;
+}
+
+.max-tag {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+  padding: 4px 0;
+}
+
+.talent-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.talent-actions button {
+  padding: 10px 18px;
+}
+
+.crystal-highlight .val {
+  color: #818cf8;
+}
+
 /* Responsiveness */
 @media (max-width: 768px) {
+  .talents-grid {
+    grid-template-columns: 1fr;
+  }
   .choices-grid {
     grid-template-columns: 1fr;
   }

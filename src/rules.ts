@@ -73,6 +73,10 @@ export function effective(key: StatKey, raw: number): number {
       return Math.min(30, raw);
     case 'projectile_speed':
       return Math.min(100, raw);
+    case 'summon_damage_pct':
+      return softCap(raw, 50, 100);
+    case 'summon_hp_pct':
+      return softCap(raw, 50, 100);
     default:
       return raw;
   }

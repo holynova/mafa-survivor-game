@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { game, WORLD } from './game';
-import type { Enemy } from './types';
+import type { Enemy, Fx, Minion, Projectile } from './types';
 
 export interface Manifest {
   animations: Record<string, string[]>;
@@ -22,6 +22,7 @@ class BattleScene extends Phaser.Scene {
   private groundGfx!: Phaser.GameObjects.Graphics;
   private keys!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
+  private spaceKey!: Phaser.Input.Keyboard.Key;
   private accumulator = 0;
   private lastRun = '';
   private seen = new Set<string>();
@@ -35,7 +36,6 @@ class BattleScene extends Phaser.Scene {
   }
 
   preload() {
-    // Attempt loading atlas; fallback cleanly if absent
     this.load.atlas('mir', '/assets/mir/atlas.png', '/assets/mir/atlas.json');
     this.load.json('manifest', '/assets/mir/manifest.json');
 
@@ -65,10 +65,21 @@ class BattleScene extends Phaser.Scene {
 
     this.keys = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys('W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.input.keyboard!.addCapture(['W', 'A', 'S', 'D', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'SPACE']);
 
     this.input.keyboard!.on('keydown-ESC', () => game.pause());
     this.input.keyboard!.on('keydown-P', () => game.pause());
+
+    // Spacebar to trigger teleport (if Mage) or savage charge (if Warrior)
+    this.spaceKey.on('down', () => {
+      if (game.phase === 'battle') {
+        const tp = game.skills.find((s) => s.id === 'teleport');
+        if (tp && tp.cd === 0) game.cast(tp);
+        const charge = game.skills.find((s) => s.id === 'savage_charge');
+        if (charge && charge.cd === 0) game.cast(charge);
+      }
+    });
 
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (game.phase === 'upgrade' && ['1', '2', '3'].includes(e.key)) {
@@ -121,9 +132,10 @@ class BattleScene extends Phaser.Scene {
     this.input.keyboard?.resetKeys();
   }
 
-  private paintGround() {
+  paintGround() {
     this.groundGfx.clear();
     const tileSize = 64;
+    const chap = game.chapter;
 
     if (this.useSprites && assets) {
       const grass = ['ground/100', 'ground/150', 'ground/200', 'ground/250'].filter(
@@ -143,24 +155,38 @@ class BattleScene extends Phaser.Scene {
         }
       }
     } else {
-      // Procedural retro wasteland earth & stone tilemap
+      // Procedural themed tilemap based on chapter
       for (let y = 0; y < WORLD.h; y += tileSize) {
         for (let x = 0; x < WORLD.w; x += tileSize) {
           const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
           const noise = hash - Math.floor(hash);
-          const color = noise > 0.7 ? 0x243026 : noise > 0.35 ? 0x1f2b21 : 0x1a241c;
+
+          let color = 0x1f2b21;
+          let dotColor = 0x2f3d32;
+
+          if (chap === 'bichon') {
+            color = noise > 0.7 ? 0x243026 : noise > 0.35 ? 0x1f2b21 : 0x1a241c;
+            dotColor = 0x2f3d32;
+          } else if (chap === 'mine') {
+            color = noise > 0.7 ? 0x2a2a2e : noise > 0.35 ? 0x212124 : 0x19191c;
+            dotColor = 0x3d3d45;
+          } else {
+            // temple
+            color = noise > 0.7 ? 0x331e1e : noise > 0.35 ? 0x291818 : 0x1f1212;
+            dotColor = 0x522929;
+          }
+
           this.groundGfx.fillStyle(color, 1);
           this.groundGfx.fillRect(x, y, tileSize, tileSize);
-
-          // Subtle grid dots
-          this.groundGfx.fillStyle(0x2f3d32, 0.3);
+          this.groundGfx.fillStyle(dotColor, 0.3);
           this.groundGfx.fillRect(x + 2, y + 2, 2, 2);
         }
       }
     }
 
     // World Boundary Border
-    this.groundGfx.lineStyle(3, 0xc49e54, 0.65);
+    const borderColor = chap === 'temple' ? 0xef4444 : chap === 'mine' ? 0x94a3b8 : 0xc49e54;
+    this.groundGfx.lineStyle(3, borderColor, 0.65);
     this.groundGfx.strokeRect(20, 30, WORLD.w - 40, WORLD.h - 50);
   }
 
@@ -192,122 +218,187 @@ class BattleScene extends Phaser.Scene {
         return;
       }
     }
-
-    // Fallback: Procedural retro pixel actor
     this.drawProceduralActor(name, dir, x, y, motion, alpha, scale);
   }
 
   private drawProceduralActor(name: string, dir: number, x: number, y: number, motion: string, alpha: number, scale: number) {
-    const isPlayer = name === 'hero' || name === 'wizard';
-    const isBoss = name === 'boss';
+    const isBoss = name.startsWith('boss');
+    const isPlayer = ['hero', 'wizard', 'warrior', 'taoist'].includes(name);
 
     // Shadow
     this.gfx.fillStyle(0x0a0c0a, 0.45 * alpha);
-    this.gfx.fillEllipse(x, y + 4, (isBoss ? 44 : 26) * scale, (isBoss ? 20 : 12) * scale);
+    this.gfx.fillEllipse(x, y + 4, (isBoss ? 48 : 26) * scale, (isBoss ? 24 : 12) * scale);
 
     if (isPlayer) {
-      // Wizard: Blue Robe, Hat, Staff
-      this.gfx.fillStyle(0x2b4c7e, alpha); // Robe
-      this.gfx.fillRect(x - 9 * scale, y - 24 * scale, 18 * scale, 24 * scale);
+      const cls = game.heroClass;
 
-      this.gfx.fillStyle(0xd4af37, alpha); // Gold trim
-      this.gfx.fillRect(x - 8 * scale, y - 4 * scale, 16 * scale, 3 * scale);
+      if (cls === 'wizard') {
+        // Wizard: Blue Robe, Pointed Hat, Staff
+        this.gfx.fillStyle(0x2b4c7e, alpha);
+        this.gfx.fillRect(x - 9 * scale, y - 24 * scale, 18 * scale, 24 * scale);
+        this.gfx.fillStyle(0xd4af37, alpha);
+        this.gfx.fillRect(x - 8 * scale, y - 4 * scale, 16 * scale, 3 * scale);
 
-      // Wizard Hat
-      this.gfx.fillStyle(0x1a2e4d, alpha);
-      this.gfx.fillTriangle(
-        x - 12 * scale,
-        y - 24 * scale,
-        x + 12 * scale,
-        y - 24 * scale,
-        x,
-        y - 42 * scale
-      );
+        // Hat
+        this.gfx.fillStyle(0x1a2e4d, alpha);
+        this.gfx.fillTriangle(x - 12 * scale, y - 24 * scale, x + 12 * scale, y - 24 * scale, x, y - 42 * scale);
 
-      // Wizard Staff & Orb
-      const staffAngle = (dir * Math.PI) / 4;
-      const sx = x + Math.cos(staffAngle) * 16 * scale;
-      const sy = y - 12 * scale + Math.sin(staffAngle) * 14 * scale;
+        // Staff
+        const staffAngle = (dir * Math.PI) / 4;
+        const sx = x + Math.cos(staffAngle) * 16 * scale;
+        const sy = y - 12 * scale + Math.sin(staffAngle) * 14 * scale;
+        this.gfx.lineStyle(2 * scale, 0x8b5a2b, alpha);
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x, y - 10 * scale, sx, sy));
+        this.gfx.fillStyle(0x5eead4, alpha);
+        this.gfx.fillCircle(sx, sy, 4 * scale);
+      } else if (cls === 'taoist') {
+        // Taoist: White/Yellow Daoist Robe, Taiji Seal
+        this.gfx.fillStyle(0xfef08a, alpha);
+        this.gfx.fillRect(x - 9 * scale, y - 24 * scale, 18 * scale, 24 * scale);
+        this.gfx.fillStyle(0x38bdf8, alpha);
+        this.gfx.fillRect(x - 9 * scale, y - 14 * scale, 18 * scale, 4 * scale);
 
-      this.gfx.lineStyle(2 * scale, 0x8b5a2b, alpha);
-      this.gfx.strokeLineShape(new Phaser.Geom.Line(x, y - 10 * scale, sx, sy));
-      this.gfx.fillStyle(0x5eead4, alpha);
-      this.gfx.fillCircle(sx, sy, 4 * scale);
+        // Daoist Cap
+        this.gfx.fillStyle(0x1e293b, alpha);
+        this.gfx.fillRect(x - 7 * scale, y - 32 * scale, 14 * scale, 8 * scale);
+
+        // Whisk / Talisman
+        const ang = (dir * Math.PI) / 4;
+        const tx = x + Math.cos(ang) * 15 * scale;
+        const ty = y - 10 * scale + Math.sin(ang) * 15 * scale;
+        this.gfx.fillStyle(0xf59e0b, alpha);
+        this.gfx.fillRect(tx - 3 * scale, ty - 5 * scale, 6 * scale, 10 * scale);
+      } else {
+        // Warrior: Heavy Steel Armor, Red Cape, Broadsword
+        this.gfx.fillStyle(0xef4444, alpha); // Red Cape
+        this.gfx.fillRect(x - 11 * scale, y - 22 * scale, 22 * scale, 20 * scale);
+
+        this.gfx.fillStyle(0x475569, alpha); // Steel Plate
+        this.gfx.fillRect(x - 9 * scale, y - 24 * scale, 18 * scale, 24 * scale);
+
+        // Helmet
+        this.gfx.fillStyle(0x334155, alpha);
+        this.gfx.fillRect(x - 8 * scale, y - 34 * scale, 16 * scale, 10 * scale);
+
+        // Giant Broadsword
+        const swordAngle = (dir * Math.PI) / 4;
+        const ex = x + Math.cos(swordAngle) * 22 * scale;
+        const ey = y - 8 * scale + Math.sin(swordAngle) * 20 * scale;
+        this.gfx.lineStyle(4 * scale, 0xcbd5e1, alpha);
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x, y - 10 * scale, ex, ey));
+        this.gfx.lineStyle(2 * scale, 0xef4444, alpha);
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x, y - 10 * scale, ex, ey));
+      }
     } else if (isBoss) {
-      // Crimson Skeleton Elf (骷髅精灵)
-      this.gfx.fillStyle(0xb91c1c, alpha);
-      this.gfx.fillCircle(x, y - 36 * scale, 14 * scale); // Skull
-
-      // Menacing Horns
-      this.gfx.lineStyle(3 * scale, 0x7f1d1d, alpha);
-      this.gfx.strokeLineShape(new Phaser.Geom.Line(x - 8 * scale, y - 44 * scale, x - 18 * scale, y - 56 * scale));
-      this.gfx.strokeLineShape(new Phaser.Geom.Line(x + 8 * scale, y - 44 * scale, x + 18 * scale, y - 56 * scale));
-
-      // Skeletal Ribs & Armor
-      this.gfx.fillStyle(0x991b1b, alpha);
-      this.gfx.fillRect(x - 16 * scale, y - 24 * scale, 32 * scale, 24 * scale);
-
-      // Glowing Eyes
-      this.gfx.fillStyle(0xfacc15, alpha);
-      this.gfx.fillCircle(x - 4 * scale, y - 37 * scale, 2.5 * scale);
-      this.gfx.fillCircle(x + 4 * scale, y - 37 * scale, 2.5 * scale);
-
-      // Twin Curved Blades
-      this.gfx.lineStyle(3 * scale, 0xef4444, alpha);
-      this.gfx.strokeLineShape(new Phaser.Geom.Line(x - 20 * scale, y - 26 * scale, x - 28 * scale, y - 6 * scale));
-      this.gfx.strokeLineShape(new Phaser.Geom.Line(x + 20 * scale, y - 26 * scale, x + 28 * scale, y - 6 * scale));
+      if (name === 'boss_bichon' || name === 'boss') {
+        // Crimson Skeleton Elf
+        this.gfx.fillStyle(0xb91c1c, alpha);
+        this.gfx.fillCircle(x, y - 36 * scale, 14 * scale);
+        this.gfx.lineStyle(3 * scale, 0x7f1d1d, alpha);
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x - 8 * scale, y - 44 * scale, x - 18 * scale, y - 56 * scale));
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x + 8 * scale, y - 44 * scale, x + 18 * scale, y - 56 * scale));
+        this.gfx.fillStyle(0x991b1b, alpha);
+        this.gfx.fillRect(x - 16 * scale, y - 24 * scale, 32 * scale, 24 * scale);
+        this.gfx.fillStyle(0xfacc15, alpha);
+        this.gfx.fillCircle(x - 4 * scale, y - 37 * scale, 2.5 * scale);
+        this.gfx.fillCircle(x + 4 * scale, y - 37 * scale, 2.5 * scale);
+        this.gfx.lineStyle(3 * scale, 0xef4444, alpha);
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x - 20 * scale, y - 26 * scale, x - 28 * scale, y - 6 * scale));
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x + 20 * scale, y - 26 * scale, x + 28 * scale, y - 6 * scale));
+      } else if (name === 'boss_mine') {
+        // Zombie King (尸王) - Massive green undead with iron shackles
+        this.gfx.fillStyle(0x166534, alpha);
+        this.gfx.fillCircle(x, y - 40 * scale, 18 * scale);
+        this.gfx.fillRect(x - 20 * scale, y - 26 * scale, 40 * scale, 28 * scale);
+        this.gfx.lineStyle(4 * scale, 0x94a3b8, alpha); // Chains
+        this.gfx.strokeCircle(x - 18 * scale, y - 10 * scale, 8 * scale);
+        this.gfx.strokeCircle(x + 18 * scale, y - 10 * scale, 8 * scale);
+        this.gfx.fillStyle(0xef4444, alpha); // Eyes
+        this.gfx.fillCircle(x - 6 * scale, y - 42 * scale, 3 * scale);
+        this.gfx.fillCircle(x + 6 * scale, y - 42 * scale, 3 * scale);
+      } else {
+        // Woma Master (沃玛教主) - Winged beast with electric horns
+        this.gfx.fillStyle(0x78350f, alpha);
+        this.gfx.fillCircle(x, y - 42 * scale, 18 * scale);
+        this.gfx.fillRect(x - 22 * scale, y - 26 * scale, 44 * scale, 28 * scale);
+        // Wings
+        this.gfx.fillStyle(0x451a03, alpha * 0.8);
+        this.gfx.fillTriangle(x - 22 * scale, y - 26 * scale, x - 55 * scale, y - 55 * scale, x - 18 * scale, y);
+        this.gfx.fillTriangle(x + 22 * scale, y - 26 * scale, x + 55 * scale, y - 55 * scale, x + 18 * scale, y);
+        // Lightning horns
+        this.gfx.lineStyle(3 * scale, 0x38bdf8, alpha);
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x - 8 * scale, y - 50 * scale, x - 22 * scale, y - 70 * scale));
+        this.gfx.strokeLineShape(new Phaser.Geom.Line(x + 8 * scale, y - 50 * scale, x + 22 * scale, y - 70 * scale));
+      }
     } else {
-      // Standard Monsters (稻草人, 多钩猫, 钉耙猫, 半兽人)
-      let color = 0x854d0e; // Scarecrow default
-      if (name === 'cat' || name === 'rakecat') color = 0xd97706; // Cats
-      if (name === 'orc') color = 0x15803d; // Orc Green
+      // Normal Monsters
+      let color = 0x854d0e;
+      if (name.includes('cat')) color = 0xd97706;
+      if (name.includes('orc')) color = 0x15803d;
+      if (name.includes('skeleton')) color = 0xe2e8f0;
+      if (name.includes('zombie')) color = 0x3f6212;
+      if (name.includes('spider')) color = 0x701a75;
+      if (name.includes('woma')) color = 0xb45309;
+      if (name.includes('zuma')) color = 0x64748b;
 
       this.gfx.fillStyle(color, alpha);
       this.gfx.fillRect(x - 8 * scale, y - 22 * scale, 16 * scale, 22 * scale);
-
-      // Head
-      this.gfx.fillStyle(color, alpha);
       this.gfx.fillCircle(x, y - 27 * scale, 7 * scale);
-
-      // Eyes
       this.gfx.fillStyle(0xfef08a, alpha);
       this.gfx.fillRect(x - 4 * scale, y - 28 * scale, 2 * scale, 2 * scale);
       this.gfx.fillRect(x + 2 * scale, y - 28 * scale, 2 * scale, 2 * scale);
     }
   }
 
-  private fx(key: string, name: string, x: number, y: number, time: number, depth: number, scale = 1) {
-    if (this.useSprites && assets) {
-      const frames = assets.animations[name];
-      if (frames?.length) {
-        this.draw(key, frames[Math.floor(time * 10) % frames.length], x, y, depth, 1, scale);
-        return;
+  private drawMinion(m: Minion, time: number) {
+    // Shadow
+    this.gfx.fillStyle(0x0a0c0a, 0.4);
+    this.gfx.fillEllipse(m.x, m.y + 4, m.kind === 'shinsu' ? 36 : 22, m.kind === 'shinsu' ? 18 : 10);
+
+    if (m.kind === 'skeleton') {
+      // Skeleton Minion: Grey bone body, battleaxe
+      this.gfx.fillStyle(0xe2e8f0, 1);
+      this.gfx.fillRect(m.x - 6, m.y - 20, 12, 20);
+      this.gfx.fillCircle(m.x, m.y - 25, 6);
+      this.gfx.fillStyle(0x38bdf8, 1); // Blue eyes
+      this.gfx.fillCircle(m.x - 3, m.y - 26, 1.5);
+      this.gfx.fillCircle(m.x + 3, m.y - 26, 1.5);
+      // Battleaxe
+      this.gfx.lineStyle(2, 0x94a3b8, 1);
+      this.gfx.strokeLineShape(new Phaser.Geom.Line(m.x + 8, m.y - 18, m.x + 14, m.y - 2));
+    } else if (m.kind === 'shinsu') {
+      // Shinsu (Divine Beast): Crimson/Gold muscular beast
+      this.gfx.fillStyle(0xd97706, 1);
+      this.gfx.fillCircle(m.x, m.y - 18, 16);
+      this.gfx.fillRect(m.x - 14, m.y - 14, 28, 16);
+      this.gfx.fillStyle(0xef4444, 1);
+      this.gfx.fillCircle(m.x, m.y - 26, 12);
+      this.gfx.fillStyle(0xfacc15, 1); // Gold horn
+      this.gfx.fillTriangle(m.x - 4, m.y - 36, m.x + 4, m.y - 36, m.x, m.y - 48);
+
+      // Flame breath effect if breathing
+      if (m.breathUntil && time < m.breathUntil) {
+        const ang = (m.dir * Math.PI) / 4;
+        const fx = m.x + Math.cos(ang) * 45;
+        const fy = m.y + Math.sin(ang) * 45;
+        this.gfx.fillStyle(0xf97316, 0.7);
+        this.gfx.fillCircle(fx, fy, 28);
+        this.gfx.fillStyle(0xfacc15, 0.9);
+        this.gfx.fillCircle(fx, fy, 14);
       }
+    } else {
+      // Enticed Charmed Monster: Golden halo
+      this.gfx.fillStyle(0xa16207, 1);
+      this.gfx.fillRect(m.x - 7, m.y - 20, 14, 20);
+      this.gfx.fillCircle(m.x, m.y - 25, 6);
+      this.gfx.lineStyle(2, 0xfacc15, 0.85);
+      this.gfx.strokeCircle(m.x, m.y - 35, 8);
     }
 
-    // Procedural Fallback FX
-    if (name.startsWith('fireball')) {
-      this.gfx.fillStyle(0xf97316, 0.9);
-      this.gfx.fillCircle(x, y, 7 * scale);
-      this.gfx.fillStyle(0xfde047, 1);
-      this.gfx.fillCircle(x, y, 3.5 * scale);
-    } else if (name === 'lightning') {
-      this.gfx.lineStyle(3 * scale, 0x38bdf8, 1);
-      this.gfx.strokeLineShape(new Phaser.Geom.Line(x, y - 300, x, y));
-      this.gfx.lineStyle(1.5 * scale, 0xffffff, 1);
-      this.gfx.strokeLineShape(new Phaser.Geom.Line(x, y - 300, x, y));
-      this.gfx.fillStyle(0x7dd3fc, 0.6);
-      this.gfx.fillCircle(x, y, 16 * scale);
-    } else if (name === 'firewall') {
-      this.gfx.fillStyle(0xea580c, 0.4);
-      this.gfx.fillCircle(x, y, 36 * scale);
-      this.gfx.fillStyle(0xfacc15, 0.7);
-      this.gfx.fillCircle(x, y, 18 * scale);
-    } else if (name === 'shield') {
-      this.gfx.lineStyle(2 * scale, 0xfacc15, 0.8);
-      this.gfx.strokeCircle(x, y - 10, 26 * scale);
-      this.gfx.fillStyle(0xfef08a, 0.15);
-      this.gfx.fillCircle(x, y - 10, 26 * scale);
+    // Minion Health Bar
+    if (m.hp < m.maxHp) {
+      this.gfx.fillStyle(0x140e0c, 0.8).fillRect(m.x - 16, m.y - 38, 32, 3);
+      this.gfx.fillStyle(0x22c55e, 1).fillRect(m.x - 16, m.y - 38, 32 * (m.hp / m.maxHp), 3);
     }
   }
 
@@ -321,6 +412,7 @@ class BattleScene extends Phaser.Scene {
       this.corpses = [];
       this.lastEnemies.clear();
       this.accumulator = 0;
+      this.paintGround();
     }
 
     if (game.phase === 'battle') {
@@ -354,7 +446,7 @@ class BattleScene extends Phaser.Scene {
 
     if (game.phase === 'lobby') {
       this.cameras.main.centerOn(WORLD.w / 2, WORLD.h / 2);
-      this.actor('hero', 'wizard', 'idle', 5, WORLD.w / 2, WORLD.h / 2, _time / 1000, 100);
+      this.actor('hero', game.heroClass, 'idle', 5, WORLD.w / 2, WORLD.h / 2, _time / 1000, 100);
       [
         ['scarecrow', 230, -140],
         ['cat', 300, 90],
@@ -375,7 +467,7 @@ class BattleScene extends Phaser.Scene {
     } else {
       this.cameras.main.centerOn(game.player.x, game.player.y);
 
-      // Track corpses
+      // Corpses
       for (const [id, e] of this.lastEnemies) {
         if (!game.enemies.some((n) => n.id === id) && e.hp <= 0) {
           this.corpses.push({ kind: e.kind, dir: e.dir, x: e.x, y: e.y, at: t });
@@ -397,67 +489,122 @@ class BattleScene extends Phaser.Scene {
         );
       });
 
+      // Render Minions (随从)
+      for (const m of game.minions) {
+        this.drawMinion(m, t);
+      }
+
       // Render Enemies
       for (const e of game.enemies) {
         const motion = e.windup > 0 ? 'attack' : t - e.hitAt < 0.17 ? 'hurt' : 'walk';
-        const scale = e.elite ? 1.25 : 1;
+        const isBoss = e.kind.startsWith('boss');
+        const scale = isBoss ? 1.6 : e.elite ? 1.3 : 1;
         this.actor(`enemy-${e.id}`, e.kind, motion, e.dir, e.x, e.y, t - e.born, e.y, 1, scale);
 
+        // Status Indicators (Poison / Paralyze)
+        if (t < e.status.poisonedUntil) {
+          this.gfx.fillStyle(0x22c55e, 0.4).fillCircle(e.x, e.y - 15, 16 * scale);
+        }
+        if (t < e.status.paralyzedUntil) {
+          this.gfx.lineStyle(2, 0xfacc15, 0.85).strokeCircle(e.x, e.y - 15, 18 * scale);
+        }
+
         // Health bars
-        if (e.elite || e.hp < e.maxHp) {
-          const w = e.kind === 'boss' ? 72 : 32;
-          this.gfx.fillStyle(0x140e0c, 0.85).fillRect(e.x - w / 2, e.y - 52, w, 4);
+        if (e.elite || isBoss || e.hp < e.maxHp) {
+          const w = isBoss ? 80 : 32;
+          this.gfx.fillStyle(0x140e0c, 0.85).fillRect(e.x - w / 2, e.y - 54 * scale, w, 4);
           this.gfx
-            .fillStyle(e.elite ? 0xeab308 : 0xef4444, 1)
-            .fillRect(e.x - w / 2, e.y - 52, w * Math.max(0, e.hp / e.maxHp), 4);
+            .fillStyle(isBoss ? 0xd97706 : e.elite ? 0xeab308 : 0xef4444, 1)
+            .fillRect(e.x - w / 2, e.y - 54 * scale, w * Math.max(0, e.hp / e.maxHp), 4);
         }
 
         // Windup telegraph
         if (e.windup > 0) {
           this.gfx
             .lineStyle(2, 0xf97316, 0.75)
-            .strokeEllipse(e.x, e.y + 2, e.kind === 'boss' ? 140 : 54, e.kind === 'boss' ? 70 : 26);
+            .strokeEllipse(e.x, e.y + 2, isBoss ? 140 : 54, isBoss ? 70 : 26);
         }
       }
 
-      // Render Drops (Gems / Gold)
+      // Render Drops
       for (const d of game.drops) {
-        if (this.useSprites) {
-          this.draw(`drop-${d.id}`, 'item/金币', d.x, d.y, 10, 1, 0.75, false);
-        }
-        if (!this.useSprites || !assets?.frames['item/金币']) {
-          if (d.exp > 0) {
-            // Blue Exp Gem
-            this.gfx.fillStyle(0x38bdf8, 0.9).fillCircle(d.x, d.y, 4);
-            this.gfx.fillStyle(0xf0f9ff, 1).fillCircle(d.x, d.y, 1.5);
-          } else {
-            // Gold Coin
-            this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x, d.y, 3.5);
-          }
+        if (d.exp > 0) {
+          this.gfx.fillStyle(0x38bdf8, 0.9).fillCircle(d.x, d.y, 4);
+          this.gfx.fillStyle(0xf0f9ff, 1).fillCircle(d.x, d.y, 1.5);
+        } else {
+          this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x, d.y, 3.5);
         }
       }
 
       // Render Projectiles
       for (const p of game.projectiles) {
-        this.fx(`p-${p.id}`, `fireball/${p.dir}`, p.x, p.y, t, 2200, 0.85);
+        if (p.isEnemy) {
+          // Enemy Projectile (Spider poison or arrow)
+          if (p.kind === 'enemy_poison') {
+            this.gfx.fillStyle(0x22c55e, 0.9).fillCircle(p.x, p.y, 5);
+          } else {
+            this.gfx.lineStyle(2, 0xe2e8f0, 1);
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(p.x, p.y, p.x - p.vx * 0.05, p.y - p.vy * 0.05));
+          }
+        } else if (p.kind === 'soul_fireball') {
+          // Spiritual talisman flying
+          this.gfx.fillStyle(0x38bdf8, 0.95).fillRect(p.x - 4, p.y - 4, 8, 8);
+          this.gfx.fillStyle(0xffffff, 1).fillCircle(p.x, p.y, 2);
+        } else {
+          // Fireball
+          this.gfx.fillStyle(0xf97316, 0.9).fillCircle(p.x, p.y, 7);
+          this.gfx.fillStyle(0xfde047, 1).fillCircle(p.x, p.y, 3.5);
+        }
       }
 
-      // Render Firewalls & Lightning
+      // Render Area Effects (Laser, Firewall, Ice Storm, Slashes)
       for (const f of game.effects) {
         if (f.kind === 'firewall') {
           const r = f.radius / 64;
-          [[0, 0], [-28, 0], [28, 0], [0, -16], [0, 16]].forEach(([ox, oy], i) => {
-            this.fx(`fx-${f.id}-${i}`, 'firewall', f.x + ox * r, f.y + oy * r, t + i * 0.1, 40, r);
+          [[0, 0], [-28, 0], [28, 0], [0, -16], [0, 16]].forEach(([ox, oy]) => {
+            this.gfx.fillStyle(0xea580c, 0.45);
+            this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 24 * r);
+            this.gfx.fillStyle(0xfacc15, 0.7);
+            this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 12 * r);
           });
         } else if (f.kind === 'lightning') {
-          this.fx(`fx-${f.id}`, 'lightning', f.x, f.y, f.total - f.life, 2100);
+          this.gfx.lineStyle(3, 0x38bdf8, 1);
+          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y - 320, f.x, f.y));
+          this.gfx.lineStyle(1.5, 0xffffff, 1);
+          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y - 320, f.x, f.y));
+          this.gfx.fillStyle(0x7dd3fc, 0.6);
+          this.gfx.fillCircle(f.x, f.y, 18);
+        } else if (f.kind === 'laser' && f.angle !== undefined) {
+          const ex = f.x + Math.cos(f.angle) * f.radius;
+          const ey = f.y + Math.sin(f.angle) * f.radius;
+          this.gfx.lineStyle(6, 0x38bdf8, 0.8);
+          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+          this.gfx.lineStyle(2, 0xffffff, 1);
+          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+        } else if (f.kind === 'ice_storm') {
+          this.gfx.fillStyle(0x38bdf8, 0.35);
+          this.gfx.fillCircle(f.x, f.y, f.radius);
+          this.gfx.lineStyle(2, 0xe0f2fe, 0.8);
+          this.gfx.strokeCircle(f.x, f.y, f.radius * (f.life / f.total));
+        } else if (f.kind === 'half_moon_sweep' && f.angle !== undefined) {
+          this.gfx.lineStyle(4, 0x93c5fd, 0.9);
+          this.gfx.strokeCircle(f.x, f.y, f.radius);
+        } else if (f.kind === 'fire_slash') {
+          this.gfx.lineStyle(6, 0xef4444, 0.9);
+          this.gfx.strokeCircle(f.x, f.y, f.radius);
+        } else if (f.kind === 'ring_of_fire') {
+          this.gfx.lineStyle(3, 0xf97316, 0.9);
+          this.gfx.strokeCircle(f.x, f.y, f.radius * (1 - f.life / f.total));
+        } else if (f.kind === 'poison_cloud') {
+          this.gfx.fillStyle(0x22c55e, 0.35);
+          this.gfx.fillCircle(f.x, f.y, f.radius);
         }
       }
 
       // Render Player
       this.actor(
         'hero',
-        'wizard',
+        game.heroClass,
         game.phase === 'dead' ? 'death' : game.player.moving ? 'walk' : t < game.player.castUntil ? 'cast' : 'idle',
         game.player.dir,
         game.player.x,
@@ -467,12 +614,23 @@ class BattleScene extends Phaser.Scene {
         t < game.player.hitUntil ? 0.65 : 1
       );
 
-      // Render Player Shield Aura
+      // Player Shields & Buff Auras
       if (t < game.player.shieldUntil) {
-        this.fx('shield', 'shield', game.player.x, game.player.y, t, game.player.y + 1, 1);
+        this.gfx.lineStyle(2.5, 0xfacc15, 0.85);
+        this.gfx.strokeCircle(game.player.x, game.player.y - 10, 26);
+        this.gfx.fillStyle(0xfef08a, 0.15);
+        this.gfx.fillCircle(game.player.x, game.player.y - 10, 26);
+      }
+      if (t < game.player.holyArmorUntil) {
+        this.gfx.lineStyle(2, 0x3b82f6, 0.8);
+        this.gfx.strokeCircle(game.player.x, game.player.y - 10, 30);
+      }
+      if (t < game.player.spiritShieldUntil) {
+        this.gfx.lineStyle(2, 0xa855f7, 0.8);
+        this.gfx.strokeCircle(game.player.x, game.player.y - 10, 34);
       }
 
-      // Player Base Ring
+      // Base ring
       this.gfx.lineStyle(1.5, 0xd4af37, 0.7).strokeEllipse(game.player.x, game.player.y + 3, 30, 15);
 
       // Floating Labels
@@ -495,7 +653,7 @@ class BattleScene extends Phaser.Scene {
       }
     }
 
-    // Clean up expired labels & bodies
+    // Clean up
     for (const [id, label] of this.labels) {
       if (!game.floating.some((f) => f.id === id)) {
         label.destroy();

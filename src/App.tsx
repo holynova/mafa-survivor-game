@@ -1,24 +1,55 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { game } from './game';
-import { getSkill, getItem, SLOT_NAMES, STAT_NAMES } from './content';
+import {
+  CHAPTERS,
+  CLASS_BASES,
+  TALENTS,
+  getItem,
+  getSkill,
+  SLOT_NAMES,
+  STAT_NAMES,
+} from './content';
 import { expNeeded, rerollPrice, sellPrice } from './rules';
 import { sound } from './audio';
-import { history, saveRun } from './save';
-import type { Mode, RunResult, SkillId, Slot, Upgrade } from './types';
+import {
+  getProfile,
+  history,
+  resetTalents,
+  saveRun,
+  upgradeTalent,
+} from './save';
+import type {
+  HeroClass,
+  MapChapter,
+  Mode,
+  ProfileData,
+  RunResult,
+  Slot,
+  TalentKey,
+  Upgrade,
+} from './types';
 
 export function App() {
   const g = useSyncExternalStore(game.subscribe, () => game);
   const [muted, setMuted] = useState(sound.isMuted());
   const [runs, setRuns] = useState<RunResult[]>([]);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [selectedClass, setSelectedClass] = useState<HeroClass>('wizard');
+  const [selectedChapter, setSelectedChapter] = useState<MapChapter>('bichon');
   const [showHistory, setShowHistory] = useState(false);
+  const [showTalents, setShowTalents] = useState(false);
 
   useEffect(() => {
+    getProfile().then(setProfile);
     history().then(setRuns);
-  }, [g.result]);
+  }, []);
 
   useEffect(() => {
     if (g.result) {
-      saveRun(g.result).then(() => history().then(setRuns));
+      saveRun(g.result).then(() => {
+        getProfile().then(setProfile);
+        history().then(setRuns);
+      });
     }
   }, [g.result]);
 
@@ -28,7 +59,17 @@ export function App() {
   };
 
   const handleStart = (mode: Mode) => {
-    game.start(mode);
+    game.start(selectedClass, selectedChapter, mode, undefined, profile || undefined);
+  };
+
+  const handleUpgradeTalent = async (key: TalentKey) => {
+    const next = await upgradeTalent(key);
+    setProfile(next);
+  };
+
+  const handleResetTalents = async () => {
+    const next = await resetTalents();
+    setProfile(next);
   };
 
   return (
@@ -47,58 +88,118 @@ export function App() {
         <div className="modal-container lobby-modal">
           <div className="panel gold-panel lobby-panel">
             <div className="title-header">
-              <span className="badge-legend">经典 1.76 语汇 · 单机肉鸽</span>
+              <span className="badge-legend">经典 1.76 语汇 · 战法道三职业肉鸽</span>
               <h1 className="main-title">玛法幸存者</h1>
-              <p className="subtitle">比奇荒野 · 法师纵切战斗原型</p>
+              <p className="subtitle">比奇荒野 · 废弃矿洞 · 祖玛神庙</p>
+
+              {profile && (
+                <div className="crystal-badge">
+                  💎 玛法结晶: <strong>{profile.crystals}</strong>
+                </div>
+              )}
             </div>
 
-            <div className="hero-card">
-              <div className="hero-avatar">
-                <div className="wizard-icon">🧙‍♂️</div>
-                <div className="hero-role">三职业 · 法师</div>
-              </div>
-              <div className="hero-stats">
-                <div className="hero-stat-row">
-                  <span>生命基础: <strong>100</strong></span>
-                  <span>移动速度: <strong>220 px/s</strong></span>
-                </div>
-                <div className="hero-stat-row">
-                  <span>魔法防御: <strong>2</strong></span>
-                  <span>初始技能: <strong>火球术</strong></span>
-                </div>
-                <p className="hero-desc">
-                  掌握烈焰与雷霆的高爆发法职。自带魔法盾自保，自动施法与独立冷却驱动。
-                </p>
-              </div>
+            {/* CLASS SELECTOR */}
+            <div className="class-selector-tabs">
+              {(['wizard', 'taoist', 'warrior'] as HeroClass[]).map((cls) => {
+                const base = CLASS_BASES[cls];
+                const active = selectedClass === cls;
+                return (
+                  <button
+                    key={cls}
+                    className={`class-tab ${active ? 'active' : ''}`}
+                    onClick={() => setSelectedClass(cls)}
+                  >
+                    <div className="class-tab-icon">
+                      {cls === 'wizard' ? '🧙‍♂️' : cls === 'taoist' ? '☯️' : '⚔️'}
+                    </div>
+                    <div className="class-tab-name">{base.name}</div>
+                  </button>
+                );
+              })}
             </div>
 
+            {/* HERO OVERVIEW */}
+            {CLASS_BASES[selectedClass] && (
+              <div className="hero-card">
+                <div className="hero-avatar">
+                  <div className="wizard-icon">
+                    {selectedClass === 'wizard' ? '🧙‍♂️' : selectedClass === 'taoist' ? '☯️' : '⚔️'}
+                  </div>
+                  <div className="hero-role">{CLASS_BASES[selectedClass].role}</div>
+                </div>
+                <div className="hero-stats">
+                  <div className="hero-stat-row">
+                    <span>生命基础: <strong>{CLASS_BASES[selectedClass].hp}</strong></span>
+                    <span>移动速度: <strong>{CLASS_BASES[selectedClass].speed} px/s</strong></span>
+                  </div>
+                  <div className="hero-stat-row">
+                    <span>物理防御: <strong>{CLASS_BASES[selectedClass].def}</strong></span>
+                    <span>魔法防御: <strong>{CLASS_BASES[selectedClass].mdef}</strong></span>
+                  </div>
+                  <p className="hero-desc">{CLASS_BASES[selectedClass].description}</p>
+                </div>
+              </div>
+            )}
+
+            {/* CHAPTER SELECTOR */}
+            <div className="chapter-selector">
+              <span className="chapter-label">出征章节：</span>
+              {(['bichon', 'mine', 'temple'] as MapChapter[]).map((chapKey) => {
+                const chap = CHAPTERS[chapKey];
+                const active = selectedChapter === chapKey;
+                return (
+                  <button
+                    key={chapKey}
+                    className={`chap-btn ${active ? 'active' : ''}`}
+                    onClick={() => setSelectedChapter(chapKey)}
+                  >
+                    <span className="chap-name">{chap.name}</span>
+                    <span className="chap-boss">({chap.bossName})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* START BUTTONS */}
             <div className="mode-select-grid">
               <button
                 className="mode-btn primary-btn"
                 onClick={() => handleStart('normal')}
               >
                 <div className="btn-title">⚔️ 标准远征 (Normal)</div>
-                <div className="btn-desc">12 波次 × 75 秒 · 15 分钟决战骷髅精灵</div>
+                <div className="btn-desc">12 波次 × 75 秒 · 15 分钟决战章节 Boss</div>
               </button>
               <button
                 className="mode-btn secondary-btn"
                 onClick={() => handleStart('trial')}
               >
                 <div className="btn-title">⚡ 快速试炼 (Trial)</div>
-                <div className="btn-desc">3 波次 × 35 秒 · 快速测试技能构筑与手感</div>
+                <div className="btn-desc">3 波次 × 35 秒 · 快速测试流派构筑</div>
               </button>
             </div>
 
             <div className="lobby-footer">
-              <button
-                className="text-btn"
-                onClick={() => setShowHistory(!showHistory)}
-              >
-                📜 远征历史纪录 ({runs.length})
-              </button>
-              <div className="controls-hint">操作: WASD 或方向键移动 / 屏幕触控拖拽 / 键盘 1 2 3 选择升级</div>
+              <div className="lobby-actions-row">
+                <button
+                  className="crystal-shrine-btn"
+                  onClick={() => setShowTalents(true)}
+                >
+                  🏛️ 结晶祭坛 / 永久天赋
+                </button>
+                <button
+                  className="text-btn"
+                  onClick={() => setShowHistory(!showHistory)}
+                >
+                  📜 历次远征战绩 ({runs.length})
+                </button>
+              </div>
+              <div className="controls-hint">
+                操作: WASD 或方向键移动 / 鼠标触屏拖拽 / 空格释放位移技能 / 键盘 1 2 3 选择升级
+              </div>
             </div>
 
+            {/* HISTORY DRAWER */}
             {showHistory && (
               <div className="history-drawer">
                 <h3>历次试炼记录</h3>
@@ -109,7 +210,9 @@ export function App() {
                     {runs.map((r, i) => (
                       <div key={i} className={`history-item ${r.won ? 'won' : 'lost'}`}>
                         <span className="hist-status">{r.won ? '👑 胜利' : '💀 阵亡'}</span>
-                        <span className="hist-mode">{r.mode === 'normal' ? '标准' : '试炼'}</span>
+                        <span className="hist-mode">
+                          {CLASS_BASES[r.heroClass]?.name ?? '法师'} · {CHAPTERS[r.chapter]?.name ?? '比奇'} · {r.mode === 'normal' ? '标准' : '试炼'}
+                        </span>
                         <span className="hist-detail">
                           波次 {r.wave} · 等级 {r.level} · 击杀 {r.kills} · 金币 {r.gold}
                         </span>
@@ -124,6 +227,69 @@ export function App() {
         </div>
       )}
 
+      {/* TALENT SHRINE MODAL */}
+      {showTalents && profile && (
+        <div className="modal-container talent-modal">
+          <div className="panel gold-panel talent-panel">
+            <div className="talent-header">
+              <h2>🏛️ 玛法结晶祭坛 · 永久天赋</h2>
+              <p>消耗每局击杀 Boss 与通关获得的玛法结晶，永久强化战力</p>
+              <div className="crystal-balance">
+                持有结晶: <strong>💎 {profile.crystals}</strong>
+              </div>
+            </div>
+
+            <div className="talents-grid">
+              {TALENTS.map((t) => {
+                const currentLvl = profile.talents[t.key] || 0;
+                const cost = t.costPerLevel * (currentLvl + 1);
+                const isMax = currentLvl >= t.maxLevel;
+                const canAfford = profile.crystals >= cost;
+
+                return (
+                  <div key={t.key} className="talent-card">
+                    <div className="talent-card-header">
+                      <span className="talent-name">{t.name}</span>
+                      <span className="talent-level">Lv.{currentLvl} / {t.maxLevel}</span>
+                    </div>
+                    <p className="talent-desc">{t.description}</p>
+                    <div className="talent-card-footer">
+                      {isMax ? (
+                        <span className="max-tag">已满级</span>
+                      ) : (
+                        <button
+                          className="upgrade-talent-btn"
+                          disabled={!canAfford}
+                          onClick={() => handleUpgradeTalent(t.key)}
+                        >
+                          加点 (💎 {cost})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="talent-actions">
+              <button
+                className="secondary-btn"
+                onClick={handleResetTalents}
+                title="全额返还已加点的全部结晶"
+              >
+                🔄 重置天赋 (全额返还)
+              </button>
+              <button
+                className="primary-btn"
+                onClick={() => setShowTalents(false)}
+              >
+                完成退出
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* IN-GAME BATTLE HUD */}
       {(g.phase === 'battle' || g.phase === 'upgrade' || g.phase === 'shop' || g.phase === 'paused') && (
         <div className="hud-container">
@@ -132,7 +298,7 @@ export function App() {
             {/* HP Bar */}
             <div className="hud-box hp-box">
               <div className="hud-label">
-                <span>生命值</span>
+                <span>{g.base.name} · 生命值</span>
                 <span className="hud-val">{Math.round(g.player.hp)} / {g.maxHP}</span>
               </div>
               <div className="bar-track hp-track">
@@ -145,7 +311,9 @@ export function App() {
 
             {/* Wave Countdown */}
             <div className="hud-box wave-box">
-              <div className="wave-badge">第 {g.wave} / {g.maxWaves} 波</div>
+              <div className="wave-badge">
+                {CHAPTERS[g.chapter]?.name} · 第 {g.wave}/{g.maxWaves} 波
+              </div>
               <div className="wave-timer">
                 {Math.max(0, Math.ceil(g.duration - g.waveTime))}s
               </div>
@@ -194,10 +362,10 @@ export function App() {
                 }
                 const def = getSkill(skill.id);
                 const cdMax = Math.max(
-                  0.4,
+                  0.35,
                   def.cooldown * (1 - (g.stats.cooldown_reduction ?? 0) / 100) * (1 - skill.localCDR / 100)
                 );
-                const cdPct = Math.min(1, skill.cd / cdMax);
+                const cdPct = cdMax > 0 ? Math.min(1, skill.cd / cdMax) : 0;
 
                 return (
                   <div key={slotIdx} className={`skill-slot active-slot skill-${skill.id}`}>
@@ -223,7 +391,7 @@ export function App() {
         <div className="modal-container upgrade-modal">
           <div className="panel gold-panel upgrade-panel">
             <div className="upgrade-header">
-              <h2>法力突破 · 境界晋升 (Lv.{g.level})</h2>
+              <h2>境界晋升 · 技能与属性选择 (Lv.{g.level})</h2>
               <p>请选择一项技能或属性强化（按键盘 1、2、3 快速选择）</p>
             </div>
 
@@ -271,7 +439,9 @@ export function App() {
                       <span className={`item-tier tier-${item.tier}`}>{item.name}</span>
                       <span className="item-price">💰 {o.price}</span>
                     </div>
-                    <div className="item-type-tag">{item.kind === 'equipment' ? '装备' : item.kind === 'passive' ? '被动道具' : '恢复品'}</div>
+                    <div className="item-type-tag">
+                      {item.kind === 'equipment' ? '装备' : item.kind === 'passive' ? '被动道具' : '恢复品'}
+                    </div>
                     <p className="item-desc">{item.description}</p>
 
                     <div className="offer-actions">
@@ -302,7 +472,7 @@ export function App() {
 
             {/* Equipped Items Drawer */}
             <div className="equipment-strip">
-              <h4>当前穿戴装备 (8槽)</h4>
+              <h4>当前穿戴装备 (8槽固定栏位)</h4>
               <div className="equip-slots-grid">
                 {(['weapon', 'armor', 'helmet', 'necklace', 'braceletL', 'braceletR', 'ringL', 'ringR'] as Slot[]).map((slot) => {
                   const eq = g.equipment[slot];
@@ -334,10 +504,10 @@ export function App() {
             <div className="shop-footer">
               <button
                 className="reroll-btn"
-                disabled={g.gold < rerollPrice(g.rerolls)}
+                disabled={g.gold < g.cooldownCost}
                 onClick={() => game.reroll()}
               >
-                🔄 刷新货架 (💰 {rerollPrice(g.rerolls)})
+                🔄 刷新货架 ({g.freeRerolls > 0 ? `免费 (${g.freeRerolls})` : `💰 ${g.cooldownCost}`})
               </button>
               <button
                 className="next-wave-btn primary-btn"
@@ -356,19 +526,25 @@ export function App() {
           <div className="panel gold-panel pause-panel">
             <h2>游戏暂停</h2>
             <div className="pause-stats-summary">
-              <p>当前波次: 第 {g.wave} / {g.maxWaves} 波</p>
-              <p>存活时间: {Math.round(g.clock)} 秒</p>
-              <p>击杀魔物: {g.kills} 只</p>
+              <p>出征职业: {g.base.name} ({g.base.role})</p>
+              <p>当前章节: {CHAPTERS[g.chapter]?.name} · 第 {g.wave} / {g.maxWaves} 波</p>
+              <p>存活时间: {Math.round(g.clock)} 秒 · 击杀魔物: {g.kills} 只</p>
               <p>玩家生命: {Math.round(g.player.hp)} / {g.maxHP}</p>
             </div>
             <div className="pause-actions">
               <button className="primary-btn" onClick={() => game.pause()}>
                 ▶️ 继续战斗
               </button>
-              <button className="secondary-btn" onClick={() => game.start(g.mode, g.seed)}>
+              <button
+                className="secondary-btn"
+                onClick={() => game.start(g.heroClass, g.chapter, g.mode, g.seed, profile || undefined)}
+              >
                 🔄 重开本局 (相同种子)
               </button>
-              <button className="danger-btn" onClick={() => { game.phase = 'lobby'; game.emit(); }}>
+              <button
+                className="danger-btn"
+                onClick={() => { game.phase = 'lobby'; game.emit(); }}
+              >
                 🚪 放弃并返回营地
               </button>
             </div>
@@ -381,9 +557,15 @@ export function App() {
         <div className="modal-container result-modal">
           <div className={`panel gold-panel result-panel ${g.result.won ? 'victory' : 'defeat'}`}>
             <div className="result-header">
-              <h1>{g.result.won ? '👑 玛法凯旋 · 诛灭骷髅精灵' : '💀 喋血比奇 · 试炼落幕'}</h1>
+              <h1>
+                {g.result.won
+                  ? `👑 玛法凯旋 · 诛灭 ${CHAPTERS[g.chapter]?.bossName}`
+                  : '💀 喋血荒野 · 试炼落幕'}
+              </h1>
               <p className="result-subtitle">
-                {g.result.won ? '你成功在玛法大陆的险恶荒野中杀出重围，成为真正的玛法幸存者！' : '力战至最后一刻，倒在涌动的魔物浪潮之中...'}
+                {g.result.won
+                  ? '斩杀终极邪祟，威震玛法大陆！获得玛法结晶奖励！'
+                  : '力战至最后一刻，倒在无穷无尽的魔物狂潮之中...'}
               </p>
             </div>
 
@@ -404,9 +586,9 @@ export function App() {
                 <span className="label">获取金币</span>
                 <span className="val">{g.result.gold}</span>
               </div>
-              <div className="stat-card">
+              <div className="stat-card crystal-highlight">
                 <span className="label">获得结晶</span>
-                <span className="val">{g.result.crystals}</span>
+                <span className="val">💎 +{g.result.crystals}</span>
               </div>
             </div>
 
@@ -417,12 +599,15 @@ export function App() {
                 {Object.entries(g.result.skillDamage).map(([skillKey, dmg]) => {
                   const total = Object.values(g.result!.skillDamage).reduce((a, b) => a + b, 0) || 1;
                   const pct = Math.round((dmg / total) * 100);
-                  const skillName = {
-                    fireball: '火球术',
-                    lightning: '雷电术',
-                    firewall: '火墙',
-                    shield: '魔法盾',
-                  }[skillKey] ?? skillKey;
+                  let skillName = skillKey;
+                  try {
+                    skillName = getSkill(skillKey as any).name;
+                  } catch {
+                    if (skillKey === 'shinsu_fire') skillName = '神兽烈焰';
+                    if (skillKey === 'skeleton_slash') skillName = '骷髅重斩';
+                    if (skillKey === 'poison_tick') skillName = '绿毒侵蚀';
+                    if (skillKey === 'pet_attack') skillName = '随从攻击';
+                  }
 
                   return (
                     <div key={skillKey} className="dmg-bar-row">
@@ -431,7 +616,7 @@ export function App() {
                         <span>{dmg} 伤 ({pct}%)</span>
                       </div>
                       <div className="bar-track">
-                        <div className={`bar-fill dmg-${skillKey}`} style={{ width: `${pct}%` }} />
+                        <div className="bar-fill dmg-skill" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -441,7 +626,7 @@ export function App() {
 
             {/* Build summary */}
             <div className="build-summary">
-              <span>最终构筑: </span>
+              <span>最终构筑技能: </span>
               {g.result.skills.map((s, i) => (
                 <span key={i} className="skill-pill">{s}</span>
               ))}
