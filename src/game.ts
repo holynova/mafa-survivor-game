@@ -1208,7 +1208,19 @@ export class Game {
     if (e.hp <= 0) {
       this.kills++;
       this.waveKills++;
-      if (e.kind.startsWith('boss')) this.bossKilled = true;
+      if (e.kind.startsWith('boss')) {
+        this.bossKilled = true;
+        sound.playMonsterDie();
+        if (this.wave === this.maxWaves) {
+          setTimeout(() => {
+            if (this.phase === 'battle') {
+              this.finish(true);
+            }
+          }, 1500);
+        }
+      } else {
+        sound.playMonsterDie();
+      }
 
       const gold =
         Math.round((this.rng.next() < 0.65 ? 4 : 0) * (1 + (this.stats.gold_gain ?? 0) / 100)) *
@@ -1264,7 +1276,7 @@ export class Game {
     const damage = incomingDamage(raw, this.stats.def_flat ?? 0, shieldBonus);
     this.player.hp = Math.max(0, this.player.hp - damage);
     this.player.hitUntil = this.clock + 0.4;
-    sound.playHit();
+    sound.playHurt();
 
     this.floating.push({
       id: ++this.id,
@@ -1642,6 +1654,11 @@ export class Game {
   finish(won: boolean) {
     if (this.result) return;
     this.phase = won ? 'won' : 'dead';
+    if (won) {
+      sound.playWaveComplete();
+    } else {
+      sound.playDie();
+    }
 
     // Award crystals: 3 crystals on boss kill, +1 per 3 waves survived
     let crystals = 0;
