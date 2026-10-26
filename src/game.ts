@@ -320,7 +320,7 @@ export class Game {
     // Savage charge speed boost
     if (this.player.savageCharging > 0) {
       this.player.savageCharging -= dt;
-      const angle = (this.player.dir * Math.PI) / 4;
+      const angle = ((this.player.dir - 2) * Math.PI) / 4;
       const chargeSpeed = 480 * dt;
       this.player.x = clamp(this.player.x + Math.cos(angle) * chargeSpeed, 30, WORLD.w - 30);
       this.player.y = clamp(this.player.y + Math.sin(angle) * chargeSpeed, 45, WORLD.h - 30);
@@ -818,13 +818,12 @@ export class Game {
       });
       sound.playFirewall();
     } else if (s.id === 'shield') {
-      if (!targets.length) return;
       this.player.shieldUntil = this.clock + Math.min(7, 6 * (1 + s.duration / 100));
       sound.playShield();
     } else if (s.id === 'laser') {
       if (!targets.length) return;
       sound.playLaser();
-      const angle = (this.player.dir * Math.PI) / 4;
+      const angle = ((this.player.dir - 2) * Math.PI) / 4;
       const length = 550;
       const ex = this.player.x + Math.cos(angle) * length;
       const ey = this.player.y + Math.sin(angle) * length;
@@ -1087,7 +1086,7 @@ export class Game {
     // --- WARRIOR SKILLS ---
     else if (s.id === 'half_moon') {
       sound.playHalfMoon();
-      const angle = (this.player.dir * Math.PI) / 4;
+      const angle = ((this.player.dir - 2) * Math.PI) / 4;
       this.effects.push({
         id: ++this.id,
         kind: 'half_moon_sweep',
@@ -1119,7 +1118,7 @@ export class Game {
     } else if (s.id === 'piercing_swordplay') {
       if (!targets.length) return;
       sound.playSwordSlash();
-      const angle = (this.player.dir * Math.PI) / 4;
+      const angle = ((this.player.dir - 2) * Math.PI) / 4;
       const thrustDist = 130;
       for (const e of targets) {
         const edx = e.x - this.player.x;

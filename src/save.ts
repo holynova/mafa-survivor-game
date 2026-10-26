@@ -112,14 +112,16 @@ export async function saveRun(result: RunResult) {
     const database = await db();
     const tx = database.transaction('runs', 'readwrite');
     const existing = await tx.store.get(result.runId);
+    let isNew = false;
     if (!existing) {
       await tx.store.add({ ...result, savedAt: Date.now() });
+      isNew = true;
     }
     await tx.done;
     database.close();
 
-    // Grant crystals on run completion / Boss kill
-    if (result.crystals > 0) {
+    // Grant crystals on run completion only if newly saved
+    if (isNew && result.crystals > 0) {
       await addCrystals(result.crystals);
     }
   } catch (err) {
