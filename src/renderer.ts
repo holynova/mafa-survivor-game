@@ -221,26 +221,50 @@ class BattleScene extends Phaser.Scene {
       image = this.pool.pop() ?? this.add.image(0, 0, f.texture, frame);
       this.bodies.set(key, image);
     }
+    const ox = (f.originX ?? 0) * scale;
+    const oy = (f.originY ?? 0) * scale;
     image
       .setTexture(f.texture, frame)
       .setVisible(true)
       .setOrigin(offset ? 0 : 0.5)
-      .setPosition(offset ? x + -f.originX * scale : x, offset ? y + -f.originY * scale : y)
+      .setPosition(offset ? x - ox : x, offset ? y - oy : y)
       .setDepth(depth)
       .setAlpha(alpha)
       .setScale(scale)
       .clearTint();
   }
 
+  private drawAnim(
+    key: string,
+    animName: string,
+    progress: number,
+    x: number,
+    y: number,
+    depth: number,
+    alpha = 1,
+    scale = 1,
+    loop = false
+  ): boolean {
+    if (!this.useSprites || !assets?.animations[animName]) return false;
+    const frames = assets.animations[animName];
+    if (!frames || !frames.length) return false;
+    const idx = loop
+      ? Math.floor(progress * 10) % frames.length
+      : Math.min(frames.length - 1, Math.max(0, Math.floor(progress * frames.length)));
+    this.draw(key, frames[idx], x, y, depth, alpha, scale);
+    return true;
+  }
+
   private resolveAnimName(name: string): string {
     if (name.startsWith('boss')) return 'boss';
     if (name.startsWith('orc')) return 'orc';
     if (name.startsWith('skeleton')) return 'skeleton';
-    if (name === 'zombie') return 'skeleton';
+    if (name === 'zombie') return 'zombie';
     if (name.startsWith('woma') || name.startsWith('zuma')) return 'orc';
     if (name === 'maggot') return 'cat';
     if (name === 'spider') return 'scarecrow';
     if (name === 'shinsu') return 'beast';
+    if (name === 'summonedSkeleton') return 'summonedSkeleton';
     return name;
   }
 
@@ -386,6 +410,31 @@ class BattleScene extends Phaser.Scene {
   }
 
   private drawMinion(m: Minion, time: number) {
+    if (this.useSprites && assets) {
+      const animActor =
+        m.kind === 'skeleton' ? 'summonedSkeleton' : m.kind === 'shinsu' ? 'beast' : 'cat';
+      const motion = m.attackCD > 0.6 ? 'attack' : 'walk';
+      const scale = m.kind === 'shinsu' ? 1.15 : 1;
+      this.actor(`minion-${m.id}`, animActor, motion, m.dir, m.x, m.y, time, m.y, 1, scale);
+
+      // Flame breath for Shinsu
+      if (m.kind === 'shinsu' && m.breathUntil && time < m.breathUntil) {
+        const p = Math.max(0, Math.min(1, 1 - (m.breathUntil - time) / 0.6));
+        this.drawAnim(
+          `minion-flame-${m.id}`,
+          `beastflame/${m.dir}`,
+          p,
+          m.x,
+          m.y,
+          m.y + 10,
+          1,
+          1.2,
+          false
+        );
+      }
+      return;
+    }
+
     // Shadow
     this.gfx.fillStyle(0x0a0c0a, 0.4);
     this.gfx.fillEllipse(m.x, m.y + 4, m.kind === 'shinsu' ? 36 : 22, m.kind === 'shinsu' ? 18 : 10);
@@ -582,57 +631,96 @@ class BattleScene extends Phaser.Scene {
             this.gfx.strokeLineShape(new Phaser.Geom.Line(p.x, p.y, p.x - p.vx * 0.05, p.y - p.vy * 0.05));
           }
         } else if (p.kind === 'soul_fireball') {
-          // Spiritual talisman flying
-          this.gfx.fillStyle(0x38bdf8, 0.95).fillRect(p.x - 4, p.y - 4, 8, 8);
-          this.gfx.fillStyle(0xffffff, 1).fillCircle(p.x, p.y, 2);
+          // Authentic Taoist Talisman
+          const dir16 = p.dir ?? 0;
+          const drawn = this.drawAnim(`proj-${p.id}`, `talisman/${dir16}`, t * 12, p.x, p.y, p.y + 5, 1, 1, true);
+          if (!drawn) {
+            this.gfx.fillStyle(0x38bdf8, 0.95).fillRect(p.x - 4, p.y - 4, 8, 8);
+            this.gfx.fillStyle(0xffffff, 1).fillCircle(p.x, p.y, 2);
+          }
         } else {
-          // Fireball
-          this.gfx.fillStyle(0xf97316, 0.9).fillCircle(p.x, p.y, 7);
-          this.gfx.fillStyle(0xfde047, 1).fillCircle(p.x, p.y, 3.5);
+          // Authentic Wizard Fireball
+          const dir16 = p.dir ?? 0;
+          const drawn = this.drawAnim(`proj-${p.id}`, `fireball/${dir16}`, t * 12, p.x, p.y, p.y + 5, 1, 1, true);
+          if (!drawn) {
+            this.gfx.fillStyle(0xf97316, 0.9).fillCircle(p.x, p.y, 7);
+            this.gfx.fillStyle(0xfde047, 1).fillCircle(p.x, p.y, 3.5);
+          }
         }
       }
 
       // Render Area Effects (Laser, Firewall, Ice Storm, Slashes)
       for (const f of game.effects) {
+        const progress = Math.max(0, Math.min(1, 1 - f.life / f.total));
         if (f.kind === 'firewall') {
-          const r = f.radius / 64;
-          [[0, 0], [-28, 0], [28, 0], [0, -16], [0, 16]].forEach(([ox, oy]) => {
-            this.gfx.fillStyle(0xea580c, 0.45);
-            this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 24 * r);
-            this.gfx.fillStyle(0xfacc15, 0.7);
-            this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 12 * r);
-          });
+          const drawn = this.drawAnim(`effect-${f.id}`, 'firewall', (f.total - f.life) * 8, f.x, f.y, f.y, 0.95, 1, true);
+          if (!drawn) {
+            const r = f.radius / 64;
+            [[0, 0], [-28, 0], [28, 0], [0, -16], [0, 16]].forEach(([ox, oy]) => {
+              this.gfx.fillStyle(0xea580c, 0.45);
+              this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 24 * r);
+              this.gfx.fillStyle(0xfacc15, 0.7);
+              this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 12 * r);
+            });
+          }
         } else if (f.kind === 'lightning') {
-          this.gfx.lineStyle(3, 0x38bdf8, 1);
-          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y - 320, f.x, f.y));
-          this.gfx.lineStyle(1.5, 0xffffff, 1);
-          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y - 320, f.x, f.y));
-          this.gfx.fillStyle(0x7dd3fc, 0.6);
-          this.gfx.fillCircle(f.x, f.y, 18);
-        } else if (f.kind === 'laser' && f.angle !== undefined) {
-          const ex = f.x + Math.cos(f.angle) * f.radius;
-          const ey = f.y + Math.sin(f.angle) * f.radius;
-          this.gfx.lineStyle(6, 0x38bdf8, 0.8);
-          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
-          this.gfx.lineStyle(2, 0xffffff, 1);
-          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+          const drawn = this.drawAnim(`effect-${f.id}`, 'lightning', progress, f.x, f.y, f.y + 10, 1, 1, false);
+          if (!drawn) {
+            this.gfx.lineStyle(3, 0x38bdf8, 1);
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y - 320, f.x, f.y));
+            this.gfx.lineStyle(1.5, 0xffffff, 1);
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y - 320, f.x, f.y));
+            this.gfx.fillStyle(0x7dd3fc, 0.6);
+            this.gfx.fillCircle(f.x, f.y, 18);
+          }
+        } else if (f.kind === 'laser') {
+          const drawn = this.drawAnim(`effect-${f.id}`, `beam/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, 1, false);
+          if (!drawn && f.angle !== undefined) {
+            const ex = f.x + Math.cos(f.angle) * f.radius;
+            const ey = f.y + Math.sin(f.angle) * f.radius;
+            this.gfx.lineStyle(6, 0x38bdf8, 0.8);
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+            this.gfx.lineStyle(2, 0xffffff, 1);
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+          }
         } else if (f.kind === 'ice_storm') {
-          this.gfx.fillStyle(0x38bdf8, 0.35);
-          this.gfx.fillCircle(f.x, f.y, f.radius);
-          this.gfx.lineStyle(2, 0xe0f2fe, 0.8);
-          this.gfx.strokeCircle(f.x, f.y, f.radius * (f.life / f.total));
-        } else if (f.kind === 'half_moon_sweep' && f.angle !== undefined) {
-          this.gfx.lineStyle(4, 0x93c5fd, 0.9);
-          this.gfx.strokeCircle(f.x, f.y, f.radius);
+          const drawn = this.drawAnim(`effect-${f.id}`, 'ice', progress, f.x, f.y, f.y + 10, 1, 1.2, false);
+          if (!drawn) {
+            this.gfx.fillStyle(0x38bdf8, 0.35);
+            this.gfx.fillCircle(f.x, f.y, f.radius);
+            this.gfx.lineStyle(2, 0xe0f2fe, 0.8);
+            this.gfx.strokeCircle(f.x, f.y, f.radius * (f.life / f.total));
+          }
+        } else if (f.kind === 'holy_word') {
+          const drawn = this.drawAnim(`effect-${f.id}`, 'holy', progress, f.x, f.y, f.y + 10, 1, 1, false);
+          if (!drawn) {
+            this.gfx.fillStyle(0xfde047, 0.5);
+            this.gfx.fillCircle(f.x, f.y, 30);
+          }
+        } else if (f.kind === 'half_moon_sweep') {
+          const drawn = this.drawAnim(`effect-${f.id}`, `cleave/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, 1.2, false);
+          if (!drawn) {
+            this.gfx.lineStyle(4, 0x93c5fd, 0.9);
+            this.gfx.strokeCircle(f.x, f.y, f.radius);
+          }
         } else if (f.kind === 'fire_slash') {
-          this.gfx.lineStyle(6, 0xef4444, 0.9);
-          this.gfx.strokeCircle(f.x, f.y, f.radius);
+          const drawn = this.drawAnim(`effect-${f.id}`, `firesword/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, 1.3, false);
+          if (!drawn) {
+            this.gfx.lineStyle(6, 0xef4444, 0.9);
+            this.gfx.strokeCircle(f.x, f.y, f.radius);
+          }
         } else if (f.kind === 'ring_of_fire') {
-          this.gfx.lineStyle(3, 0xf97316, 0.9);
-          this.gfx.strokeCircle(f.x, f.y, f.radius * (1 - f.life / f.total));
+          const drawn = this.drawAnim(`effect-${f.id}`, 'repulse', progress, f.x, f.y, f.y + 10, 1, 1.2, false);
+          if (!drawn) {
+            this.gfx.lineStyle(3, 0xf97316, 0.9);
+            this.gfx.strokeCircle(f.x, f.y, f.radius * (1 - f.life / f.total));
+          }
         } else if (f.kind === 'poison_cloud') {
-          this.gfx.fillStyle(0x22c55e, 0.35);
-          this.gfx.fillCircle(f.x, f.y, f.radius);
+          const drawn = this.drawAnim(`effect-${f.id}`, 'poison', progress, f.x, f.y, f.y + 10, 1, 1, false);
+          if (!drawn) {
+            this.gfx.fillStyle(0x22c55e, 0.35);
+            this.gfx.fillCircle(f.x, f.y, f.radius);
+          }
         }
       }
 
@@ -651,18 +739,27 @@ class BattleScene extends Phaser.Scene {
 
       // Player Shields & Buff Auras
       if (t < game.player.shieldUntil) {
-        this.gfx.lineStyle(2.5, 0xfacc15, 0.85);
-        this.gfx.strokeCircle(game.player.x, game.player.y - 10, 26);
-        this.gfx.fillStyle(0xfef08a, 0.15);
-        this.gfx.fillCircle(game.player.x, game.player.y - 10, 26);
+        const drawn = this.drawAnim('player-shield', 'shield', t * 5, game.player.x, game.player.y, game.player.y + 2, 0.9, 1, true);
+        if (!drawn) {
+          this.gfx.lineStyle(2.5, 0xfacc15, 0.85);
+          this.gfx.strokeCircle(game.player.x, game.player.y - 10, 26);
+          this.gfx.fillStyle(0xfef08a, 0.15);
+          this.gfx.fillCircle(game.player.x, game.player.y - 10, 26);
+        }
       }
       if (t < game.player.holyArmorUntil) {
-        this.gfx.lineStyle(2, 0x3b82f6, 0.8);
-        this.gfx.strokeCircle(game.player.x, game.player.y - 10, 30);
+        const drawn = this.drawAnim('player-armor', 'armor', t * 5, game.player.x, game.player.y, game.player.y + 2, 0.9, 1, true);
+        if (!drawn) {
+          this.gfx.lineStyle(2, 0x3b82f6, 0.8);
+          this.gfx.strokeCircle(game.player.x, game.player.y - 10, 30);
+        }
       }
       if (t < game.player.spiritShieldUntil) {
-        this.gfx.lineStyle(2, 0xa855f7, 0.8);
-        this.gfx.strokeCircle(game.player.x, game.player.y - 10, 34);
+        const drawn = this.drawAnim('player-ghost', 'ghost', t * 5, game.player.x, game.player.y, game.player.y + 2, 0.9, 1, true);
+        if (!drawn) {
+          this.gfx.lineStyle(2, 0xa855f7, 0.8);
+          this.gfx.strokeCircle(game.player.x, game.player.y - 10, 34);
+        }
       }
 
       // Base ring

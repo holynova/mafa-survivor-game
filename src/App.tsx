@@ -17,6 +17,8 @@ import {
   resetTalents,
   saveRun,
   upgradeTalent,
+  unlockChapter,
+  CHAPTER_UNLOCK_COSTS,
 } from './save';
 import type {
   HeroClass,
@@ -91,6 +93,7 @@ export function App() {
   const [copiedSeed, setCopiedSeed] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showTalents, setShowTalents] = useState(false);
+  const [unlockModal, setUnlockModal] = useState<MapChapter | null>(null);
 
   useEffect(() => {
     getProfile().then(setProfile);
@@ -224,17 +227,24 @@ export function App() {
               {(['bichon', 'mine', 'temple'] as MapChapter[]).map((chapKey) => {
                 const chap = CHAPTERS[chapKey];
                 const active = selectedChapter === chapKey;
+                const isUnlocked =
+                  profile?.unlockedChapters?.includes(chapKey) ?? chapKey === 'bichon';
                 return (
                   <button
                     key={chapKey}
-                    className={`chap-btn ${active ? 'active' : ''}`}
+                    className={`chap-btn ${active ? 'active' : ''} ${!isUnlocked ? 'locked-chap' : ''}`}
                     onClick={() => {
                       sound.playClick();
+                      if (!isUnlocked) {
+                        setUnlockModal(chapKey);
+                        return;
+                      }
                       setSelectedChapter(chapKey);
                     }}
                   >
                     <span className="chap-name">{chap.name}</span>
                     <span className="chap-boss">({chap.bossName})</span>
+                    {!isUnlocked && <span className="chap-lock-tag">【未解锁】</span>}
                   </button>
                 );
               })}
@@ -384,6 +394,50 @@ export function App() {
                 }}
               >
                 完成退出
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHAPTER UNLOCK MODAL */}
+      {unlockModal && profile && (
+        <div className="modal-container chapter-unlock-modal">
+          <div className="panel gold-panel unlock-panel">
+            <h2>章节解锁 · {CHAPTERS[unlockModal].name}</h2>
+            <div className="unlock-theme-box">【{CHAPTERS[unlockModal].theme}】</div>
+            <p className="unlock-description">{CHAPTERS[unlockModal].description}</p>
+            <div className="unlock-cost-box">
+              <p>通关上一章节可免费解锁，或消耗玛法结晶直接开启：</p>
+              <div className="cost-row">
+                所需结晶: <strong>{CHAPTER_UNLOCK_COSTS[unlockModal]}</strong> / 当前持有: <strong>{profile.crystals}</strong>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="secondary-btn"
+                onClick={() => {
+                  sound.playClick();
+                  setUnlockModal(null);
+                }}
+              >
+                返回
+              </button>
+              <button
+                className="primary-btn"
+                disabled={profile.crystals < CHAPTER_UNLOCK_COSTS[unlockModal]}
+                onClick={async () => {
+                  sound.playClick();
+                  const res = await unlockChapter(unlockModal, true);
+                  if (res.success) {
+                    const prof = await getProfile();
+                    setProfile(prof);
+                    setSelectedChapter(unlockModal);
+                    setUnlockModal(null);
+                  }
+                }}
+              >
+                消耗结晶立即解锁
               </button>
             </div>
           </div>
@@ -744,6 +798,14 @@ export function App() {
             )}
 
             <div className="pause-actions">
+              <button
+                className="secondary-btn sound-toggle-pause-btn"
+                onClick={() => {
+                  toggleSound();
+                }}
+              >
+                音效: {muted ? '已静音' : '已开启'}
+              </button>
               <button
                 className="primary-btn"
                 onClick={() => {

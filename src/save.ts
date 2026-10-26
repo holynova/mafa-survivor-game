@@ -107,6 +107,32 @@ export async function resetTalents(): Promise<ProfileData> {
   return profile;
 }
 
+export const CHAPTER_UNLOCK_COSTS: Record<MapChapter, number> = {
+  bichon: 0,
+  mine: 5,
+  temple: 12,
+};
+
+export async function unlockChapter(
+  chapter: MapChapter,
+  useCrystals = false
+): Promise<{ success: boolean; reason?: string }> {
+  const profile = await getProfile();
+  if (profile.unlockedChapters.includes(chapter)) {
+    return { success: true };
+  }
+  const cost = CHAPTER_UNLOCK_COSTS[chapter] ?? 10;
+  if (useCrystals) {
+    if (profile.crystals < cost) {
+      return { success: false, reason: `玛法结晶不足，需要 ${cost} 颗结晶` };
+    }
+    profile.crystals -= cost;
+  }
+  profile.unlockedChapters.push(chapter);
+  await saveProfile(profile);
+  return { success: true };
+}
+
 export async function saveRun(result: RunResult) {
   try {
     const database = await db();
@@ -120,9 +146,22 @@ export async function saveRun(result: RunResult) {
     await tx.done;
     database.close();
 
-    // Grant crystals on run completion only if newly saved
-    if (isNew && result.crystals > 0) {
-      await addCrystals(result.crystals);
+    // Grant crystals and unlock next chapter on run completion only if newly saved
+    if (isNew) {
+      if (result.crystals > 0) {
+        await addCrystals(result.crystals);
+      }
+      if (result.won) {
+        const nextChapter: MapChapter | null =
+          result.chapter === 'bichon' ? 'mine' : result.chapter === 'mine' ? 'temple' : null;
+        if (nextChapter) {
+          const profile = await getProfile();
+          if (!profile.unlockedChapters.includes(nextChapter)) {
+            profile.unlockedChapters.push(nextChapter);
+            await saveProfile(profile);
+          }
+        }
+      }
     }
   } catch (err) {
     console.warn('Failed to save run to IndexedDB:', err);

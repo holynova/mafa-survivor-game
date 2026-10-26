@@ -67,4 +67,35 @@ describe('IndexedDB Save, Profile & Talent Shrine Persistence', () => {
     expect(prof.talents.robustness).toBe(0);
     expect(prof.crystals).toBe(20);
   });
+
+  it('unlocks subsequent chapter on victory', async () => {
+    const g = new Game();
+    g.start('wizard', 'bichon', 'normal', 176);
+    g.finish(true);
+    await saveRun(g.result!);
+
+    let prof = await getProfile();
+    expect(prof.unlockedChapters).toContain('mine');
+
+    // Winning mine unlocks temple
+    const g2 = new Game();
+    g2.start('wizard', 'mine', 'normal', 177);
+    g2.finish(true);
+    await saveRun(g2.result!);
+
+    prof = await getProfile();
+    expect(prof.unlockedChapters).toContain('temple');
+  });
+
+  it('allows unlocking chapters with crystals', async () => {
+    await addCrystals(20);
+    const { unlockChapter } = await import('../src/save');
+
+    const res = await unlockChapter('temple', true);
+    expect(res.success).toBe(true);
+
+    const prof = await getProfile();
+    expect(prof.unlockedChapters).toContain('temple');
+    expect(prof.crystals).toBe(8); // 20 - 12 = 8
+  });
 });

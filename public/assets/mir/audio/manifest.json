@@ -1,0 +1,244 @@
+{
+  "ref": "9e21ea6631317d06e064fbfa7e1ea43af6a2d3e6",
+  "repository": "https://github.com/etorth/mir2x_res",
+  "rightsStatus": "UNVERIFIED_THIRD_PARTY_ART",
+  "releaseStatus": "BLOCKED_BY_ASSET_RIGHTS",
+  "mappingReference": {
+    "ref": "bb6a22287abcd9f248d2aba755074c254c68787a",
+    "sourcePath": "common/src/magicrecord.inc",
+    "sha256": "0002588851cf2f9288261713df8735ed0ed3b645c7139680ae25b107a41dab70",
+    "soundFormula": "0x04000000 + seffBase * 16 + stage; references resolved; first existing stage retained"
+  },
+  "mapping": {
+    "fireball": "04000010.WAV",
+    "lightning": "040000B0.WAV",
+    "firewall": "04000160.WAV",
+    "shield": "040001F0.WAV",
+    "repulse": "04000081.WAV",
+    "hellfire": "04000090.WAV",
+    "bigfireball": "04000050.WAV",
+    "teleport": "04000150.WAV",
+    "explosion": "04000170.WAV",
+    "beam": "040000A0.WAV",
+    "nova": "04000180.WAV",
+    "holy": "04000200.WAV",
+    "ice": "04000210.WAV",
+    "charm": "04000140.WAV",
+    "heal": "04000020.WAV",
+    "poison": "04000060.WAV",
+    "talisman": "040000D0.WAV",
+    "skeleton": "04000110.WAV",
+    "invisible": "04000120.WAV",
+    "groupInvisible": "040000D0.WAV",
+    "ghost": "040000E1.WAV",
+    "armor": "040000F1.WAV",
+    "trap": "04000100.WAV",
+    "groupHeal": "040001D0.WAV",
+    "beast": "040001E0.WAV",
+    "step": "01000001.WAV",
+    "attack": "01010034.WAV",
+    "unarmed": "01010039.WAV",
+    "hurt": "0103008A.WAV"
+  },
+  "files": {
+    "01000001.WAV": {
+      "sourcePath": "sound/seff/01000001.WAV",
+      "sha1": "c38b7a612810bdd0312deda9f843e3cd8748d548",
+      "sha256": "c67d3326c0190ed467acfbbb30f99b8b32d3b1f4328afbcfc1b2e97931fb9cf4",
+      "bytes": 35328,
+      "permissionStatus": "permission_pending"
+    },
+    "01010034.WAV": {
+      "sourcePath": "sound/seff/01010034.WAV",
+      "sha1": "fb22e6d8236605963fc838f4ff263b31516b81ca",
+      "sha256": "e5425259402abaa3b2c1376e6e010cdd76c894cb692401fa5f31f8dc42cc898f",
+      "bytes": 51108,
+      "permissionStatus": "permission_pending"
+    },
+    "01010039.WAV": {
+      "sourcePath": "sound/seff/01010039.WAV",
+      "sha1": "ba1bbf4597cc8fd9bad221d6ae0f80471e805b62",
+      "sha256": "068b2c928df12cb4d7bbca92307dc1236714f17bbc2108384db705b2640cbca2",
+      "bytes": 35912,
+      "permissionStatus": "permission_pending"
+    },
+    "0103008A.WAV": {
+      "sourcePath": "sound/seff/0103008A.WAV",
+      "sha1": "5ae9c1cb3cd3a204f1a4fc10d466be89c8f65ed0",
+      "sha256": "2f743e5fab9ec78ff5a9b873229754b0e4536dc6db505a7497b32b1a543c8656",
+      "bytes": 32684,
+      "permissionStatus": "permission_pending"
+    },
+    "04000010.WAV": {
+      "sourcePath": "sound/seff/04000010.WAV",
+      "sha1": "729057d70e265711e4fa31764155101a1681da76",
+      "sha256": "f21bfca484f7497739fd5059fc48a3ead4e5f50f76868f9850ddbcabda4d1c04",
+      "bytes": 182034,
+      "permissionStatus": "permission_pending"
+    },
+    "04000020.WAV": {
+      "sourcePath": "sound/seff/04000020.WAV",
+      "sha1": "269097a74759decd51a88df61bf708cece449b5f",
+      "sha256": "596d8b4d65ff1a6319607c7c922be41562d721772f805ff1bf7fa3b55460eff2",
+      "bytes": 97026,
+      "permissionStatus": "permission_pending"
+    },
+    "04000050.WAV": {
+      "sourcePath": "sound/seff/04000050.WAV",
+      "sha1": "b417dfec580e468623e514d21e109aca7a02be05",
+      "sha256": "e930d88402cb4d53f86af8ce02ae1af99fcecedd3c78cedac19d715f673215bc",
+      "bytes": 145368,
+      "permissionStatus": "permission_pending"
+    },
+    "04000060.WAV": {
+      "sourcePath": "sound/seff/04000060.WAV",
+      "sha1": "f84b557dab2b5d429afcac0a82a83199c4bf6a9f",
+      "sha256": "1f57cad69cba1356d35a42cf93a08038df34a5091bfb85e45553351364d2fd61",
+      "bytes": 119824,
+      "permissionStatus": "permission_pending"
+    },
+    "04000081.WAV": {
+      "sourcePath": "sound/seff/04000081.WAV",
+      "sha1": "bab9bb3e9176f0f57961fe00b7379bd2434ec81a",
+      "sha256": "3e8dffb1dd1d3828ba85f3a1d08dc57ca8c05de62e6302af0ea4a5dacc944d37",
+      "bytes": 127778,
+      "permissionStatus": "permission_pending"
+    },
+    "04000090.WAV": {
+      "sourcePath": "sound/seff/04000090.WAV",
+      "sha1": "06e99248c71cc8197669bf9c06b07918ac734043",
+      "sha256": "257bf3160e3a5df1e15c94c1ebe30990d72ac9119fd4992e34d0c5fd186dc7d4",
+      "bytes": 308904,
+      "permissionStatus": "permission_pending"
+    },
+    "040000A0.WAV": {
+      "sourcePath": "sound/seff/040000A0.WAV",
+      "sha1": "ce4bf8882aabc671d57eed13848a65dcade4824d",
+      "sha256": "0497d3dea333a98e8bf8ca46b2102814c5b567fa95d18068539f2de5d659dc31",
+      "bytes": 264722,
+      "permissionStatus": "permission_pending"
+    },
+    "040000B0.WAV": {
+      "sourcePath": "sound/seff/040000B0.WAV",
+      "sha1": "e87a7a96638f18550076f13fbc2fae988557a170",
+      "sha256": "023a528b0e5d3936f8c76825436b02a2fb4ea260e03394eba6598cd26386c764",
+      "bytes": 189152,
+      "permissionStatus": "permission_pending"
+    },
+    "040000D0.WAV": {
+      "sourcePath": "sound/seff/040000D0.WAV",
+      "sha1": "3b9d8276c90dd81ba8ba3c6f66aa79ac211fea66",
+      "sha256": "c647ddbbff35a15b9ec58f2658483a186ebf46146b5b7826bc7cafbe0ccb6296",
+      "bytes": 78178,
+      "permissionStatus": "permission_pending"
+    },
+    "040000E1.WAV": {
+      "sourcePath": "sound/seff/040000E1.WAV",
+      "sha1": "72c676f90b68f3f7b4f940afc3d62695ae57db2d",
+      "sha256": "25a47098deea2e09f0cefdf1fb1250d038d8262a97fe8dfbf6623b0c4bb5eb63",
+      "bytes": 76120,
+      "permissionStatus": "permission_pending"
+    },
+    "040000F1.WAV": {
+      "sourcePath": "sound/seff/040000F1.WAV",
+      "sha1": "eb35aabfc6bee9bd7e4d337f08f9f1dc43024eb0",
+      "sha256": "0e898dd123f6f5d27b04408136dca2f5b22c1394cbe1b98c9b7b4b76869955b4",
+      "bytes": 76120,
+      "permissionStatus": "permission_pending"
+    },
+    "04000100.WAV": {
+      "sourcePath": "sound/seff/04000100.WAV",
+      "sha1": "cc907ad3efec14d57c546eafa8090faba4d5ecd3",
+      "sha256": "7102a8b1c33bbe4575841ab0ffc725e4e8f69ed0ddf03d9e617d1ce9d96d3506",
+      "bytes": 114984,
+      "permissionStatus": "permission_pending"
+    },
+    "04000110.WAV": {
+      "sourcePath": "sound/seff/04000110.WAV",
+      "sha1": "20ffa100a57dba2a96619d163ce9ef21784a0c9a",
+      "sha256": "dc93c02cde87960bba1d8487cfff6cbcebe1182bac1e370ba71a368f7e6372ad",
+      "bytes": 100248,
+      "permissionStatus": "permission_pending"
+    },
+    "04000120.WAV": {
+      "sourcePath": "sound/seff/04000120.WAV",
+      "sha1": "85fa590a52612d232788a6f2cede091276d02d75",
+      "sha256": "cc2b1b22597fb5275c940b7612a1a6bf5310f2f093c1a2d95eede0a403e8961e",
+      "bytes": 138342,
+      "permissionStatus": "permission_pending"
+    },
+    "04000140.WAV": {
+      "sourcePath": "sound/seff/04000140.WAV",
+      "sha1": "492b52cab5daeafeff8eb91923eeca94fefb3f23",
+      "sha256": "e7bbafcf7a8b7fc1112096f5717a34e55698789bba52edef3729d8663cd9e914",
+      "bytes": 114828,
+      "permissionStatus": "permission_pending"
+    },
+    "04000150.WAV": {
+      "sourcePath": "sound/seff/04000150.WAV",
+      "sha1": "3b418ec307add009873155da1d58c5348aa25425",
+      "sha256": "8a8eb5f9be86a8f4f79b3986a2aa9c323f9cba2b5da8179126ab4b5dcea11d65",
+      "bytes": 114728,
+      "permissionStatus": "permission_pending"
+    },
+    "04000160.WAV": {
+      "sourcePath": "sound/seff/04000160.WAV",
+      "sha1": "b279592ad4ab150226c5ff8cdf92d6ae61661d68",
+      "sha256": "2a29ad1d8c13ae91be0002e745bff974ce9c9737d6471f7b4d59e40972500785",
+      "bytes": 123478,
+      "permissionStatus": "permission_pending"
+    },
+    "04000170.WAV": {
+      "sourcePath": "sound/seff/04000170.WAV",
+      "sha1": "45b20579df98dd164f6d34b1c66c258992487f4b",
+      "sha256": "30d3f46bee4240d87c1770a81ae823e356e420ddfa214f4c1d5fe33b9ac0c4b4",
+      "bytes": 140132,
+      "permissionStatus": "permission_pending"
+    },
+    "04000180.WAV": {
+      "sourcePath": "sound/seff/04000180.WAV",
+      "sha1": "f549f93bd76a01febcaf52f28f64a79aa4a37d93",
+      "sha256": "38400d638d80d5ed0850c99ecf6aad6d22072bbca78e1b4c363d1dfb3234d4fe",
+      "bytes": 276278,
+      "permissionStatus": "permission_pending"
+    },
+    "040001D0.WAV": {
+      "sourcePath": "sound/seff/040001D0.WAV",
+      "sha1": "5952dc198ee2cf88e05d9aba22c029d9f2fbf9db",
+      "sha256": "e3360cdd16279af1d9009adb852bb4788a97920866e14b9f00fc162633041d85",
+      "bytes": 176498,
+      "permissionStatus": "permission_pending"
+    },
+    "040001E0.WAV": {
+      "sourcePath": "sound/seff/040001E0.WAV",
+      "sha1": "3a074117074029dc5259e7886800bf6979ed382b",
+      "sha256": "49bbbffeb651475502224521ef1ea6de78953c7b04caa932fa8ad0a5efe5d9fa",
+      "bytes": 141578,
+      "permissionStatus": "permission_pending"
+    },
+    "040001F0.WAV": {
+      "sourcePath": "sound/seff/040001F0.WAV",
+      "sha1": "0a143e4b3b28c5fbea149538b37cb20d0671f3db",
+      "sha256": "3e018b2d62aa96bdb6d040961a51f4af7d76da17749f51ddefeb2650f3e75560",
+      "bytes": 166956,
+      "permissionStatus": "permission_pending"
+    },
+    "04000200.WAV": {
+      "sourcePath": "sound/seff/04000200.WAV",
+      "sha1": "a0cc4f3b1c6338cadcc62aa952387df0cab9c378",
+      "sha256": "ceccc5c0357fdb03e22b3ba7643d93c95f77eb818b40749182a859700fdb42b7",
+      "bytes": 157740,
+      "permissionStatus": "permission_pending"
+    },
+    "04000210.WAV": {
+      "sourcePath": "sound/seff/04000210.WAV",
+      "sha1": "1e6ca0ca6edcb6d6e2425f9b12d9e319e185f93f",
+      "sha256": "f2ba705c034d8e291471dda2adbcef094b0b9a36be8242e5404ca6642c834da9",
+      "bytes": 198440,
+      "permissionStatus": "permission_pending"
+    }
+  },
+  "missing": [
+    "beastflame"
+  ]
+}
