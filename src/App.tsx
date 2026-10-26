@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
-import { game } from './game';
+import { game, SKILL_ENHANCEMENTS } from './game';
 import {
   CHAPTERS,
   CLASS_BASES,
+  EQUIPMENT_ITEMS,
+  SKILLS,
   TALENTS,
   getItem,
   getSkill,
@@ -102,6 +104,10 @@ export function App() {
   const [copiedSeed, setCopiedSeed] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showTalents, setShowTalents] = useState(false);
+  const [showCompendium, setShowCompendium] = useState(false);
+  const [compendiumTab, setCompendiumTab] = useState<'skills' | 'equipments'>('skills');
+  const [compSkillFilter, setCompSkillFilter] = useState<'all' | 'wizard' | 'taoist' | 'warrior'>('all');
+  const [compEquipFilter, setCompEquipFilter] = useState<'all' | 'weapon' | 'armor' | 'helmet' | 'necklace' | 'bracelet' | 'ring'>('all');
   const [unlockModal, setUnlockModal] = useState<MapChapter | null>(null);
 
   useEffect(() => {
@@ -301,6 +307,15 @@ export function App() {
                   结晶祭坛 · 永久天赋
                 </button>
                 <button
+                  className="comp-btn-lobby"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowCompendium(true);
+                  }}
+                >
+                  玛法图鉴 · 藏经阁
+                </button>
+                <button
                   className="text-btn"
                   onClick={() => {
                     sound.playClick();
@@ -449,6 +464,290 @@ export function App() {
                 消耗结晶立即解锁
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* COMPENDIUM MODAL (玛法图鉴 · 藏经阁) */}
+      {showCompendium && (
+        <div className="modal-container compendium-modal">
+          <div className="panel gold-panel compendium-panel">
+            <div className="compendium-header">
+              <div className="compendium-title-row">
+                <h2>玛法图鉴 · 藏经阁</h2>
+                <span className="compendium-subtitle">收录传奇 1.76 经典武学绝技与神兵宝甲</span>
+              </div>
+              <button
+                className="compendium-close-btn"
+                onClick={() => {
+                  sound.playClick();
+                  setShowCompendium(false);
+                }}
+              >
+                返回
+              </button>
+            </div>
+
+            {/* MAIN TAB SWITCHER */}
+            <div className="compendium-nav">
+              <button
+                className={`compendium-tab-btn ${compendiumTab === 'skills' ? 'active' : ''}`}
+                onClick={() => {
+                  sound.playClick();
+                  setCompendiumTab('skills');
+                }}
+              >
+                技能真传 ({SKILLS.length} 门)
+              </button>
+              <button
+                className={`compendium-tab-btn ${compendiumTab === 'equipments' ? 'active' : ''}`}
+                onClick={() => {
+                  sound.playClick();
+                  setCompendiumTab('equipments');
+                }}
+              >
+                神兵宝甲 ({EQUIPMENT_ITEMS.length} 件)
+              </button>
+            </div>
+
+            {/* TAB CONTENT: SKILLS */}
+            {compendiumTab === 'skills' && (() => {
+              const unlockedSkills = profile?.unlockedSkills || ['fireball', 'heal_self', 'basic_swordplay'];
+              const filteredSkills = SKILLS.filter(
+                (s) => compSkillFilter === 'all' || s.heroClass === compSkillFilter
+              );
+              const unlockedCount = SKILLS.filter((s) => unlockedSkills.includes(s.id)).length;
+
+              return (
+                <>
+                  <div className="compendium-subnav-row">
+                    <div className="compendium-filters">
+                      {(['all', 'wizard', 'taoist', 'warrior'] as const).map((cf) => (
+                        <button
+                          key={cf}
+                          className={`comp-filter-btn ${compSkillFilter === cf ? 'active' : ''}`}
+                          onClick={() => {
+                            sound.playClick();
+                            setCompSkillFilter(cf);
+                          }}
+                        >
+                          {cf === 'all'
+                            ? `全部 (${SKILLS.length})`
+                            : cf === 'wizard'
+                            ? '法师武学 (14)'
+                            : cf === 'taoist'
+                            ? '道家道术 (13)'
+                            : '战士剑法 (6)'}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="compendium-progress-info">
+                      已参悟技能: <strong>{unlockedCount}</strong> / {SKILLS.length} (进度:{' '}
+                      {Math.round((unlockedCount / SKILLS.length) * 100)}%)
+                    </div>
+                  </div>
+
+                  <div className="compendium-content-scroll">
+                    <div className="compendium-grid">
+                      {filteredSkills.map((s) => {
+                        const isUnlocked = unlockedSkills.includes(s.id);
+                        const branches = SKILL_ENHANCEMENTS[s.id] || [];
+                        return (
+                          <div
+                            key={s.id}
+                            className={`compendium-card ${isUnlocked ? 'unlocked' : 'locked'}`}
+                          >
+                            <div className="comp-card-top">
+                              <div className="comp-card-icon">
+                                <Icon frame={s.asset} />
+                              </div>
+                              <div className="comp-card-info">
+                                <div className="comp-card-name-row">
+                                  <span className="comp-card-name">{s.name}</span>
+                                  <span
+                                    className={`comp-card-status ${
+                                      isUnlocked ? 'comp-status-unlocked' : 'comp-status-locked'
+                                    }`}
+                                  >
+                                    {isUnlocked ? '【已参悟】' : '【未习得】'}
+                                  </span>
+                                </div>
+                                <div className="comp-card-tags">
+                                  <span className={`comp-tag ${s.heroClass}`}>
+                                    {s.heroClass === 'wizard'
+                                      ? '法师'
+                                      : s.heroClass === 'taoist'
+                                      ? '道士'
+                                      : '战士'}
+                                  </span>
+                                  <span className="comp-tag">CD {s.cooldown}s</span>
+                                  {s.passive && <span className="comp-tag">被动心法</span>}
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="comp-card-desc">{s.description}</p>
+
+                            {branches.length > 0 && (
+                              <div className="comp-card-branches">
+                                <span className="comp-branch-title">
+                                  进阶参悟路径 ({branches.length}):
+                                </span>
+                                {branches.map((b, idx) => (
+                                  <div key={idx} className="comp-branch-item">
+                                    <strong>【{b.name}】</strong>{' '}
+                                    {b.desc(2).replace('升至 Lv.2，', '')}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* TAB CONTENT: EQUIPMENTS */}
+            {compendiumTab === 'equipments' && (() => {
+              const unlockedEquips = profile?.unlockedEquipments || ['wpn-wood', 'arm-cloth-m', 'arm-cloth-f'];
+              const filteredEquips = EQUIPMENT_ITEMS.filter((item) => {
+                if (compEquipFilter === 'all') return true;
+                if (compEquipFilter === 'weapon') return item.slot === 'weapon';
+                if (compEquipFilter === 'armor') return item.slot === 'armor';
+                if (compEquipFilter === 'helmet') return item.slot === 'helmet';
+                if (compEquipFilter === 'necklace') return item.slot === 'necklace';
+                if (compEquipFilter === 'bracelet')
+                  return item.slot === 'braceletL' || item.slot === 'braceletR';
+                if (compEquipFilter === 'ring')
+                  return item.slot === 'ringL' || item.slot === 'ringR';
+                return true;
+              });
+              const unlockedCount = EQUIPMENT_ITEMS.filter((item) =>
+                unlockedEquips.includes(item.id)
+              ).length;
+
+              return (
+                <>
+                  <div className="compendium-subnav-row">
+                    <div className="compendium-filters">
+                      {(
+                        [
+                          { key: 'all', label: '全部' },
+                          { key: 'weapon', label: '武器' },
+                          { key: 'armor', label: '衣服' },
+                          { key: 'helmet', label: '头盔' },
+                          { key: 'necklace', label: '项链' },
+                          { key: 'bracelet', label: '手镯' },
+                          { key: 'ring', label: '戒指' },
+                        ] as const
+                      ).map((f) => (
+                        <button
+                          key={f.key}
+                          className={`comp-filter-btn ${compEquipFilter === f.key ? 'active' : ''}`}
+                          onClick={() => {
+                            sound.playClick();
+                            setCompEquipFilter(f.key);
+                          }}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="compendium-progress-info">
+                      已收录装备: <strong>{unlockedCount}</strong> / {EQUIPMENT_ITEMS.length} (进度:{' '}
+                      {Math.round((unlockedCount / EQUIPMENT_ITEMS.length) * 100)}%)
+                    </div>
+                  </div>
+
+                  <div className="compendium-content-scroll">
+                    <div className="compendium-grid">
+                      {filteredEquips.map((item) => {
+                        const isUnlocked = unlockedEquips.includes(item.id);
+                        const tierLabel =
+                          item.tier === 1
+                            ? '初阶'
+                            : item.tier === 2
+                            ? '沃玛'
+                            : item.tier === 3
+                            ? '祖玛'
+                            : '赤月神品';
+                        const statEntries = Object.entries(item.stats);
+
+                        return (
+                          <div
+                            key={item.id}
+                            className={`compendium-card ${isUnlocked ? 'unlocked' : 'locked'}`}
+                          >
+                            <div className="comp-card-top">
+                              <div className="comp-card-icon">
+                                <Icon frame={item.icon || 'item/' + item.name} />
+                              </div>
+                              <div className="comp-card-info">
+                                <div className="comp-card-name-row">
+                                  <span className="comp-card-name">{item.name}</span>
+                                  <span
+                                    className={`comp-card-status ${
+                                      isUnlocked ? 'comp-status-unlocked' : 'comp-status-locked'
+                                    }`}
+                                  >
+                                    {isUnlocked ? '【已收录】' : '【未探索】'}
+                                  </span>
+                                </div>
+                                <div className="comp-card-tags">
+                                  <span className={`comp-tag tier-${item.tier}`}>
+                                    {tierLabel}
+                                  </span>
+                                  {item.slot && (
+                                    <span className="comp-tag">
+                                      {SLOT_NAMES[item.slot] || item.slot}
+                                    </span>
+                                  )}
+                                  <span className="comp-tag">
+                                    {item.classReq
+                                      ? item.classReq === 'wizard'
+                                        ? '法师专用'
+                                        : item.classReq === 'taoist'
+                                        ? '道士专用'
+                                        : '战士专用'
+                                      : '全职业通用'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="comp-card-desc">{item.description}</p>
+
+                            {statEntries.length > 0 && (
+                              <div className="comp-card-stats">
+                                {statEntries.map(([k, v]) => (
+                                  <span key={k}>
+                                    {STAT_NAMES[k as keyof typeof STAT_NAMES] ?? k}: +{v}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {item.special && (
+                              <div className="comp-special-badge">
+                                {item.special === 'revive' &&
+                                  '【特殊神器: 涅槃复活 · 受到致命伤立刻复原50%生命】'}
+                                {item.special === 'paralyze' &&
+                                  '【特殊神器: 麻痹神力 · 攻击概率彻底麻痹魔物】'}
+                                {item.special === 'mana_shield' &&
+                                  '【特殊神器: 护身神力 · 受到伤害额外削减20%】'}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -814,6 +1113,15 @@ export function App() {
                 }}
               >
                 音效: {muted ? '已静音' : '已开启'}
+              </button>
+              <button
+                className="secondary-btn"
+                onClick={() => {
+                  sound.playClick();
+                  setShowCompendium(true);
+                }}
+              >
+                查阅图鉴
               </button>
               <button
                 className="primary-btn"

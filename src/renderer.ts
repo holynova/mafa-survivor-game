@@ -612,7 +612,31 @@ class BattleScene extends Phaser.Scene {
 
       // Render Drops
       for (const d of game.drops) {
-        if (d.exp > 0) {
+        if (d.item) {
+          // Legendary Equipment Drop: Golden/Violet Pillar of Light & Ground Halo
+          const isHighTier = (d.item.tier ?? 1) >= 3;
+          const beamColor = isHighTier ? 0xa855f7 : 0xf59e0b;
+          const coreColor = isHighTier ? 0xe9d5ff : 0xfef08a;
+
+          // Vertical Light Pillar
+          this.gfx.fillStyle(beamColor, 0.45).fillRect(d.x - 3, d.y - 42, 6, 42);
+          this.gfx.fillStyle(coreColor, 0.75).fillRect(d.x - 1, d.y - 48, 2, 48);
+
+          // Ground Pulsing Ring
+          this.gfx.lineStyle(1.5, beamColor, 0.85).strokeEllipse(d.x, d.y + 2, 18, 9);
+          this.gfx.fillStyle(beamColor, 0.95).fillCircle(d.x, d.y - 2, 6);
+          this.gfx.fillStyle(coreColor, 1).fillCircle(d.x, d.y - 2, 2.5);
+        } else if (d.isChest) {
+          // Golden Treasure Chest
+          this.gfx.fillStyle(0xf59e0b, 0.35).fillRect(d.x - 2, d.y - 32, 4, 32);
+          this.gfx.lineStyle(1.5, 0xfbbf24, 0.8).strokeEllipse(d.x, d.y + 4, 20, 10);
+          // Chest Base
+          this.gfx.fillStyle(0x78350f, 1).fillRect(d.x - 8, d.y - 6, 16, 11);
+          // Chest Lid
+          this.gfx.fillStyle(0xd97706, 1).fillRect(d.x - 9, d.y - 10, 18, 5);
+          // Golden Trim & Keyhole
+          this.gfx.fillStyle(0xfde047, 1).fillRect(d.x - 2, d.y - 5, 4, 5);
+        } else if (d.exp > 0) {
           this.gfx.fillStyle(0x38bdf8, 0.9).fillCircle(d.x, d.y, 4);
           this.gfx.fillStyle(0xf0f9ff, 1).fillCircle(d.x, d.y, 1.5);
         } else {

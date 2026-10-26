@@ -148,6 +148,8 @@ export interface Drop extends Entity {
   exp: number;
   gold: number;
   born: number;
+  item?: Item;
+  isChest?: boolean;
 }
 
 export interface Fx extends Entity {
@@ -256,6 +258,8 @@ export interface RunResult {
   crystals: number;
   skillDamage: Record<string, number>;
   skills: string[];
+  skillIds?: string[];
+  equipments?: string[];
   savedAt?: number;
 }
 
@@ -282,4 +286,6 @@ export interface ProfileData {
   talents: Record<TalentKey, number>;
   unlockedChapters: MapChapter[];
   unlockedClasses: HeroClass[];
+  unlockedSkills?: string[];
+  unlockedEquipments?: string[];
 }

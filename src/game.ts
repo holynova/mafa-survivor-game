@@ -6,6 +6,7 @@ import {
   SKILLS,
   WAVE_BUDGET,
   getItem,
+  getRandomDropEquipment,
   getSkill,
 } from './content';
 import {
@@ -47,7 +48,7 @@ import {
 
 export const WORLD = { w: 2208, h: 1536 };
 
-const SKILL_ENHANCEMENTS: Record<
+export const SKILL_ENHANCEMENTS: Record<
   string,
   Array<{
     suffix: string;
@@ -239,6 +240,9 @@ export class Game {
   effects: Fx[] = [];
   floating: Floating[] = [];
 
+  acquiredSkills = new Set<string>();
+  acquiredEquipments = new Set<string>();
+
   equipment: Partial<Record<Slot, Equipped>> = {};
   passives: Record<string, number> = {};
   upgrades: Bonuses = {};
@@ -386,6 +390,8 @@ export class Game {
 
     // Starting Skill based on chosen class
     this.skills = [this.newSkill(base.startingSkill)];
+    this.acquiredSkills = new Set([base.startingSkill]);
+    this.acquiredEquipments = new Set();
     this.recompute();
     this.phase = 'battle';
     this.emit();
@@ -851,7 +857,72 @@ export class Game {
           this.waveGold += d.gold;
           this.totalGold += d.gold;
           this.exp += d.exp;
-          if (d.exp > 0) sound.playGem();
+          if (d.exp > 0 && !d.item && !d.isChest) sound.playGem();
+
+          if (d.isChest) {
+            sound.playWaveComplete();
+            this.floating.push({
+              id: ++this.id,
+              x: this.player.x,
+              y: this.player.y - 45,
+              text: `【开启宝箱】金币 +${d.gold}`,
+              color: '#ffd700',
+              life: 1.2,
+            });
+          }
+
+          if (d.item) {
+            const item = d.item;
+            this.acquiredEquipments.add(item.id);
+            sound.playTeleport();
+            const slot = this.equipmentSlot(item);
+            const currentEquipped = this.equipment[slot];
+            if (!currentEquipped) {
+              this.equipment[slot] = { itemId: item.id, paid: item.price };
+              this.recompute();
+              this.floating.push({
+                id: ++this.id,
+                x: this.player.x,
+                y: this.player.y - 55,
+                text: `【装备】${item.name}`,
+                color: '#ffaa00',
+                life: 1.5,
+              });
+            } else {
+              const currentItem = getItem(currentEquipped.itemId);
+              if (
+                item.tier > currentItem.tier ||
+                (item.tier === currentItem.tier && item.price > currentItem.price)
+              ) {
+                const refund = sellPrice(currentEquipped.paid, currentItem.price);
+                this.gold += refund;
+                this.totalGold += refund;
+                this.equipment[slot] = { itemId: item.id, paid: item.price };
+                this.recompute();
+                this.floating.push({
+                  id: ++this.id,
+                  x: this.player.x,
+                  y: this.player.y - 55,
+                  text: `【换装】${item.name} (旧装备折现 +${refund})`,
+                  color: '#ffaa00',
+                  life: 1.6,
+                });
+              } else {
+                const salvage = Math.round(item.price * 0.7);
+                this.gold += salvage;
+                this.totalGold += salvage;
+                this.floating.push({
+                  id: ++this.id,
+                  x: this.player.x,
+                  y: this.player.y - 55,
+                  text: `【获得装备】${item.name} (自动折现 +${salvage})`,
+                  color: '#fbbf24',
+                  life: 1.5,
+                });
+              }
+            }
+          }
+
           this.drops.splice(i, 1);
         }
       }
@@ -1424,7 +1495,8 @@ export class Game {
     if (e.hp <= 0) {
       this.kills++;
       this.waveKills++;
-      if (e.kind.startsWith('boss')) {
+      const isBoss = e.kind.startsWith('boss');
+      if (isBoss) {
         this.bossKilled = true;
         sound.playMonsterDie();
         if (this.wave === this.maxWaves) {
@@ -1443,7 +1515,7 @@ export class Game {
         (e.elite ? 4 : 1);
       const exp = Math.round(e.exp * (1 + (this.stats.exp_gain ?? 0) / 100));
 
-      if (this.drops.length >= 300) {
+      if (!isBoss && !e.elite && this.drops.length >= 300) {
         this.drops[0].exp += exp;
         this.drops[0].gold += gold;
       } else {
@@ -1455,6 +1527,66 @@ export class Game {
           gold,
           born: this.clock,
         });
+      }
+
+      // Boss special ground drops: guaranteed equipment drop + treasure chest!
+      if (isBoss) {
+        const bossDropItem = getRandomDropEquipment(
+          this.heroClass,
+          this.chapter === 'temple' ? 4 : 3,
+          4,
+          () => this.rng.next()
+        );
+        this.drops.push({
+          id: ++this.id,
+          x: e.x + (this.rng.next() * 30 - 15),
+          y: e.y + (this.rng.next() * 30 - 15),
+          exp: 50,
+          gold: 60,
+          born: this.clock,
+          item: bossDropItem,
+        });
+        this.drops.push({
+          id: ++this.id,
+          x: e.x + (this.rng.next() * 30 - 15),
+          y: e.y + (this.rng.next() * 30 - 15),
+          exp: 30,
+          gold: 150,
+          born: this.clock,
+          isChest: true,
+        });
+      } else if (e.elite) {
+        // Elite special ground drops: 45% equipment drop, 30% treasure chest
+        const roll = this.rng.next();
+        if (roll < 0.45) {
+          const minTier = this.wave >= 8 ? 2 : 1;
+          const maxTier = this.wave >= 8 ? 3 : 2;
+          const dropItem = getRandomDropEquipment(
+            this.heroClass,
+            minTier,
+            maxTier,
+            () => this.rng.next()
+          );
+          this.drops.push({
+            id: ++this.id,
+            x: e.x + (this.rng.next() * 24 - 12),
+            y: e.y + (this.rng.next() * 24 - 12),
+            exp: 20,
+            gold: 30,
+            born: this.clock,
+            item: dropItem,
+          });
+        } else if (roll < 0.75) {
+          this.drops.push({
+            id: ++this.id,
+            x: e.x + (this.rng.next() * 24 - 12),
+            y: e.y + (this.rng.next() * 24 - 12),
+            exp: 15,
+            gold: 50 + Math.floor(this.rng.next() * 40),
+            born: this.clock,
+            isChest: true,
+          });
+        }
       }
     }
   }
@@ -1665,6 +1797,7 @@ export class Game {
     if (!c) return;
 
     if (c.kind === 'skill') {
+      if (c.skill) this.acquiredSkills.add(c.skill);
       let s = this.skills.find((s) => s.id === c.skill);
       if (!s) {
         if (this.skills.length >= 6) return;
@@ -1794,6 +1927,7 @@ export class Game {
     offer.locked = false;
 
     if (item.kind === 'equipment') {
+      this.acquiredEquipments.add(item.id);
       const slot = this.equipmentSlot(item);
       const old = this.equipment[slot];
       if (old) {
@@ -1892,6 +2026,8 @@ export class Game {
       crystals,
       skillDamage: { ...this.damageDealt },
       skills: this.skills.map((s) => `${getSkill(s.id).name} Lv.${s.rank}`),
+      skillIds: Array.from(this.acquiredSkills),
+      equipments: Array.from(this.acquiredEquipments),
     };
     this.input = { x: 0, y: 0 };
     this.emit();

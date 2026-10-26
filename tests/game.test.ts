@@ -180,4 +180,82 @@ describe('Game Engine State Machine & Combat', () => {
     expect(g.result?.kills).toBe(35);
     expect(g.result?.skillDamage.fireball).toBe(450);
   });
+
+  it('drops ground equipment and chests upon boss defeat and auto-equips when collected', () => {
+    g.start('warrior', 'bichon', 'trial', 176);
+    g.player.x = 200;
+    g.player.y = 200;
+
+    // Simulate boss enemy death
+    const boss = {
+      id: 999,
+      kind: 'boss_bichon',
+      name: '骷髅精灵',
+      hp: 10,
+      maxHp: 950,
+      speed: 40,
+      damage: 15,
+      exp: 100,
+      dir: 4,
+      windup: 0,
+      attackCD: 0,
+      shootCD: 0,
+      hitAt: -1,
+      burnAt: 0,
+      elite: false,
+      born: 0,
+      aiType: 'melee' as const,
+      status: { poisonedUntil: 0, poisonDamage: 0, poisonDefDown: 0, paralyzedUntil: 0 },
+      x: 205,
+      y: 205,
+    };
+    g.enemies.push(boss);
+
+    // Hit boss with lethal blow
+    g.hit(boss, 50, 'half_moon');
+
+    expect(boss.hp).toBeLessThanOrEqual(0);
+    expect(g.bossKilled).toBe(true);
+
+    // Verify boss dropped an item and chest
+    const itemDrop = g.drops.find((d) => d.item !== undefined);
+    const chestDrop = g.drops.find((d) => d.isChest === true);
+    expect(itemDrop).toBeDefined();
+    expect(chestDrop).toBeDefined();
+
+    // Move player onto drops to trigger magnetic collection
+    const initialGold = g.gold;
+    g.step(0.1);
+
+    // After step, item should be collected, equipped, and recorded in acquiredEquipments
+    expect(g.acquiredEquipments.size).toBeGreaterThan(0);
+    expect(g.gold).toBeGreaterThan(initialGold);
+  });
+
+  it('tracks acquired skills and equipments for compendium', () => {
+    g.start('wizard', 'bichon', 'trial', 176);
+    expect(g.acquiredSkills.has('fireball')).toBe(true);
+
+    // Choose upgrade for new skill
+    g.choices = [
+      {
+        id: 'learn-lightning',
+        kind: 'skill',
+        skill: 'lightning',
+        name: '习得 · 雷电术',
+        description: '雷电术',
+        value: 0,
+      },
+    ];
+    g.phase = 'upgrade';
+    g.choose('learn-lightning');
+
+    expect(g.acquiredSkills.has('lightning')).toBe(true);
+    expect(g.skills.some((s) => s.id === 'lightning')).toBe(true);
+
+    // Finish game and check telemetry
+    g.finish(true);
+    expect(g.result?.skillIds).toContain('fireball');
+    expect(g.result?.skillIds).toContain('lightning');
+  });
 });

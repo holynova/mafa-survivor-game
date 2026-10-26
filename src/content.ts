@@ -1385,6 +1385,26 @@ export const getItem = (id: string): Item => {
   return item;
 };
 
+export function getRandomDropEquipment(
+  heroClass: HeroClass,
+  minTier: number,
+  maxTier: number,
+  rngNext: () => number
+): Item {
+  const candidates = EQUIPMENT_ITEMS.filter(
+    (item) =>
+      item.tier >= minTier &&
+      item.tier <= maxTier &&
+      (!item.classReq || item.classReq === heroClass)
+  );
+  if (candidates.length === 0) {
+    const fallback = EQUIPMENT_ITEMS.filter((item) => item.tier >= minTier && item.tier <= maxTier);
+    if (fallback.length === 0) return getItem(EQUIPMENT_ITEMS[0].id);
+    return getItem(fallback[Math.floor(rngNext() * fallback.length)].id);
+  }
+  return getItem(candidates[Math.floor(rngNext() * candidates.length)].id);
+}
+
 export const SCENERY = [
   { id: 'deadwood', x: 780, y: 580, r: 15 },
   { id: 'deadwood', x: 1460, y: 920, r: 15 },

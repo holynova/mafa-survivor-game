@@ -17,6 +17,8 @@ const defaultProfile: ProfileData = {
   },
   unlockedChapters: ['bichon'],
   unlockedClasses: ['wizard', 'taoist', 'warrior'],
+  unlockedSkills: ['fireball', 'heal_self', 'basic_swordplay'],
+  unlockedEquipments: ['wpn-wood', 'arm-cloth-m', 'arm-cloth-f'],
 };
 
 const db = () =>
@@ -151,16 +153,43 @@ export async function saveRun(result: RunResult) {
       if (result.crystals > 0) {
         await addCrystals(result.crystals);
       }
+      const profile = await getProfile();
+      let profileUpdated = false;
+
+      // Update Compendium unlocks
+      const rawSkills = result.skillIds || result.skills;
+      if (rawSkills && rawSkills.length > 0) {
+        const skillsSet = new Set(profile.unlockedSkills || defaultProfile.unlockedSkills);
+        for (const s of rawSkills) {
+          if (!skillsSet.has(s)) {
+            skillsSet.add(s);
+            profileUpdated = true;
+          }
+        }
+        profile.unlockedSkills = Array.from(skillsSet);
+      }
+      if (result.equipments && result.equipments.length > 0) {
+        const eqSet = new Set(profile.unlockedEquipments || defaultProfile.unlockedEquipments);
+        for (const eq of result.equipments) {
+          if (!eqSet.has(eq)) {
+            eqSet.add(eq);
+            profileUpdated = true;
+          }
+        }
+        profile.unlockedEquipments = Array.from(eqSet);
+      }
+
       if (result.won) {
         const nextChapter: MapChapter | null =
           result.chapter === 'bichon' ? 'mine' : result.chapter === 'mine' ? 'temple' : null;
-        if (nextChapter) {
-          const profile = await getProfile();
-          if (!profile.unlockedChapters.includes(nextChapter)) {
-            profile.unlockedChapters.push(nextChapter);
-            await saveProfile(profile);
-          }
+        if (nextChapter && !profile.unlockedChapters.includes(nextChapter)) {
+          profile.unlockedChapters.push(nextChapter);
+          profileUpdated = true;
         }
+      }
+
+      if (profileUpdated) {
+        await saveProfile(profile);
       }
     }
   } catch (err) {
