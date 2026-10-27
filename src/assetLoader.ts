@@ -16,6 +16,27 @@ export interface PreloadState {
 export let framePositions: Record<string, { x: number; y: number }> = {};
 export let assetManifest: Manifest | null = null;
 
+export const MIR_CORE_UI_ASSETS = [
+  'mainbar.png',
+  'hp_ball.png',
+  'mp_ball.png',
+  'equip_panel.png',
+  'skill_panel.png',
+  'bag_panel.png',
+  'lobby_bg.png',
+  'dialog_bg.png',
+  'btn_close.png',
+  'btn_close_down.png',
+  'btn_equip_off.png',
+  'btn_equip_down.png',
+  'btn_skill_off.png',
+  'btn_skill_down.png',
+  'btn_bag_off.png',
+  'btn_bag_down.png',
+  'btn_opt_off.png',
+  'btn_opt_down.png',
+];
+
 const manifestListeners = new Set<(m: Manifest) => void>();
 
 export function onManifestLoaded(fn: (m: Manifest) => void) {
@@ -87,7 +108,8 @@ export async function preloadAllAssets(): Promise<void> {
       assetManifest = manifest;
       manifestListeners.forEach((fn) => fn(manifest));
 
-      const totalItems = 1 + manifest.pages.length * 2 + Object.keys(MIR_AUDIO_MAP).length;
+      const totalItems =
+        1 + manifest.pages.length * 2 + Object.keys(MIR_AUDIO_MAP).length + MIR_CORE_UI_ASSETS.length;
       state.totalCount = totalItems;
       state.loadedCount = 1;
       state.progress = Math.round((state.loadedCount / state.totalCount) * 100);
@@ -163,6 +185,33 @@ export async function preloadAllAssets(): Promise<void> {
           console.warn(`Audio preload error for ${key}:`, e);
         }
 
+        state.loadedCount++;
+        state.progress = Math.round((state.loadedCount / state.totalCount) * 100);
+        notify();
+      }
+
+      // Step 4: Preload Authentic Mir2 UI assets
+      state.statusText = '正在预载入热血传奇原版 UI 界面美术...';
+      notify();
+      for (const uiFile of MIR_CORE_UI_ASSETS) {
+        try {
+          const blob = await fetchBlobWithCache(assetUrl('assets/mir/ui/' + uiFile));
+          await new Promise<void>((resolve) => {
+            const img = new Image();
+            const url = URL.createObjectURL(blob);
+            img.onload = () => {
+              URL.revokeObjectURL(url);
+              resolve();
+            };
+            img.onerror = () => {
+              URL.revokeObjectURL(url);
+              resolve();
+            };
+            img.src = url;
+          });
+        } catch (e) {
+          console.warn(`UI asset preload error for ${uiFile}:`, e);
+        }
         state.loadedCount++;
         state.progress = Math.round((state.loadedCount / state.totalCount) * 100);
         notify();

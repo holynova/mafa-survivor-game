@@ -168,7 +168,12 @@ export function Mir2EquipmentView({
 
   return (
     <div className="mir2-char-panel">
-      <div className="mir2-char-doll-col">
+      <div
+        className="mir2-char-doll-col"
+        style={{
+          backgroundImage: `url(${assetUrl('assets/mir/ui/equip_panel.png')})`,
+        }}
+      >
         {/* Helmet (Top Center) */}
         <div className="doll-slot-row doll-top">
           {renderSlotBox('helmet')}
@@ -419,7 +424,15 @@ export function App() {
       {/* LOBBY VIEW */}
       {g.phase === 'lobby' && (
         <div className="modal-container lobby-modal">
-          <div className="panel gold-panel lobby-panel">
+          <div
+            className="panel gold-panel lobby-panel"
+            style={{
+              backgroundImage: `linear-gradient(rgba(14, 11, 8, 0.75), rgba(14, 11, 8, 0.88)), url(${assetUrl('assets/mir/ui/lobby_bg.png')})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center top',
+              backgroundSize: 'cover',
+            }}
+          >
             <div className="title-header">
               <span className="badge-legend">经典 1.76 语汇 · 战法道三职业肉鸽</span>
               <h1 className="main-title">玛法幸存者</h1>
@@ -1774,6 +1787,12 @@ export function App() {
                 <h2>玛法大陆 · 勇士装备与属性 (F10)</h2>
                 <button
                   className="guide-close-btn"
+                  style={{
+                    backgroundImage: `url(${assetUrl('assets/mir/ui/btn_close.png')})`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    paddingLeft: '28px',
+                  }}
                   onClick={() => {
                     sound.playClick();
                     setShowEquipModal(false);
@@ -1793,7 +1812,7 @@ export function App() {
       {/* IN-GAME BATTLE HUD */}
       {(g.phase === 'battle' || g.phase === 'upgrade' || g.phase === 'shop' || g.phase === 'paused') && (
         <div className="hud-container">
-          {/* FLOATING DEBUG BUTTON */}
+          {/* FLOATING SUBTLE DEBUG BUTTON (TOP-LEFT) */}
           <button
             className="hud-debug-pill"
             title="快捷键: ~ 或 F1"
@@ -1802,114 +1821,188 @@ export function App() {
               setShowSandbox((s) => !s);
             }}
           >
-            【◈ 调试调测】
+            【◈ 调试 (F1)】
           </button>
 
-          {/* FLOATING EQUIPMENT BUTTON */}
-          <button
-            className="hud-equip-pill"
-            title="快捷键: F10 或 B"
-            onClick={() => {
-              sound.playClick();
-              setShowEquipModal((s) => !s);
-            }}
-          >
-            【◈ 装备 (F10)】
-          </button>
-          {/* TOP BAR */}
-          <header className="top-hud">
-            {/* HP Bar */}
-            <div className="hud-box hp-box">
-              <div className="hud-label">
-                <span>{g.base.name} · 生命值</span>
-                <span className="hud-val">{Math.round(g.player.hp)} / {g.maxHP}</span>
-              </div>
-              <div className="bar-track hp-track">
-                <div
-                  className="bar-fill hp-fill"
-                  style={{ width: `${Math.max(0, Math.min(100, (g.player.hp / g.maxHP) * 100))}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Wave Countdown */}
-            <div className="hud-box wave-box">
-              <div className="wave-badge">
-                {CHAPTERS[g.chapter]?.name} · 第 {g.wave}/{g.maxWaves} 波
-              </div>
-              <div className="wave-timer">
-                {Math.max(0, Math.ceil(g.duration - g.waveTime))}s
-              </div>
-            </div>
-
-            {/* Level & EXP */}
-            <div className="hud-box exp-box">
-              <div className="hud-label">
-                <span>Lv. {g.level}</span>
-                <span className="hud-val">{g.exp} / {expNeeded(g.level)}</span>
-              </div>
-              <div className="bar-track exp-track">
-                <div
-                  className="bar-fill exp-fill"
-                  style={{ width: `${Math.max(0, Math.min(100, (g.exp / expNeeded(g.level)) * 100))}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Gold & Kills */}
-            <div className="hud-box counters-box">
-              <span className="counter-item">金币: {g.gold}</span>
-              <span className="counter-item">击杀: {g.kills}</span>
-              <button
-                className="pause-hud-btn"
-                onClick={() => {
-                  sound.playClick();
-                  game.pause();
-                }}
-                title="暂停游戏 (ESC)"
+          {/* AUTHENTIC LEGEND OF MIR 2 BOTTOM CONSOLE (MAINBAR: 800x133) */}
+          <footer className="mir2-mainbar-container">
+            <div
+              className="mir2-mainbar-frame"
+              style={{ backgroundImage: `url(${assetUrl('assets/mir/ui/mainbar.png')})` }}
+            >
+              {/* LEFT: AUTHENTIC DUAL BLOOD/MANA ORB (阴阳红蓝太极血球) */}
+              <div
+                className="mir2-blood-orb-socket"
+                title={`生命值: ${Math.round(g.player.hp)} / ${g.maxHP}`}
               >
-                {g.phase === 'paused' ? '继续' : '暂停'}
-              </button>
-            </div>
-          </header>
+                {/* Red HP Left Half */}
+                <div className="mir2-orb-half hp-half">
+                  <div
+                    className="mir2-orb-fill hp-fill"
+                    style={{
+                      backgroundImage: `url(${assetUrl('assets/mir/ui/hp_ball.png')})`,
+                      height: `${Math.max(0, Math.min(100, (g.player.hp / g.maxHP) * 100))}%`,
+                    }}
+                  />
+                </div>
+                {/* Blue MP Right Half */}
+                <div className="mir2-orb-half mp-half">
+                  <div
+                    className="mir2-orb-fill mp-fill"
+                    style={{
+                      backgroundImage: `url(${assetUrl('assets/mir/ui/mp_ball.png')})`,
+                      height: `${
+                        g.player.shieldUntil > g.clock
+                          ? 100
+                          : 85
+                      }%`,
+                    }}
+                  />
+                </div>
+                {/* HP Numeric Overlay */}
+                <div className="mir2-orb-text">
+                  <span className="orb-num-hp">{Math.round(g.player.hp)}</span>
+                  <span className="orb-divider">/</span>
+                  <span className="orb-num-max">{g.maxHP}</span>
+                </div>
+                {/* Character Name & Level tag below orb */}
+                <div className="mir2-hero-badge">
+                  <span>Lv.{g.level}</span>
+                  <span>{g.base.name}</span>
+                </div>
+              </div>
 
-          {/* BOTTOM SKILLS BAR */}
-          <footer className="bottom-hud">
-            <div className="skills-bar">
-              {[0, 1, 2, 3, 4, 5].map((slotIdx) => {
-                const skill = g.skills[slotIdx];
-                if (!skill) {
-                  return (
-                    <div key={slotIdx} className="skill-slot empty-slot">
-                      <span className="slot-num">{slotIdx + 1}</span>
-                      <span className="slot-empty-icon">空</span>
-                    </div>
-                  );
-                }
-                const def = getSkill(skill.id);
-                const cdMax = Math.max(
-                  0.35,
-                  def.cooldown * (1 - (g.stats.cooldown_reduction ?? 0) / 100) * (1 - skill.localCDR / 100)
-                );
-                const cdPct = cdMax > 0 ? Math.min(1, skill.cd / cdMax) : 0;
+              {/* CENTER: SKILL SLOTS + TELEMETRY + EXP BAR */}
+              <div className="mir2-center-console">
+                {/* Top Row: Quick Skills Bar (1 - 6) */}
+                <div className="mir2-skills-belt">
+                  {[0, 1, 2, 3, 4, 5].map((slotIdx) => {
+                    const skill = g.skills[slotIdx];
+                    if (!skill) {
+                      return (
+                        <div key={slotIdx} className="mir2-skill-slot empty-slot">
+                          <span className="slot-key">{slotIdx + 1}</span>
+                        </div>
+                      );
+                    }
+                    const def = getSkill(skill.id);
+                    const cdMax = Math.max(
+                      0.25,
+                      def.cooldown *
+                        (1 - (g.stats.cooldown_reduction ?? 0) / 100) *
+                        (1 - skill.localCDR / 100)
+                    );
+                    const cdPct = cdMax > 0 ? Math.min(1, skill.cd / cdMax) : 0;
 
-                return (
-                  <div key={slotIdx} className={`skill-slot active-slot skill-${skill.id}`}>
-                    <Icon frame={def.asset} />
-                    <div className="skill-slot-info">
-                      <span className="slot-num">{slotIdx + 1}</span>
-                      <span className="skill-rank">Lv.{skill.rank}</span>
-                      <div className="skill-name">{def.name}</div>
-                    </div>
-                    {skill.cd > 0 && (
+                    return (
                       <div
-                        className="cd-sweep"
-                        style={{ height: `${cdPct * 100}%` }}
-                      />
-                    )}
+                        key={slotIdx}
+                        className={`mir2-skill-slot active-slot skill-${skill.id}`}
+                        title={`${def.name} (Lv.${skill.rank})\n${def.description}`}
+                      >
+                        <Icon frame={def.asset} />
+                        <span className="slot-key">{slotIdx + 1}</span>
+                        <span className="slot-rank">{skill.rank}</span>
+                        {skill.cd > 0 && (
+                          <div
+                            className="mir2-cd-sweep"
+                            style={{ height: `${cdPct * 100}%` }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Middle Row: Battlefield Telemetry (波次、倒计时、战绩) */}
+                <div className="mir2-telemetry-row">
+                  <span className="mir2-tele-chap">
+                    【{CHAPTERS[g.chapter]?.name}】第 {g.wave}/{g.maxWaves} 波
+                  </span>
+                  <span className="mir2-tele-timer">
+                    剩余: {Math.max(0, Math.ceil(g.duration - g.waveTime))}s
+                  </span>
+                  <span className="mir2-tele-kills">
+                    击杀: <strong>{g.kills}</strong>
+                  </span>
+                  <span className="mir2-tele-gold">
+                    金币: <strong>{g.gold}</strong>
+                  </span>
+                </div>
+
+                {/* Bottom Row: Exp Bar across console */}
+                <div
+                  className="mir2-exp-track"
+                  title={`经验: ${g.exp} / ${expNeeded(g.level)}`}
+                >
+                  <div
+                    className="mir2-exp-fill"
+                    style={{
+                      width: `${Math.max(
+                        0,
+                        Math.min(100, (g.exp / expNeeded(g.level)) * 100)
+                      )}%`,
+                    }}
+                  />
+                  <div className="mir2-exp-text">
+                    经验: {g.exp} / {expNeeded(g.level)} (
+                    {Math.round((g.exp / expNeeded(g.level)) * 100)}%)
                   </div>
-                );
-              })}
+                </div>
+              </div>
+
+              {/* RIGHT: AUTHENTIC MIR 2 METALLIC ACTION BUTTONS */}
+              <div className="mir2-actions-cluster">
+                {/* Row 1 */}
+                <div className="mir2-btn-row">
+                  <button
+                    className="mir2-metal-btn btn-equip"
+                    title="人物装备 (F10 或 B)"
+                    onClick={() => {
+                      sound.playClick();
+                      setShowEquipModal((s) => !s);
+                    }}
+                  >
+                    <span className="btn-label">装备</span>
+                  </button>
+                  <button
+                    className="mir2-metal-btn btn-skill"
+                    title="技能藏经阁 (F11 或 K)"
+                    onClick={() => {
+                      sound.playClick();
+                      setShowCompendium((s) => !s);
+                    }}
+                  >
+                    <span className="btn-label">技能</span>
+                  </button>
+                </div>
+
+                {/* Row 2 */}
+                <div className="mir2-btn-row">
+                  <button
+                    className="mir2-metal-btn btn-bag"
+                    title="随身包裹 (F9)"
+                    onClick={() => {
+                      sound.playClick();
+                      setShowEquipModal((s) => !s);
+                    }}
+                  >
+                    <span className="btn-label">包裹</span>
+                  </button>
+                  <button
+                    className="mir2-metal-btn btn-opt"
+                    title="暂停 / 选项 (ESC)"
+                    onClick={() => {
+                      sound.playClick();
+                      game.pause();
+                    }}
+                  >
+                    <span className="btn-label">
+                      {g.phase === 'paused' ? '继续' : '设置'}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           </footer>
         </div>
