@@ -207,6 +207,14 @@ class BattleScene extends Phaser.Scene {
         }
         texture.refresh();
         const terrainImg = this.add.image(0, 0, 'terrain').setOrigin(0).setDepth(-100);
+        const chap = game.chapter;
+        if (chap === 'mine') {
+          terrainImg.setTint(0x788898);
+        } else if (chap === 'temple') {
+          terrainImg.setTint(0xc89878);
+        } else {
+          terrainImg.clearTint();
+        }
         this.groundImages.push(terrainImg);
 
         for (const o of map.objects) {
@@ -220,6 +228,11 @@ class BattleScene extends Phaser.Scene {
             .setOrigin(0, 1)
             .setDepth(o.depth === 3 ? 2000 : o.y + (o.depth === 1 ? -1 : 0))
             .setAlpha(o.alpha ? 0.38 : 1);
+          if (chap === 'mine') {
+            image.setTint(0x8898a8);
+          } else if (chap === 'temple') {
+            image.setTint(0xd0a080);
+          }
           this.groundImages.push(image);
           this.mapObjects.push({ image, alpha: o.alpha ? 0.38 : 1 });
         }

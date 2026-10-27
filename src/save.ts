@@ -6,7 +6,7 @@ const DB_NAME = 'mafa-survivor-db';
 const DB_VERSION = 2;
 
 const defaultProfile: ProfileData = {
-  crystals: 0,
+  crystals: 100,
   talents: {
     robustness: 0,
     swiftness: 0,
@@ -29,8 +29,8 @@ export function validateAndRepairProfile(raw: any): ProfileData {
   }
 
   const crystals =
-    typeof raw.crystals === 'number' && !isNaN(raw.crystals) && raw.crystals >= 0
-      ? Math.floor(raw.crystals)
+    typeof raw.crystals === 'number' && !isNaN(raw.crystals)
+      ? Math.max(0, Math.floor(raw.crystals))
       : defaultProfile.crystals;
 
   const talents = { ...defaultProfile.talents };
@@ -104,29 +104,43 @@ const db = () =>
   });
 
 export async function getProfile(): Promise<ProfileData> {
+  let profile: ProfileData = { ...defaultProfile };
   try {
     const database = await db();
     const row = await database.get('profile', 'main');
     database.close();
     if (row && row.data) {
-      return validateAndRepairProfile(row.data);
-    }
-    if (typeof window !== 'undefined' && window.localStorage) {
+      profile = validateAndRepairProfile(row.data);
+    } else if (typeof window !== 'undefined' && window.localStorage) {
       const local = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       if (local) {
-        return validateAndRepairProfile(JSON.parse(local));
+        profile = validateAndRepairProfile(JSON.parse(local));
       }
     }
-    return { ...defaultProfile };
   } catch {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const local = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (local) return validateAndRepairProfile(JSON.parse(local));
+        if (local) profile = validateAndRepairProfile(JSON.parse(local));
       }
     } catch {}
-    return { ...defaultProfile };
   }
+
+  // Ensure 100 test crystals are granted to existing or returning profiles
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const granted = window.localStorage.getItem('mafa_test_crystals_100_v1');
+      if (!granted) {
+        window.localStorage.setItem('mafa_test_crystals_100_v1', 'true');
+        if (profile.crystals < 100) {
+          profile.crystals = 100;
+          await saveProfile(profile);
+        }
+      }
+    } catch {}
+  }
+
+  return profile;
 }
 
 export async function saveProfile(data: ProfileData): Promise<void> {

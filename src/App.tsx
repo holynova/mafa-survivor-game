@@ -426,8 +426,31 @@ export function App() {
               <p className="subtitle">比奇荒野 · 废弃矿洞 · 祖玛神庙</p>
 
               {profile && (
-                <div className="crystal-badge">
-                  玛法结晶: <strong>{profile.crystals}</strong>
+                <div className="crystal-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <span>玛法结晶: <strong>{profile.crystals}</strong></span>
+                  <button
+                    className="test-crystal-btn"
+                    title="点击补充 100 玛法结晶做测试"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      sound.playGem();
+                      const updated = await addCrystals(100);
+                      setProfile(updated);
+                    }}
+                    style={{
+                      background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)',
+                      color: '#ffffff',
+                      border: '1px solid #60a5fa',
+                      borderRadius: '4px',
+                      padding: '2px 8px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      boxShadow: '0 0 6px rgba(37, 99, 235, 0.4)',
+                    }}
+                  >
+                    +100 测试结晶
+                  </button>
                 </div>
               )}
             </div>
@@ -549,7 +572,11 @@ export function App() {
                   >
                     <span className="chap-name">{chap.name}</span>
                     <span className="chap-boss">({chap.bossName})</span>
-                    {!isUnlocked && <span className="chap-lock-tag">【未解锁】</span>}
+                    {!isUnlocked && (
+                      <span className="chap-lock-tag">
+                        【{CHAPTER_UNLOCK_COSTS[chapKey]} 结晶解锁】
+                      </span>
+                    )}
                   </button>
                 );
               })}
