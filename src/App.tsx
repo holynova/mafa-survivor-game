@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
-import { game, SKILL_ENHANCEMENTS } from './game';
+import { Game, game, SKILL_ENHANCEMENTS } from './game';
 import {
   CHAPTERS,
   CLASS_BASES,
@@ -33,6 +33,7 @@ import type {
   Slot,
   TalentKey,
   Upgrade,
+  ActiveRunSnapshot,
 } from './types';
 import { assets, setAssetManifest, type Manifest } from './renderer';
 
@@ -114,11 +115,22 @@ export function App() {
   const [guideTab, setGuideTab] = useState<'rules' | 'classes' | 'stats' | 'controls'>('rules');
   const [importText, setImportText] = useState('');
   const [guideMsg, setGuideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [activeRunSnapshot, setActiveRunSnapshot] = useState<ActiveRunSnapshot | null>(null);
+  const [showSandbox, setShowSandbox] = useState(false);
   const [unlockModal, setUnlockModal] = useState<MapChapter | null>(null);
 
   useEffect(() => {
     getProfile().then(setProfile);
     history().then(setRuns);
+    setActiveRunSnapshot(Game.getSavedActiveRun());
+
+    const handleBeforeUnload = () => {
+      if (game.phase === 'battle' || game.phase === 'paused' || game.phase === 'upgrade') {
+        game.saveActiveRun();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   useEffect(() => {
@@ -185,6 +197,44 @@ export function App() {
                 </div>
               )}
             </div>
+
+            {/* ACTIVE RUN RESUME BANNER */}
+            {activeRunSnapshot && (
+              <div className="active-run-banner">
+                <div className="active-run-info">
+                  <span className="banner-tag">【发现未完成战局】</span>
+                  <span>
+                    {CLASS_BASES[activeRunSnapshot.heroClass]?.name ?? '战士'} ·{' '}
+                    {CHAPTERS[activeRunSnapshot.chapter]?.name ?? '比奇'} · 第 {activeRunSnapshot.wave} 波
+                  </span>
+                  <span className="banner-detail">
+                    存活 {Math.round(activeRunSnapshot.clock)}s · 击杀 {activeRunSnapshot.kills} · 金币 {activeRunSnapshot.gold}
+                  </span>
+                </div>
+                <div className="active-run-actions">
+                  <button
+                    className="primary-btn resume-run-btn"
+                    onClick={() => {
+                      sound.playClick();
+                      game.resumeActiveRun(activeRunSnapshot);
+                      setActiveRunSnapshot(null);
+                    }}
+                  >
+                    恢复战局
+                  </button>
+                  <button
+                    className="secondary-btn abandon-run-btn"
+                    onClick={() => {
+                      sound.playClick();
+                      Game.clearSavedActiveRun();
+                      setActiveRunSnapshot(null);
+                    }}
+                  >
+                    放弃
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* CLASS SELECTOR */}
             <div className="class-selector-tabs">
@@ -338,6 +388,16 @@ export function App() {
                   }}
                 >
                   历次远征战绩 ({runs.length})
+                </button>
+                <button
+                  className="text-btn"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowSandbox(true);
+                  }}
+                  title="开启开发者快速测试沙盒控制台"
+                >
+                  调试沙盒
                 </button>
               </div>
               <div className="controls-hint">
@@ -1078,6 +1138,123 @@ export function App() {
         </div>
       )}
 
+      {/* DEVELOPER QUICK TEST SANDBOX MODAL (调试沙盒) */}
+      {showSandbox && (
+        <div className="modal-container sandbox-modal">
+          <div className="panel sandbox-panel">
+            <div className="sandbox-header">
+              <h2>开发者测试沙盒 · 快速调优控制台</h2>
+              <button
+                className="guide-close-btn"
+                onClick={() => {
+                  sound.playClick();
+                  setShowSandbox(false);
+                }}
+              >
+                关闭
+              </button>
+            </div>
+
+            <div className="sandbox-desc">
+              【提示】开启测试工具后该局游戏将自动标记为沙盒模式，退出时不计入正式排行榜或战绩记录，供数值调参与快速验证！
+            </div>
+
+            <div className="sandbox-grid">
+              <button
+                className={`sandbox-btn ${game.isInvincible ? 'active' : ''}`}
+                onClick={() => {
+                  game.toggleInvincible();
+                }}
+              >
+                无敌模式: {game.isInvincible ? '【已开启】' : '【已关闭】'}
+              </button>
+
+              <button
+                className="sandbox-btn"
+                onClick={() => {
+                  game.healFull();
+                }}
+              >
+                全额回满生命
+              </button>
+
+              <button
+                className="sandbox-btn"
+                onClick={() => {
+                  game.addCheatGold(500);
+                }}
+              >
+                增加 500 金币
+              </button>
+
+              <button
+                className="sandbox-btn"
+                onClick={() => {
+                  game.addCheatLevel();
+                  setShowSandbox(false);
+                }}
+              >
+                立即提升 1 级 (选技)
+              </button>
+
+              <button
+                className="sandbox-btn"
+                onClick={() => {
+                  game.resetCooldowns();
+                }}
+              >
+                清空全技能 CD
+              </button>
+
+              <button
+                className="sandbox-btn"
+                onClick={() => {
+                  game.spawnBossCheat();
+                  setShowSandbox(false);
+                }}
+              >
+                召唤当前章节 Boss
+              </button>
+
+              <button
+                className="sandbox-btn"
+                onClick={() => {
+                  game.skipWaveCheat();
+                  setShowSandbox(false);
+                }}
+              >
+                跳过波次 (进商店)
+              </button>
+
+              <button
+                className={`sandbox-btn ${game.debugAssets ? 'active' : ''}`}
+                onClick={() => {
+                  game.toggleDebugAssets();
+                }}
+              >
+                替身灰盒 (ART-09): {game.debugAssets ? '【已开启】' : '【已关闭】'}
+              </button>
+            </div>
+
+            <div className="speed-buttons-row">
+              <span style={{ fontSize: '13px', color: '#94a3b8' }}>运行速度:</span>
+              {[1, 2, 4].map((spd) => (
+                <button
+                  key={spd}
+                  className={`speed-btn ${game.timeScale === spd ? 'active' : ''}`}
+                  onClick={() => {
+                    sound.playClick();
+                    game.setTimeScale(spd);
+                  }}
+                >
+                  {spd}x 倍速
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* IN-GAME BATTLE HUD */}
       {(g.phase === 'battle' || g.phase === 'upgrade' || g.phase === 'shop' || g.phase === 'paused') && (
         <div className="hud-container">
@@ -1431,6 +1608,41 @@ export function App() {
               </div>
             )}
 
+            <div className="audio-volume-controls">
+              <div className="volume-slider-row">
+                <span className="slider-label">音效音量:</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={Math.round(sound.getSfxVolume() * 100)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) / 100;
+                    sound.setSfxVolume(val);
+                    setProfile((p) => (p ? { ...p } : p));
+                  }}
+                  className="volume-slider"
+                />
+                <span className="volume-val">{Math.round(sound.getSfxVolume() * 100)}%</span>
+              </div>
+              <div className="volume-slider-row">
+                <span className="slider-label">环境背景音:</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={Math.round(sound.getBgmVolume() * 100)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) / 100;
+                    sound.setBgmVolume(val);
+                    setProfile((p) => (p ? { ...p } : p));
+                  }}
+                  className="volume-slider"
+                />
+                <span className="volume-val">{Math.round(sound.getBgmVolume() * 100)}%</span>
+              </div>
+            </div>
+
             <div className="pause-actions">
               <button
                 className="secondary-btn sound-toggle-pause-btn"
@@ -1459,6 +1671,15 @@ export function App() {
                 玩法秘籍
               </button>
               <button
+                className="secondary-btn"
+                onClick={() => {
+                  sound.playClick();
+                  setShowSandbox(true);
+                }}
+              >
+                调试沙盒
+              </button>
+              <button
                 className="primary-btn"
                 onClick={() => {
                   sound.playClick();
@@ -1480,8 +1701,7 @@ export function App() {
                 className="danger-btn"
                 onClick={() => {
                   sound.playClick();
-                  game.phase = 'lobby';
-                  game.emit();
+                  game.quitToLobby();
                 }}
               >
                 放弃并返回营地
@@ -1600,8 +1820,7 @@ export function App() {
                 className="secondary-btn"
                 onClick={() => {
                   sound.playClick();
-                  game.phase = 'lobby';
-                  game.emit();
+                  game.quitToLobby();
                 }}
               >
                 返回大厅

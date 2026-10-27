@@ -53,6 +53,7 @@ class BattleScene extends Phaser.Scene {
   private corpses: { kind: string; dir: number; x: number; y: number; at: number }[] = [];
   private lastEnemies = new Map<number, Enemy>();
   private useSprites = false;
+  private groundImages: Phaser.GameObjects.Image[] = [];
 
   constructor() {
     super('battle');
@@ -158,6 +159,8 @@ class BattleScene extends Phaser.Scene {
   }
 
   paintGround() {
+    for (const img of this.groundImages) img.destroy();
+    this.groundImages = [];
     this.groundGfx.clear();
     const fallback = 'ground/3';
     if (this.useSprites && assets?.frames[fallback]) {
@@ -166,10 +169,11 @@ class BattleScene extends Phaser.Scene {
       const h = tile.height;
       for (let y = 0; y < WORLD.h; y += h) {
         for (let x = 0; x < WORLD.w; x += w) {
-          this.add
+          const img = this.add
             .image(x, y, tile.texture, fallback)
             .setOrigin(0)
             .setDepth(-100);
+          this.groundImages.push(img);
         }
       }
 
@@ -177,10 +181,11 @@ class BattleScene extends Phaser.Scene {
         const frame = 'scenery/' + object.id;
         const f = assets.frames[frame];
         if (f) {
-          this.add
+          const img = this.add
             .image(object.x, object.y, f.texture, frame)
             .setOrigin(0.5, 1)
             .setDepth(object.y);
+          this.groundImages.push(img);
         }
       }
     } else {
@@ -491,6 +496,16 @@ class BattleScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     if (!rendererReady) return;
     frameMS = frameMS * 0.95 + delta * 0.05;
+
+    const forceDebug =
+      game.debugAssets ||
+      (typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('debugAssets') === 'true');
+    const nextUseSprites = !forceDebug && !!assets;
+    if (this.useSprites !== nextUseSprites) {
+      this.useSprites = nextUseSprites;
+      this.paintGround();
+    }
 
     if (this.lastRun !== game.runId) {
       this.lastRun = game.runId;
@@ -804,19 +819,27 @@ class BattleScene extends Phaser.Scene {
       for (const f of game.floating) {
         let label = this.labels.get(f.id);
         if (!label) {
+          const isCrit = f.type === 'crit';
+          const fontSize = isCrit ? '18px' : f.type === 'heal' ? '16px' : '14px';
           label = this.add
             .text(0, 0, '', {
               fontFamily: 'serif, sans-serif',
-              fontSize: '15px',
-              fontStyle: 'bold',
+              fontSize,
+              fontStyle: isCrit ? '900' : 'bold',
               stroke: '#0f0e0c',
-              strokeThickness: 3,
+              strokeThickness: isCrit ? 4 : 3,
             })
             .setOrigin(0.5)
             .setDepth(6000);
           this.labels.set(f.id, label);
         }
-        label.setPosition(f.x, f.y).setText(f.text).setColor(f.color).setAlpha(Math.min(1, f.life * 2));
+        const scale = f.scale ?? (f.type === 'crit' ? 1.25 : 1);
+        label
+          .setPosition(f.x, f.y)
+          .setText(f.text)
+          .setColor(f.color)
+          .setScale(scale)
+          .setAlpha(Math.min(1, f.life * 2));
       }
     }
 

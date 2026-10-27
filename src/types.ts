@@ -178,6 +178,8 @@ export interface Floating extends Entity {
   text: string;
   color: string;
   life: number;
+  type?: 'damage' | 'crit' | 'dodge' | 'heal' | 'poison' | 'shield';
+  scale?: number;
 }
 
 export interface Skill {
@@ -261,6 +263,33 @@ export interface RunResult {
   skillIds?: string[];
   equipments?: string[];
   savedAt?: number;
+}
+
+export interface ActiveRunSnapshot {
+  runId: string;
+  heroClass: HeroClass;
+  chapter: MapChapter;
+  mode: Mode;
+  seed: number;
+  wave: number;
+  waveTime: number;
+  clock: number;
+  kills: number;
+  gold: number;
+  totalGold: number;
+  level: number;
+  exp: number;
+  player: { x: number; y: number; hp: number; dir: number };
+  skills: Skill[];
+  equipment: Partial<Record<Slot, Equipped>>;
+  passives: Record<string, number>;
+  upgrades: Bonuses;
+  acquiredSkills: string[];
+  acquiredEquipments: string[];
+  damageDealt: Record<string, number>;
+  phase: Phase;
+  timestamp: number;
+  isSandbox?: boolean;
 }
 
 export type TalentKey =

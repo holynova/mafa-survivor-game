@@ -1,6 +1,10 @@
 class SoundSystem {
   private ctx: AudioContext | null = null;
   private muted: boolean = false;
+  private sfxVolume: number = 0.7;
+  private bgmVolume: number = 0.35;
+  private bgmGain: GainNode | null = null;
+  private bgmNodes: { stop: () => void } | null = null;
   private buffers = new Map<string, AudioBuffer>();
   private loading = new Map<string, Promise<AudioBuffer | null>>();
 
@@ -8,6 +12,10 @@ class SoundSystem {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
       try {
         this.muted = localStorage.getItem('mafa_sound_muted') === 'true';
+        const sfx = localStorage.getItem('mafa_sfx_volume');
+        if (sfx) this.sfxVolume = Math.max(0, Math.min(1, parseFloat(sfx)));
+        const bgm = localStorage.getItem('mafa_bgm_volume');
+        if (bgm) this.bgmVolume = Math.max(0, Math.min(1, parseFloat(bgm)));
       } catch {
         this.muted = false;
       }
@@ -31,12 +39,150 @@ class SoundSystem {
     return this.muted;
   }
 
+  getSfxVolume() {
+    return this.sfxVolume;
+  }
+
+  getBgmVolume() {
+    return this.bgmVolume;
+  }
+
+  setSfxVolume(v: number) {
+    this.sfxVolume = Math.max(0, Math.min(1, v));
+    try {
+      localStorage.setItem('mafa_sfx_volume', String(this.sfxVolume));
+    } catch {}
+  }
+
+  setBgmVolume(v: number) {
+    this.bgmVolume = Math.max(0, Math.min(1, v));
+    try {
+      localStorage.setItem('mafa_bgm_volume', String(this.bgmVolume));
+    } catch {}
+    if (this.bgmGain && this.ctx) {
+      this.bgmGain.gain.setValueAtTime(this.bgmVolume * 0.4, this.ctx.currentTime);
+    }
+  }
+
   toggleMute(): boolean {
     this.muted = !this.muted;
     try {
       localStorage.setItem('mafa_sound_muted', String(this.muted));
     } catch {}
+    if (this.muted) {
+      this.stopBgm();
+    } else {
+      this.startBgm();
+    }
     return this.muted;
+  }
+
+  startBgm() {
+    if (this.muted || typeof window === 'undefined' || this.bgmNodes) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const masterBgm = this.ctx.createGain();
+      masterBgm.gain.setValueAtTime(0, now);
+      masterBgm.gain.linearRampToValueAtTime(this.bgmVolume * 0.4, now + 1.5);
+      masterBgm.connect(this.ctx.destination);
+      this.bgmGain = masterBgm;
+
+      // Low drone oscillators (A1 = 55Hz, E2 = 82.4Hz)
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const filter = this.ctx.createBiquadFilter();
+
+      filter.type = 'lowpass';
+      filter.frequency.value = 180;
+      filter.Q.value = 2.0;
+
+      osc1.type = 'sawtooth';
+      osc1.frequency.value = 55;
+      osc2.type = 'triangle';
+      osc2.frequency.value = 82.4;
+
+      const oscGain = this.ctx.createGain();
+      oscGain.gain.value = 0.25;
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(oscGain);
+      oscGain.connect(masterBgm);
+
+      osc1.start();
+      osc2.start();
+
+      // Atmospheric cavern wind noise
+      const bufferSize = this.ctx.sampleRate * 2;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let lastOut = 0.0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        output[i] = (lastOut + 0.02 * white) / 1.02;
+        lastOut = output[i];
+      }
+
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+      noiseSource.loop = true;
+
+      const windFilter = this.ctx.createBiquadFilter();
+      windFilter.type = 'bandpass';
+      windFilter.frequency.value = 320;
+      windFilter.Q.value = 3.0;
+
+      const lfo = this.ctx.createOscillator();
+      lfo.frequency.value = 0.12;
+      const lfoGain = this.ctx.createGain();
+      lfoGain.gain.value = 140;
+      lfo.connect(lfoGain);
+      lfoGain.connect(windFilter.frequency);
+      lfo.start();
+
+      const windGain = this.ctx.createGain();
+      windGain.gain.value = 0.35;
+
+      noiseSource.connect(windFilter);
+      windFilter.connect(windGain);
+      windGain.connect(masterBgm);
+
+      noiseSource.start();
+
+      this.bgmNodes = {
+        stop: () => {
+          try {
+            osc1.stop();
+            osc2.stop();
+            noiseSource.stop();
+            lfo.stop();
+          } catch {}
+        },
+      };
+    } catch (e) {
+      console.warn('Failed to start ambient BGM:', e);
+    }
+  }
+
+  stopBgm() {
+    if (!this.bgmNodes || !this.ctx || !this.bgmGain) return;
+    try {
+      const now = this.ctx.currentTime;
+      this.bgmGain.gain.setValueAtTime(this.bgmGain.gain.value, now);
+      this.bgmGain.gain.linearRampToValueAtTime(0, now + 0.8);
+      const nodes = this.bgmNodes;
+      this.bgmNodes = null;
+      setTimeout(() => {
+        nodes.stop();
+        this.bgmGain = null;
+      }, 900);
+    } catch {
+      this.bgmNodes = null;
+      this.bgmGain = null;
+    }
   }
 
   private async loadBuffer(path: string): Promise<AudioBuffer | null> {
@@ -68,13 +214,14 @@ class SoundSystem {
     this.initCtx();
     if (!this.ctx) return;
 
+    const effectiveVolume = volume * this.sfxVolume;
     const path = `/assets/sound/${fileName}`;
     const buf = this.buffers.get(path);
     if (buf) {
       try {
         const source = this.ctx.createBufferSource();
         const gain = this.ctx.createGain();
-        gain.gain.value = volume;
+        gain.gain.value = effectiveVolume;
         source.buffer = buf;
         source.connect(gain);
         gain.connect(this.ctx.destination);
@@ -86,7 +233,7 @@ class SoundSystem {
         try {
           const source = this.ctx.createBufferSource();
           const gain = this.ctx.createGain();
-          gain.gain.value = volume;
+          gain.gain.value = effectiveVolume;
           source.buffer = loadedBuf;
           source.connect(gain);
           gain.connect(this.ctx.destination);

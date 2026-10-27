@@ -44,6 +44,7 @@ import {
   type Equipped,
   type RunResult,
   type ProfileData,
+  type ActiveRunSnapshot,
 } from './types';
 
 export const WORLD = { w: 2208, h: 1536 };
@@ -267,8 +268,224 @@ export class Game {
   private previous: Phase = 'battle';
   private hash = new SpatialHash<Enemy>();
   private waveKills = 0;
+  private lastWasCrit = false;
 
   version = 0;
+  isSandbox = false;
+  timeScale = 1;
+  isInvincible = false;
+  debugAssets = false;
+  private saveTimer = 0;
+
+  static ACTIVE_RUN_KEY = 'mafa_active_run_snapshot';
+
+  static getSavedActiveRun(): ActiveRunSnapshot | null {
+    if (typeof window === 'undefined' || !window.localStorage) return null;
+    try {
+      const raw = window.localStorage.getItem(Game.ACTIVE_RUN_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (data && data.runId && data.player && data.skills) {
+        return data as ActiveRunSnapshot;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  static clearSavedActiveRun(): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      window.localStorage.removeItem(Game.ACTIVE_RUN_KEY);
+    } catch {}
+  }
+
+  saveActiveRun(): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    if (this.phase === 'lobby' || this.phase === 'won' || this.phase === 'dead') {
+      Game.clearSavedActiveRun();
+      return;
+    }
+    try {
+      const snapshot: ActiveRunSnapshot = {
+        runId: this.runId,
+        heroClass: this.heroClass,
+        chapter: this.chapter,
+        mode: this.mode,
+        seed: this.seed,
+        wave: this.wave,
+        waveTime: this.waveTime,
+        clock: this.clock,
+        kills: this.kills,
+        gold: this.gold,
+        totalGold: this.totalGold,
+        level: this.level,
+        exp: this.exp,
+        player: { ...this.player },
+        skills: this.skills.map((s) => ({ ...s })),
+        equipment: { ...this.equipment },
+        passives: { ...this.passives },
+        upgrades: { ...this.upgrades },
+        acquiredSkills: Array.from(this.acquiredSkills),
+        acquiredEquipments: Array.from(this.acquiredEquipments),
+        damageDealt: { ...this.damageDealt },
+        phase: this.phase,
+        timestamp: Date.now(),
+        isSandbox: this.isSandbox,
+      };
+      window.localStorage.setItem(Game.ACTIVE_RUN_KEY, JSON.stringify(snapshot));
+    } catch {}
+  }
+
+  resumeActiveRun(snapshot: ActiveRunSnapshot): void {
+    this.runId = snapshot.runId;
+    this.heroClass = snapshot.heroClass;
+    this.chapter = snapshot.chapter;
+    this.mode = snapshot.mode;
+    this.seed = snapshot.seed;
+    this.rng = new Rng(snapshot.seed);
+    this.wave = snapshot.wave;
+    this.waveTime = snapshot.waveTime;
+    this.clock = snapshot.clock;
+    this.kills = snapshot.kills;
+    this.gold = snapshot.gold;
+    this.totalGold = snapshot.totalGold;
+    this.level = snapshot.level;
+    this.exp = snapshot.exp;
+    this.player = {
+      x: snapshot.player.x,
+      y: snapshot.player.y,
+      hp: snapshot.player.hp,
+      dir: snapshot.player.dir ?? 4,
+      moving: false,
+      hitUntil: 0,
+      castUntil: 0,
+      shieldUntil: 0,
+      stealthUntil: 0,
+      holyArmorUntil: 0,
+      spiritShieldUntil: 0,
+      savageCharging: 0,
+    };
+    this.skills = snapshot.skills.map((s) => ({ ...s }));
+    this.equipment = { ...snapshot.equipment };
+    this.passives = { ...snapshot.passives };
+    this.upgrades = { ...snapshot.upgrades };
+    this.acquiredSkills = new Set(snapshot.acquiredSkills);
+    this.acquiredEquipments = new Set(snapshot.acquiredEquipments);
+    this.damageDealt = { ...snapshot.damageDealt };
+    this.isSandbox = snapshot.isSandbox ?? false;
+    this.recompute();
+    this.phase = snapshot.phase === 'shop' || snapshot.phase === 'upgrade' ? snapshot.phase : 'battle';
+    if (this.phase === 'shop' && this.offers.length === 0) {
+      this.generateOffers(true);
+    }
+    if (this.phase === 'battle') {
+      sound.startBgm();
+    }
+    this.emit();
+  }
+
+  // --- Developer Cheat / Sandbox Methods ---
+  addCheatGold(amount = 500) {
+    this.gold += amount;
+    this.totalGold += amount;
+    this.isSandbox = true;
+    sound.playGem();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: `【调试】金币 +${amount}`,
+      color: '#ffd700',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  addCheatLevel() {
+    this.isSandbox = true;
+    this.beginUpgrade();
+  }
+
+  healFull() {
+    this.player.hp = this.maxHP;
+    this.isSandbox = true;
+    sound.playHeal();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: '【调试】气血充盈',
+      color: '#4ade80',
+      life: 1.2,
+      type: 'heal',
+    });
+    this.emit();
+  }
+
+  resetCooldowns() {
+    for (const s of this.skills) {
+      s.cd = 0;
+    }
+    this.isSandbox = true;
+    sound.playLevelUp();
+    this.emit();
+  }
+
+  spawnBossCheat() {
+    this.isSandbox = true;
+    const chap = CHAPTERS[this.chapter];
+    this.spawnEnemy(chap.bossId);
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 65,
+      text: `【调试召唤】${chap.bossName}`,
+      color: '#ef4444',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
+  skipWaveCheat() {
+    this.isSandbox = true;
+    this.endWave();
+  }
+
+  toggleInvincible() {
+    this.isInvincible = !this.isInvincible;
+    this.isSandbox = true;
+    sound.playClick();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: this.isInvincible ? '【无敌模式: 开启】' : '【无敌模式: 关闭】',
+      color: this.isInvincible ? '#facc15' : '#94a3b8',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  toggleDebugAssets() {
+    this.debugAssets = !this.debugAssets;
+    sound.playClick();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player ? this.player.x : WORLD.w / 2,
+      y: this.player ? this.player.y - 45 : WORLD.h / 2,
+      text: this.debugAssets ? '【替身灰盒: 开启】' : '【替身灰盒: 关闭】',
+      color: this.debugAssets ? '#38bdf8' : '#94a3b8',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  setTimeScale(scale: number) {
+    this.timeScale = scale;
+    this.emit();
+  }
 
   subscribe = (f: () => void) => {
     this.listeners.add(f);
@@ -395,6 +612,8 @@ export class Game {
     this.recompute();
     this.phase = 'battle';
     this.emit();
+    this.saveActiveRun();
+    sound.startBgm();
   }
 
   newSkill(id: SkillId): Skill {
@@ -454,16 +673,26 @@ export class Game {
       this.previous = 'battle';
       this.phase = 'paused';
       this.emit();
+      this.saveActiveRun();
     } else if (this.phase === 'paused') {
       this.phase = this.previous;
       this.emit();
+      this.saveActiveRun();
     }
   }
 
   step(dt: number) {
     if (this.phase !== 'battle') return;
+    dt = dt * this.timeScale;
     this.clock += dt;
     this.waveTime += dt;
+
+    // Periodic run state snapshot
+    this.saveTimer += dt;
+    if (this.saveTimer >= 5) {
+      this.saveTimer = 0;
+      this.saveActiveRun();
+    }
 
     // HP Regeneration
     const regen = (this.stats.hp_regen ?? 0) * dt;
@@ -1025,7 +1254,8 @@ export class Game {
 
     // Mind's Eye extra crit chance
     const extraCrit = this.skills.some((sk) => sk.id === 'mind_eye') ? 15 : 0;
-    if (this.rng.next() < (extraCrit + (this.stats.crit_chance ?? 0)) / 100) {
+    this.lastWasCrit = this.rng.next() < (extraCrit + (this.stats.crit_chance ?? 0)) / 100;
+    if (this.lastWasCrit) {
       damage *= 1.5 + (this.stats.crit_mult ?? 0);
     }
     return Math.max(1, Math.round(damage));
@@ -1458,7 +1688,7 @@ export class Game {
     }
   }
 
-  hit(e: Enemy, damage: number, skill: string) {
+  hit(e: Enemy, damage: number, skill: string, isCrit = this.lastWasCrit) {
     if (e.hp <= 0 || this.phase !== 'battle') return;
     const actualDamage = Math.min(e.hp, damage);
     e.hp -= damage;
@@ -1482,14 +1712,32 @@ export class Game {
     }
 
     if (this.floating.length < 45) {
-      this.floating.push({
-        id: ++this.id,
-        x: e.x,
-        y: e.y - 40,
-        text: String(damage),
-        color: skill.includes('fire') ? '#f97316' : skill.includes('lightning') ? '#facc15' : '#e2e8f0',
-        life: 0.75,
-      });
+      if (isCrit) {
+        this.floating.push({
+          id: ++this.id,
+          x: e.x,
+          y: e.y - 48,
+          text: `暴击! ${damage}`,
+          color: '#fbbf24',
+          life: 0.9,
+          type: 'crit',
+          scale: 1.35,
+        });
+      } else {
+        this.floating.push({
+          id: ++this.id,
+          x: e.x,
+          y: e.y - 40,
+          text: String(damage),
+          color: skill.includes('fire')
+            ? '#f97316'
+            : skill.includes('lightning')
+            ? '#facc15'
+            : '#e2e8f0',
+          life: 0.75,
+          type: 'damage',
+        });
+      }
     }
 
     if (e.hp <= 0) {
@@ -1592,7 +1840,7 @@ export class Game {
   }
 
   hurt(raw: number) {
-    if (this.phase !== 'battle' || this.clock < this.player.hitUntil) return;
+    if (this.phase !== 'battle' || this.isInvincible || this.clock < this.player.hitUntil) return;
     if (this.rng.next() < (5 + (this.stats.dodge ?? 0)) / 100) {
       this.floating.push({
         id: ++this.id,
@@ -1601,6 +1849,7 @@ export class Game {
         text: '闪避',
         color: '#7be3b2',
         life: 0.6,
+        type: 'dodge',
       });
       return;
     }
@@ -1996,7 +2245,9 @@ export class Game {
 
   finish(won: boolean) {
     if (this.result) return;
+    Game.clearSavedActiveRun();
     this.phase = won ? 'won' : 'dead';
+    sound.stopBgm();
     if (won) {
       sound.playWaveComplete();
     } else {
@@ -2005,7 +2256,9 @@ export class Game {
 
     // Award crystals: 3 crystals on boss kill, +1 per 3 waves survived
     let crystals = 0;
-    if (won) {
+    if (this.isSandbox) {
+      crystals = 0;
+    } else if (won) {
       crystals = this.mode === 'normal' ? 6 : 3;
     } else {
       crystals = Math.floor(this.wave / 3);
@@ -2032,9 +2285,17 @@ export class Game {
     this.input = { x: 0, y: 0 };
     this.emit();
   }
+
+  quitToLobby() {
+    Game.clearSavedActiveRun();
+    this.phase = 'lobby';
+    sound.stopBgm();
+    this.emit();
+  }
 }
 
 export const game = new Game();
 if (typeof window !== 'undefined') {
   (window as any).game = game;
+  (window as any).__game = game;
 }
