@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
-export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/mafa-survivor-game/' : '/',
+export default defineConfig(({ command, mode }) => ({
+  base: command === 'build' || mode === 'production' ? '/mafa-survivor-game/' : '/',
   server: {
     host: '127.0.0.1',
     port: 5180,
@@ -21,4 +21,4 @@ export default defineConfig({
     environment: 'node',
     globals: true,
   },
-});
+}));

@@ -44,7 +44,10 @@ let assetManifest: Manifest | null = null;
 export async function loadArtPositions() {
   try {
     const r = await fetch(assetUrl('assets/mir/manifest.json'));
-    if (!r.ok) return;
+    if (!r.ok) {
+      console.error('Failed to fetch manifest.json:', r.status, r.statusText, r.url);
+      return;
+    }
     const manifest = (await r.json()) as Manifest;
     assetManifest = manifest;
     setAssetManifest(manifest);

@@ -1,5 +1,36 @@
 import { assetUrl } from './utils';
 
+export const MIR_AUDIO_MAP: Record<string, string> = {
+  fireball: '04000010.WAV',
+  lightning: '040000B0.WAV',
+  firewall: '04000160.WAV',
+  shield: '040001F0.WAV',
+  repulse: '04000081.WAV',
+  hellfire: '04000090.WAV',
+  bigfireball: '04000050.WAV',
+  teleport: '04000150.WAV',
+  explosion: '04000170.WAV',
+  beam: '040000A0.WAV',
+  nova: '04000180.WAV',
+  holy: '04000200.WAV',
+  ice: '04000210.WAV',
+  charm: '04000140.WAV',
+  heal: '04000020.WAV',
+  poison: '04000060.WAV',
+  talisman: '040000D0.WAV',
+  skeleton: '04000110.WAV',
+  invisible: '04000120.WAV',
+  ghost: '040000E1.WAV',
+  armor: '040000F1.WAV',
+  trap: '04000100.WAV',
+  groupHeal: '040001D0.WAV',
+  beast: '040001E0.WAV',
+  step: '01000001.WAV',
+  attack: '01010034.WAV',
+  unarmed: '01010039.WAV',
+  hurt: '0103008A.WAV',
+};
+
 class SoundSystem {
   private ctx: AudioContext | null = null;
   private muted: boolean = false;
@@ -211,13 +242,18 @@ class SoundSystem {
     return promise;
   }
 
-  private playSound(fileName: string, volume = 0.5) {
+  play(key: string, volume = 0.5) {
+    this.playSound(key, volume);
+  }
+
+  private playSound(keyOrFile: string, volume = 0.5) {
     if (this.muted || typeof window === 'undefined') return;
     this.initCtx();
     if (!this.ctx) return;
 
     const effectiveVolume = volume * this.sfxVolume;
-    const path = assetUrl(`assets/sound/${fileName}`);
+    const mirFile = MIR_AUDIO_MAP[keyOrFile] || (keyOrFile.toUpperCase().endsWith('.WAV') ? keyOrFile : null);
+    const path = mirFile ? assetUrl(`assets/mir/audio/${mirFile}`) : assetUrl(`assets/sound/${keyOrFile}`);
     const buf = this.buffers.get(path);
     if (buf) {
       try {
@@ -246,119 +282,119 @@ class SoundSystem {
   }
 
   playFireball() {
-    this.playSound('skill_fireball.wav', 0.55);
+    this.play('fireball', 0.55);
   }
 
   playLightning() {
-    this.playSound('skill_lightning.wav', 0.65);
+    this.play('lightning', 0.65);
   }
 
   playFirewall() {
-    this.playSound('skill_firewall.wav', 0.5);
+    this.play('firewall', 0.5);
   }
 
   playShield() {
-    this.playSound('skill_shield.wav', 0.6);
+    this.play('shield', 0.6);
   }
 
   playSoulFireball() {
-    this.playSound('skill_talisman.wav', 0.55);
+    this.play('talisman', 0.55);
   }
 
   playPoison() {
-    this.playSound('skill_poison.wav', 0.55);
+    this.play('poison', 0.55);
   }
 
   playSummon() {
-    this.playSound('skill_shinsu.wav', 0.6);
+    this.play('skeleton', 0.6);
   }
 
   playIceStorm() {
-    this.playSound('skill_iceroar.wav', 0.6);
+    this.play('ice', 0.6);
   }
 
   playLaser() {
-    this.playSound('skill_beam.wav', 0.6);
+    this.play('beam', 0.6);
   }
 
   playHellfire() {
-    this.playSound('skill_hellfire.wav', 0.55);
+    this.play('hellfire', 0.55);
   }
 
   playHellThunder() {
-    this.playSound('skill_hellthunder.wav', 0.65);
+    this.play('nova', 0.65);
   }
 
   playHolyWord() {
-    this.playSound('skill_holyword.wav', 0.6);
+    this.play('holy', 0.6);
   }
 
   playRepel() {
-    this.playSound('skill_repel.wav', 0.5);
+    this.play('repulse', 0.5);
   }
 
   playHalfMoon() {
-    this.playSound('skill_slash.wav', 0.5);
+    this.play('attack', 0.5);
   }
 
   playFireSword() {
-    this.playSound('skill_slash.wav', 0.65);
+    this.play('attack', 0.65);
   }
 
   playCharge() {
-    this.playSound('skill_slash.wav', 0.55);
+    this.play('attack', 0.55);
   }
 
   playSwordSlash() {
-    this.playSound('hit_sword.wav', 0.45);
+    this.play('attack', 0.45);
   }
 
   playHit() {
-    this.playSound('hit_sword.wav', 0.4);
+    this.play('attack', 0.4);
   }
 
   playHeal() {
-    this.playSound('potion.wav', 0.55);
+    this.play('heal', 0.55);
   }
 
   playRevive() {
-    this.playSound('potion.wav', 0.7);
+    this.play('heal', 0.7);
   }
 
   playGem() {
-    this.playSound('coin.wav', 0.4);
+    this.play('unarmed', 0.4);
   }
 
   playLevelUp() {
-    this.playSound('teleport.wav', 0.6);
+    this.play('teleport', 0.6);
   }
 
   playWaveComplete() {
-    this.playSound('teleport.wav', 0.6);
+    this.play('teleport', 0.6);
   }
 
   playTeleport() {
-    this.playSound('teleport.wav', 0.6);
+    this.play('teleport', 0.6);
   }
 
   playClick() {
-    this.playSound('ui_click.wav', 0.35);
+    this.play('unarmed', 0.35);
   }
 
   playHurt() {
-    this.playSound('player_hurt.wav', 0.5);
+    this.play('hurt', 0.5);
   }
 
   playDie() {
-    this.playSound('player_die.wav', 0.7);
+    this.play('hurt', 0.7);
   }
 
   playMonsterHurt() {
-    this.playSound('monster_hurt.wav', 0.3);
+    this.play('attack', 0.3);
   }
 
   playMonsterDie() {
-    this.playSound('monster_die.wav', 0.4);
+    this.play('hurt', 0.4);
   }
 }
 

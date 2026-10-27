@@ -6,6 +6,21 @@ import type { Enemy, Fx, Minion, Projectile } from './types';
 import { assetUrl } from './utils';
 
 export interface Manifest {
+  world?: {
+    width: number;
+    height: number;
+    cellWidth: number;
+    cellHeight: number;
+    walk: number[];
+    tiles: { texture: number; x: number; y: number }[];
+    objects: {
+      texture: number;
+      x: number;
+      y: number;
+      depth: number;
+      alpha: boolean;
+    }[];
+  };
   pages: {
     key: string;
     image: string;
@@ -55,6 +70,8 @@ class BattleScene extends Phaser.Scene {
   private lastEnemies = new Map<number, Enemy>();
   private useSprites = false;
   private groundImages: Phaser.GameObjects.Image[] = [];
+  private mapObjects: { image: Phaser.GameObjects.Image; alpha: number }[] = [];
+  private nextFootstep = 0;
 
   constructor() {
     super('battle');
@@ -76,8 +93,22 @@ class BattleScene extends Phaser.Scene {
 
   create() {
     if (!assets) {
-      const cached = this.cache.json.get('manifest');
-      if (cached) assets = cached;
+      const cached = this.cache.json.get('manifest') as Manifest | undefined;
+      if (cached) {
+        assets = cached;
+        setAssetManifest(cached);
+        for (const page of cached.pages) {
+          if (!this.textures.exists(page.key)) {
+            this.load.atlas(page.key, assetUrl('assets/mir/' + page.image), assetUrl('assets/mir/' + page.data));
+          }
+        }
+        this.load.once('complete', () => {
+          this.useSprites = true;
+          this.paintGround();
+          game.emit();
+        });
+        this.load.start();
+      }
     }
     this.useSprites = !!assets;
 
@@ -162,54 +193,111 @@ class BattleScene extends Phaser.Scene {
   paintGround() {
     for (const img of this.groundImages) img.destroy();
     this.groundImages = [];
+    this.mapObjects = [];
     this.groundGfx.clear();
-    const fallback = 'ground/3';
-    if (this.useSprites && assets?.frames[fallback]) {
-      const tile = assets.frames[fallback];
-      const w = tile.width;
-      const h = tile.height;
-      for (let y = 0; y < WORLD.h; y += h) {
-        for (let x = 0; x < WORLD.w; x += w) {
-          const img = this.add
-            .image(x, y, tile.texture, fallback)
-            .setOrigin(0)
-            .setDepth(-100);
-          this.groundImages.push(img);
-        }
-      }
 
-      for (const object of SCENERY) {
-        const frame = 'scenery/' + object.id;
-        const f = assets.frames[frame];
-        if (f) {
-          const img = this.add
-            .image(object.x, object.y, f.texture, frame)
-            .setOrigin(0.5, 1)
-            .setDepth(object.y);
-          this.groundImages.push(img);
+    const map = assets?.world;
+    if (this.useSprites && map && assets) {
+      let texture = this.textures.get('terrain') as Phaser.Textures.CanvasTexture;
+      if (!texture) {
+        texture = this.textures.createCanvas('terrain', WORLD.w, WORLD.h)!;
+      }
+      if (texture) {
+        const context = texture.context;
+        context.imageSmoothingEnabled = false;
+        const paint = (key: string, x: number, y: number, bottom = false) => {
+          const meta = assets?.frames[key];
+          if (!meta) return;
+          const f = this.textures.getFrame(meta.texture, key);
+          if (!f || !f.source?.image) return;
+          context.drawImage(
+            f.source.image as HTMLImageElement,
+            f.cutX,
+            f.cutY,
+            f.cutWidth,
+            f.cutHeight,
+            x,
+            bottom ? y - f.cutHeight : y,
+            f.cutWidth,
+            f.cutHeight
+          );
+        };
+
+        for (const tile of map.tiles) {
+          paint('map/' + tile.texture.toString(16).toUpperCase().padStart(8, '0'), tile.x, tile.y);
+        }
+        for (const o of map.objects) {
+          if (o.depth === 0) {
+            paint('map/' + o.texture.toString(16).toUpperCase().padStart(8, '0'), o.x, o.y, true);
+          }
+        }
+        texture.refresh();
+        const terrainImg = this.add.image(0, 0, 'terrain').setOrigin(0).setDepth(-100);
+        this.groundImages.push(terrainImg);
+
+        for (const o of map.objects) {
+          if (o.depth === 0) continue;
+          const key = 'map/' + o.texture.toString(16).toUpperCase().padStart(8, '0');
+          const f = assets.frames[key];
+          if (!f) continue;
+          const image = this.add
+            .image(o.x, o.y, f.texture, key)
+            .setOrigin(0, 1)
+            .setDepth(o.depth === 3 ? 2000 : o.y + (o.depth === 1 ? -1 : 0))
+            .setAlpha(o.alpha ? 0.38 : 1);
+          this.groundImages.push(image);
+          this.mapObjects.push({ image, alpha: o.alpha ? 0.38 : 1 });
         }
       }
     } else {
-      const tileSize = 64;
-      const chap = game.chapter;
-      for (let y = 0; y < WORLD.h; y += tileSize) {
-        for (let x = 0; x < WORLD.w; x += tileSize) {
-          const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-          const noise = hash - Math.floor(hash);
-          const color =
-            chap === 'temple'
-              ? noise > 0.6
-                ? 0x2e1a1a
-                : 0x221313
-              : chap === 'mine'
+      const fallback = 'ground/3';
+      if (this.useSprites && assets?.frames[fallback]) {
+        const tile = assets.frames[fallback];
+        const w = tile.width;
+        const h = tile.height;
+        for (let y = 0; y < WORLD.h; y += h) {
+          for (let x = 0; x < WORLD.w; x += w) {
+            const img = this.add
+              .image(x, y, tile.texture, fallback)
+              .setOrigin(0)
+              .setDepth(-100);
+            this.groundImages.push(img);
+          }
+        }
+
+        for (const object of SCENERY) {
+          const frame = 'scenery/' + object.id;
+          const f = assets.frames[frame];
+          if (f) {
+            const img = this.add
+              .image(object.x, object.y, f.texture, frame)
+              .setOrigin(0.5, 1)
+              .setDepth(object.y);
+            this.groundImages.push(img);
+          }
+        }
+      } else {
+        const tileSize = 64;
+        const chap = game.chapter;
+        for (let y = 0; y < WORLD.h; y += tileSize) {
+          for (let x = 0; x < WORLD.w; x += tileSize) {
+            const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            const noise = hash - Math.floor(hash);
+            const color =
+              chap === 'temple'
                 ? noise > 0.6
-                  ? 0x28282b
-                  : 0x1e1e21
-                : noise > 0.6
-                  ? 0x253227
-                  : 0x1d271f;
-          this.groundGfx.fillStyle(color, 1);
-          this.groundGfx.fillRect(x, y, tileSize, tileSize);
+                  ? 0x2e1a1a
+                  : 0x221313
+                : chap === 'mine'
+                  ? noise > 0.6
+                    ? 0x28282b
+                    : 0x1e1e21
+                  : noise > 0.6
+                    ? 0x253227
+                    : 0x1d271f;
+            this.groundGfx.fillStyle(color, 1);
+            this.groundGfx.fillRect(x, y, tileSize, tileSize);
+          }
         }
       }
     }
@@ -545,6 +633,25 @@ class BattleScene extends Phaser.Scene {
     this.seen.clear();
     this.gfx.clear();
     const t = game.clock;
+
+    for (const object of this.mapObjects) {
+      const i = object.image;
+      const occludes =
+        game.phase !== 'lobby' &&
+        i.depth > game.player.y &&
+        i.x < game.player.x + 50 &&
+        i.x + i.width > game.player.x - 50 &&
+        i.y - i.height < game.player.y + 20 &&
+        i.y > game.player.y - 85;
+      i.setAlpha(occludes ? 0.12 : object.alpha);
+    }
+
+    if (game.phase === 'battle') {
+      if (game.player.moving && game.clock >= this.nextFootstep) {
+        sound.play('step', 0.25);
+        this.nextFootstep = game.clock + 0.34;
+      }
+    }
 
     if (game.phase === 'lobby') {
       this.cameras.main.centerOn(WORLD.w / 2, WORLD.h / 2);
