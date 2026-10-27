@@ -36,13 +36,14 @@ import type {
   ActiveRunSnapshot,
 } from './types';
 import { assets, setAssetManifest, type Manifest } from './renderer';
+import { assetUrl } from './utils';
 
 let framePositions: Record<string, { x: number; y: number }> = {};
 let assetManifest: Manifest | null = null;
 
 export async function loadArtPositions() {
   try {
-    const r = await fetch('/assets/mir/manifest.json');
+    const r = await fetch(assetUrl('assets/mir/manifest.json'));
     if (!r.ok) return;
     const manifest = (await r.json()) as Manifest;
     assetManifest = manifest;
@@ -51,7 +52,7 @@ export async function loadArtPositions() {
     await Promise.all(
       manifest.pages.map(async (page) => {
         try {
-          const resp = await fetch('/assets/mir/' + page.data);
+          const resp = await fetch(assetUrl('assets/mir/' + page.data));
           if (!resp.ok) return;
           const atlas = await resp.json();
           for (const [key, val] of Object.entries(atlas.frames)) {
@@ -84,7 +85,7 @@ export function Icon({ frame, className = '' }: { frame?: string; className?: st
       {f && position && page ? (
         <svg viewBox={`0 0 ${f.width} ${f.height}`} preserveAspectRatio="xMidYMid meet">
           <svg width={f.width} height={f.height} viewBox={`${position.x} ${position.y} ${f.width} ${f.height}`} overflow="hidden">
-            <image width={page.width} height={page.height} href={'/assets/mir/' + page.image} />
+            <image width={page.width} height={page.height} href={assetUrl('assets/mir/' + page.image)} />
           </svg>
         </svg>
       ) : (

@@ -1,3 +1,5 @@
+import { assetUrl } from './utils';
+
 class SoundSystem {
   private ctx: AudioContext | null = null;
   private muted: boolean = false;
@@ -215,7 +217,7 @@ class SoundSystem {
     if (!this.ctx) return;
 
     const effectiveVolume = volume * this.sfxVolume;
-    const path = `/assets/sound/${fileName}`;
+    const path = assetUrl(`assets/sound/${fileName}`);
     const buf = this.buffers.get(path);
     if (buf) {
       try {

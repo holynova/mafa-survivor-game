@@ -3,6 +3,7 @@ import { game, WORLD } from './game';
 import { SCENERY } from './content';
 import { sound } from './audio';
 import type { Enemy, Fx, Minion, Projectile } from './types';
+import { assetUrl } from './utils';
 
 export interface Manifest {
   pages: {
@@ -62,10 +63,10 @@ class BattleScene extends Phaser.Scene {
   preload() {
     if (assets?.pages) {
       for (const page of assets.pages) {
-        this.load.atlas(page.key, '/assets/mir/' + page.image, '/assets/mir/' + page.data);
+        this.load.atlas(page.key, assetUrl('assets/mir/' + page.image), assetUrl('assets/mir/' + page.data));
       }
     } else {
-      this.load.json('manifest', '/assets/mir/manifest.json');
+      this.load.json('manifest', assetUrl('assets/mir/manifest.json'));
     }
 
     this.load.on('loaderror', (file: any) => {
