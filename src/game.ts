@@ -649,8 +649,9 @@ export class Game {
 
   spawnSpecificBoss(bossKind: string) {
     this.isSandbox = true;
-    this.spawnEnemy(bossKind);
-    const bossName = bossKind === 'boss_woma' ? '沃玛教主' : bossKind === 'boss_mine' ? '尸王' : '骷髅精灵';
+    const kind = bossKind === 'boss_woma' ? 'boss_temple' : bossKind;
+    this.spawnEnemy(kind);
+    const bossName = kind === 'boss_temple' ? '沃玛教主' : kind === 'boss_mine' ? '尸王' : '骷髅精灵';
     this.floating.push({
       id: ++this.id,
       x: this.player.x,

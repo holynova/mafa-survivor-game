@@ -1556,7 +1556,7 @@ export function App() {
                   <button
                     className="debug-chip"
                     onClick={() => {
-                      game.spawnSpecificBoss('boss_woma');
+                      game.spawnSpecificBoss('boss_temple');
                       setShowSandbox(false);
                     }}
                   >
