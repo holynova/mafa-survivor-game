@@ -43,7 +43,7 @@ export function validateAndRepairProfile(raw: any): ProfileData {
     }
   }
 
-  const validChapters: MapChapter[] = ['bichon', 'mine', 'temple'];
+  const validChapters: MapChapter[] = ['bichon', 'mine', 'temple', 'tomb', 'desert'];
   let unlockedChapters: MapChapter[] = ['bichon'];
   if (Array.isArray(raw.unlockedChapters)) {
     const valid = raw.unlockedChapters.filter((c: any) => validChapters.includes(c));
@@ -288,7 +288,15 @@ export async function saveRun(result: RunResult) {
 
       if (result.won) {
         const nextChapter: MapChapter | null =
-          result.chapter === 'bichon' ? 'mine' : result.chapter === 'mine' ? 'temple' : null;
+          result.chapter === 'bichon'
+            ? 'mine'
+            : result.chapter === 'mine'
+            ? 'temple'
+            : result.chapter === 'temple'
+            ? 'tomb'
+            : result.chapter === 'tomb'
+            ? 'desert'
+            : null;
         if (nextChapter && !profile.unlockedChapters.includes(nextChapter)) {
           profile.unlockedChapters.push(nextChapter);
           profileUpdated = true;

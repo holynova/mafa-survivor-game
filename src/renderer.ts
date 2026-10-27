@@ -179,6 +179,48 @@ class BattleScene extends Phaser.Scene {
         const context = texture.context;
         context.imageSmoothingEnabled = false;
         context.clearRect(0, 0, WORLD.w, WORLD.h);
+
+        const baseFloorMap: Record<MapChapter, string> = {
+          bichon: 'map/00001CE5',
+          mine: 'map/00022F78',
+          temple: 'map/00023071',
+          tomb: 'map/00022E80',
+          desert: 'map/000101AD',
+        };
+        const baseFloorKey = baseFloorMap[game.chapter] || 'map/00001CE5';
+        const baseMeta = assets?.frames[baseFloorKey];
+        if (baseMeta && this.textures.exists(baseMeta.texture)) {
+          const bf = this.textures.getFrame(baseMeta.texture, baseFloorKey);
+          if (bf?.source?.image) {
+            const bw = bf.cutWidth || 96;
+            const bh = bf.cutHeight || 64;
+            for (let by = 0; by < WORLD.h; by += bh) {
+              for (let bx = 0; bx < WORLD.w; bx += bw) {
+                context.drawImage(
+                  bf.source.image as CanvasImageSource,
+                  bf.cutX,
+                  bf.cutY,
+                  bw,
+                  bh,
+                  bx,
+                  by,
+                  bw,
+                  bh
+                );
+              }
+            }
+          }
+        }
+
+        const voidTileKeys = new Set([
+          '0002273C',
+          '00022EAE',
+          '00022EAF',
+          '00022EB0',
+          '00022EB1',
+          '00022EB2',
+        ]);
+
         const paint = (key: string, x: number, y: number, bottom = false) => {
           const meta = assets?.frames[key];
           if (!meta) return;
@@ -199,7 +241,9 @@ class BattleScene extends Phaser.Scene {
         };
 
         for (const tile of map.tiles) {
-          paint('map/' + tile.texture.toString(16).toUpperCase().padStart(8, '0'), tile.x, tile.y);
+          const hex = tile.texture.toString(16).toUpperCase().padStart(8, '0');
+          if (voidTileKeys.has(hex)) continue;
+          paint('map/' + hex, tile.x, tile.y);
         }
         for (const o of map.objects) {
           if (o.depth === 0) {

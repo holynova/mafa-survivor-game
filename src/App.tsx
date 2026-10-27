@@ -301,7 +301,7 @@ export function App() {
   const [selectedChapter, setSelectedChapter] = useState<MapChapter>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = window.localStorage.getItem('mafa_selected_chapter') as MapChapter | null;
-      if (saved && (saved === 'bichon' || saved === 'mine' || saved === 'temple')) {
+      if (saved && (saved === 'bichon' || saved === 'mine' || saved === 'temple' || saved === 'tomb' || saved === 'desert')) {
         return saved;
       }
     }
