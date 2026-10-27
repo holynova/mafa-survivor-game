@@ -11,3 +11,4 @@ yarn-error.log*
 
 # Original evaluation asset binary (fetchable locally via npm run assets:fetch)
 public/assets/mir/atlas.png
+scratch/
