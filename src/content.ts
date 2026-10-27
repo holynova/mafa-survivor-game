@@ -3,6 +3,7 @@ import type {
   Bonuses,
   HeroClass,
   Item,
+  ItemAffix,
   MapChapter,
   SkillId,
   Slot,
@@ -493,6 +494,7 @@ export const STAT_NAMES: Record<StatKey, string> = {
   projectile_speed: '弹道速度',
   summon_damage_pct: '随从伤害',
   summon_hp_pct: '随从生命',
+  lifesteal: '攻击吸血',
 };
 
 export const SLOT_NAMES: Record<Slot, string> = {
@@ -1124,6 +1126,212 @@ export const EQUIPMENT_ITEMS: Item[] = [
     special: 'revive',
     description: '【经典特戒】生命归零时立刻原地复活并回复 50% 生命（每局限触发 1 次）！',
   },
+
+  // --- Hongmo Set (虹魔套装) ---
+  {
+    id: 'neck-hongmo',
+    name: '虹魔项链',
+    kind: 'equipment',
+    slot: 'necklace',
+    tier: 3,
+    price: 650,
+    maxCount: null,
+    stats: { dc_flat: 4, mc_flat: 4, sc_flat: 4, lifesteal: 3 },
+    setKey: 'hongmo',
+    description: '【虹魔套装】攻击吸血 3%，集齐套装激活强大噬血光环',
+  },
+  {
+    id: 'brac-hongmo',
+    name: '虹魔手镯',
+    kind: 'equipment',
+    slot: 'braceletL',
+    tier: 3,
+    price: 650,
+    maxCount: null,
+    stats: { def_flat: 3, mdef_flat: 3, lifesteal: 2 },
+    setKey: 'hongmo',
+    description: '【虹魔套装】赤红魔纹手镯，攻击吸血 2%',
+  },
+  {
+    id: 'ring-hongmo',
+    name: '虹魔戒指',
+    kind: 'equipment',
+    slot: 'ringL',
+    tier: 3,
+    price: 650,
+    maxCount: null,
+    stats: { dc_flat: 5, mc_flat: 5, sc_flat: 5, lifesteal: 2 },
+    setKey: 'hongmo',
+    description: '【虹魔套装】玛法魔族至宝，攻击吸血 2%',
+  },
+
+  // --- Moxue Set (魔血套装) ---
+  {
+    id: 'neck-moxue',
+    name: '魔血项链',
+    kind: 'equipment',
+    slot: 'necklace',
+    tier: 3,
+    price: 650,
+    maxCount: null,
+    stats: { hp_max: 30, mc_flat: 3, sc_flat: 3 },
+    setKey: 'moxue',
+    description: '【魔血套装】蕴含太古魔血，大幅提升生命上限',
+  },
+  {
+    id: 'brac-moxue',
+    name: '魔血手镯',
+    kind: 'equipment',
+    slot: 'braceletL',
+    tier: 3,
+    price: 650,
+    maxCount: null,
+    stats: { hp_max: 30, def_flat: 3 },
+    setKey: 'moxue',
+    description: '【魔血套装】血玉凝结而成的护腕，强固气血',
+  },
+  {
+    id: 'ring-moxue',
+    name: '魔血戒指',
+    kind: 'equipment',
+    slot: 'ringL',
+    tier: 3,
+    price: 650,
+    maxCount: null,
+    stats: { hp_max: 30, mdef_flat: 3 },
+    setKey: 'moxue',
+    description: '【魔血套装】魔力化血，生存能力极大强化',
+  },
+
+  // --- Memory Set (记忆套装) ---
+  {
+    id: 'neck-memory',
+    name: '记忆项链',
+    kind: 'equipment',
+    slot: 'necklace',
+    tier: 4,
+    price: 950,
+    maxCount: null,
+    stats: { dc_flat: 6, crit_chance: 6 },
+    luck: 2,
+    setKey: 'memory',
+    description: '【记忆套装】极其罕见的运+2幸运项链！运九套终极圣物',
+  },
+  {
+    id: 'helm-memory',
+    name: '记忆头盔',
+    kind: 'equipment',
+    slot: 'helmet',
+    tier: 3,
+    price: 500,
+    maxCount: null,
+    stats: { def_flat: 6, mdef_flat: 4, exp_gain: 10 },
+    setKey: 'memory',
+    description: '【记忆套装】凝聚往昔英灵记忆的青铜战盔',
+  },
+  {
+    id: 'brac-memory',
+    name: '记忆手镯',
+    kind: 'equipment',
+    slot: 'braceletL',
+    tier: 3,
+    price: 500,
+    maxCount: null,
+    stats: { mc_flat: 4, sc_flat: 4, gold_gain: 15 },
+    setKey: 'memory',
+    description: '【记忆套装】雕刻古符文的记忆护镯',
+  },
+  {
+    id: 'ring-memory',
+    name: '记忆戒指',
+    kind: 'equipment',
+    slot: 'ringL',
+    tier: 4,
+    price: 1200,
+    maxCount: null,
+    stats: { dc_flat: 6, mc_flat: 6, sc_flat: 6, cooldown_reduction: 8 },
+    setKey: 'memory',
+    description: '【记忆套装】天地合一的召集魔戒',
+  },
+
+  // --- Classic Zuma Regalia (祖玛套名牌) ---
+  {
+    id: 'neck-green',
+    name: '绿色项链',
+    kind: 'equipment',
+    slot: 'necklace',
+    tier: 4,
+    price: 900,
+    maxCount: null,
+    classReq: 'warrior',
+    stats: { dc_flat: 9, dc_bonus_pct: 10 },
+    setKey: 'zuma_warrior',
+    description: '【祖玛名器】墨绿玉髓项链，战士攻击力大幅提升',
+  },
+  {
+    id: 'brac-knight',
+    name: '骑士手镯',
+    kind: 'equipment',
+    slot: 'braceletL',
+    tier: 4,
+    price: 850,
+    maxCount: null,
+    classReq: 'warrior',
+    stats: { dc_flat: 6, def_flat: 5 },
+    setKey: 'zuma_warrior',
+    description: '【祖玛名器】骑士重装手镯，战士攻防一体',
+  },
+  {
+    id: 'neck-demon-bell',
+    name: '恶魔铃铛',
+    kind: 'equipment',
+    slot: 'necklace',
+    tier: 4,
+    price: 900,
+    maxCount: null,
+    classReq: 'wizard',
+    stats: { mc_flat: 10, mc_bonus_pct: 10 },
+    setKey: 'zuma_wizard',
+    description: '【祖玛名器】恶魔头颅雕饰的金铃，法术伤害暴增',
+  },
+  {
+    id: 'brac-dragon',
+    name: '龙之手镯',
+    kind: 'equipment',
+    slot: 'braceletL',
+    tier: 4,
+    price: 850,
+    maxCount: null,
+    classReq: 'wizard',
+    stats: { mc_flat: 6, mdef_flat: 5 },
+    setKey: 'zuma_wizard',
+    description: '【祖玛名器】盘龙青铜魔镯，法术防御与魔力共鸣',
+  },
+  {
+    id: 'neck-soul',
+    name: '灵魂项链',
+    kind: 'equipment',
+    slot: 'necklace',
+    tier: 4,
+    price: 900,
+    maxCount: null,
+    classReq: 'taoist',
+    stats: { sc_flat: 10, sc_bonus_pct: 10 },
+    setKey: 'zuma_taoist',
+    description: '【祖玛名器】拘魂摄魄的道家至宝，大幅提升道术',
+  },
+  {
+    id: 'neck-tiger-tooth',
+    name: '白色虎齿项链',
+    kind: 'equipment',
+    slot: 'necklace',
+    tier: 2,
+    price: 320,
+    maxCount: null,
+    stats: { dodge: 8, def_flat: 2 },
+    luck: 1,
+    description: '【经典项链】虎齿精雕而成，自带幸运+1与敏捷闪避',
+  },
 ];
 
 // Passive Items (30 Brotato-style stacked items)
@@ -1283,6 +1491,17 @@ export const PASSIVE_ITEMS: Item[] = [
 export const ITEMS: Item[] = [
   ...EQUIPMENT_ITEMS,
   ...PASSIVE_ITEMS,
+  {
+    id: 'blessing-oil',
+    name: '祝福油',
+    kind: 'oil',
+    price: 150,
+    tier: 2,
+    stats: {},
+    maxCount: null,
+    icon: 'item/强效金创药',
+    description: '【玛法秘宝】涂抹于当前武器，有几率提升武器幸运值（最高可至幸运+7）。运9套必备神油！',
+  },
   {
     id: 'heal-small',
     name: '中量金创药',
@@ -1463,6 +1682,125 @@ export function getRandomDropEquipment(
     return getItem(fallback[Math.floor(rngNext() * fallback.length)].id);
   }
   return getItem(candidates[Math.floor(rngNext() * candidates.length)].id);
+}
+
+export interface SetBonusDef {
+  pieces: number;
+  description: string;
+  stats: Bonuses;
+}
+
+export interface EquipmentSetDef {
+  key: string;
+  name: string;
+  bonuses: SetBonusDef[];
+}
+
+export const EQUIPMENT_SETS: Record<string, EquipmentSetDef> = {
+  hongmo: {
+    key: 'hongmo',
+    name: '虹魔套装',
+    bonuses: [
+      { pieces: 2, description: '全技能命中吸血 5%', stats: { lifesteal: 5 } },
+      { pieces: 3, description: '全技能命中吸血 10%，移动速度 +15%', stats: { lifesteal: 10, move_speed: 15 } },
+    ],
+  },
+  moxue: {
+    key: 'moxue',
+    name: '魔血套装',
+    bonuses: [
+      { pieces: 2, description: '生命上限 +60，防御 +6', stats: { hp_max: 60, def_flat: 6 } },
+      { pieces: 3, description: '生命上限 +150，魔防 +10，防御 +10', stats: { hp_max: 150, mdef_flat: 10, def_flat: 10 } },
+    ],
+  },
+  memory: {
+    key: 'memory',
+    name: '记忆套装',
+    bonuses: [
+      { pieces: 2, description: '经验获取 +25%，金币获取 +25%', stats: { exp_gain: 25, gold_gain: 25 } },
+      { pieces: 3, description: '全技能冷却 -12%，召唤物伤害 +35%', stats: { cooldown_reduction: 12, summon_damage_pct: 35 } },
+    ],
+  },
+  zuma_warrior: {
+    key: 'zuma_warrior',
+    name: '祖玛战士套装',
+    bonuses: [
+      { pieces: 2, description: '攻击力 +15%，防御 +8', stats: { dc_bonus_pct: 15, def_flat: 8 } },
+    ],
+  },
+  zuma_wizard: {
+    key: 'zuma_wizard',
+    name: '祖玛法师套装',
+    bonuses: [
+      { pieces: 2, description: '魔法伤害 +15%，魔防 +8', stats: { mc_bonus_pct: 15, mdef_flat: 8 } },
+    ],
+  },
+  zuma_taoist: {
+    key: 'zuma_taoist',
+    name: '祖玛道士套装',
+    bonuses: [
+      { pieces: 2, description: '道术伤害 +15%，召唤物生命 +25%', stats: { sc_bonus_pct: 15, summon_hp_pct: 25 } },
+    ],
+  },
+};
+
+export function mutateSuperiorEquipment(baseItem: Item, rng: () => number = Math.random): Item {
+  if (baseItem.kind !== 'equipment') return baseItem;
+
+  const affixes: ItemAffix[] = [];
+  const mergedStats: Bonuses = { ...baseItem.stats };
+  let extraLuck = 0;
+
+  type AffixCandidate = {
+    type: StatKey | 'luck';
+    name: string;
+    minValue: number;
+    maxValue: number;
+  };
+
+  const pool: AffixCandidate[] = [
+    { type: 'dc_flat', name: '攻击', minValue: 1, maxValue: 4 },
+    { type: 'mc_flat', name: '魔法', minValue: 1, maxValue: 4 },
+    { type: 'sc_flat', name: '道术', minValue: 1, maxValue: 4 },
+    { type: 'def_flat', name: '防御', minValue: 1, maxValue: 3 },
+    { type: 'mdef_flat', name: '魔防', minValue: 1, maxValue: 3 },
+    { type: 'crit_chance', name: '暴击', minValue: 2, maxValue: 5 },
+    { type: 'lifesteal', name: '吸血', minValue: 1, maxValue: 3 },
+  ];
+
+  if (baseItem.slot === 'weapon' || baseItem.slot === 'necklace') {
+    pool.push({ type: 'luck', name: '幸运', minValue: 1, maxValue: 1 });
+  }
+
+  const numAffixes = rng() < 0.35 ? 2 : 1;
+  const shuffled = [...pool].sort(() => rng() - 0.5);
+
+  for (let i = 0; i < numAffixes && i < shuffled.length; i++) {
+    const cand = shuffled[i];
+    const val = Math.floor(rng() * (cand.maxValue - cand.minValue + 1)) + cand.minValue;
+    affixes.push({
+      type: cand.type,
+      name: cand.name,
+      value: val,
+    });
+    if (cand.type === 'luck') {
+      extraLuck += val;
+    } else {
+      const k = cand.type as StatKey;
+      mergedStats[k] = (mergedStats[k] || 0) + val;
+    }
+  }
+
+  const baseLuck = baseItem.luck || 0;
+
+  return {
+    ...baseItem,
+    isSuperior: true,
+    stats: mergedStats,
+    affixes,
+    luck: baseLuck + extraLuck,
+    price: Math.round(baseItem.price * 1.35),
+  };
 }
 
 export const SCENERY = [

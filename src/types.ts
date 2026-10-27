@@ -24,7 +24,8 @@ export type StatKey =
   | 'dodge'
   | 'projectile_speed'
   | 'summon_damage_pct'
-  | 'summon_hp_pct';
+  | 'summon_hp_pct'
+  | 'lifesteal';
 
 export type Bonuses = Partial<Record<StatKey, number>>;
 
@@ -222,10 +223,16 @@ export interface Upgrade {
   stat?: StatKey;
 }
 
+export interface ItemAffix {
+  type: StatKey | 'luck' | 'lifesteal';
+  name: string;
+  value: number;
+}
+
 export interface Item {
   id: string;
   name: string;
-  kind: 'equipment' | 'passive' | 'heal';
+  kind: 'equipment' | 'passive' | 'heal' | 'oil';
   price: number;
   tier: number;
   stats: Bonuses;
@@ -235,6 +242,10 @@ export interface Item {
   description: string;
   classReq?: HeroClass;
   special?: 'paralyze' | 'revive' | 'mana_shield';
+  setKey?: 'hongmo' | 'moxue' | 'memory' | 'zuma_warrior' | 'zuma_wizard' | 'zuma_taoist';
+  isSuperior?: boolean;
+  affixes?: ItemAffix[];
+  luck?: number;
 }
 
 export interface Offer {
@@ -243,11 +254,17 @@ export interface Offer {
   price: number;
   locked: boolean;
   sold: boolean;
+  isSuperior?: boolean;
+  affixes?: ItemAffix[];
+  luck?: number;
 }
 
 export interface Equipped {
   itemId: string;
   paid: number;
+  luck?: number;
+  isSuperior?: boolean;
+  affixes?: ItemAffix[];
 }
 
 export interface RunResult {

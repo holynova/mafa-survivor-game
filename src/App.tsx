@@ -4,6 +4,7 @@ import {
   CHAPTERS,
   CLASS_BASES,
   EQUIPMENT_ITEMS,
+  EQUIPMENT_SETS,
   SKILLS,
   TALENTS,
   getItem,
@@ -246,10 +247,39 @@ export function Mir2EquipmentView({
             <strong>{game.stats.crit_chance ?? 0}%</strong>
           </div>
           <div className="char-stat-row">
+            <span>总幸运值:</span>
+            <strong style={{ color: game.totalLuck >= 9 ? '#facc15' : '#e2e8f0' }}>
+              {game.totalLuck >= 9 ? (
+                <span className="luck-9-glow-badge">【运9大成 · 刀刀真伤上限】</span>
+              ) : (
+                `幸运 +${game.totalLuck} (上限率 ${(game.totalLuck > 0 ? (game.totalLuck / 9 * 100).toFixed(0) : 0)}%)`
+              )}
+            </strong>
+          </div>
+          {Boolean(game.stats.lifesteal) && (
+            <div className="char-stat-row">
+              <span>攻击吸血:</span>
+              <strong style={{ color: '#f43f5e' }}>{game.stats.lifesteal}%</strong>
+            </div>
+          )}
+          <div className="char-stat-row">
             <span>移动速度:</span>
             <strong>{Math.round(game.moveSpeed)} px/s</strong>
           </div>
         </div>
+
+        {/* Set Resonance Card */}
+        {game.activeSetBonuses.length > 0 && (
+          <div className="char-sets-card">
+            <div className="char-sets-title">已激活套装羁绊</div>
+            {game.activeSetBonuses.map((b) => (
+              <div key={b.setKey + b.pieces} className="char-set-badge">
+                <span className="char-set-name">【{b.name} ({b.count}件)】</span>
+                <span className="char-set-desc">{b.description}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Selected Item Details */}
         <div className="char-item-inspect-card">
@@ -260,12 +290,34 @@ export function Mir2EquipmentView({
                 <div>
                   <div className={`inspect-item-name tier-${selectedItem.tier ?? 1}`}>
                     {selectedItem.name}
+                    {selectedEq?.isSuperior && (
+                      <span className="inspect-superior-badge">极品</span>
+                    )}
                   </div>
                   <div className="inspect-item-sub">
                     {selectedItem.slot ? SLOT_NAMES[selectedItem.slot] : '道具'} · 档次 Tier {selectedItem.tier ?? 1}
                   </div>
                 </div>
               </div>
+              {(selectedEq?.luck ?? selectedItem.luck) ? (
+                <div className="inspect-luck-tag">
+                  幸运加成: +{selectedEq?.luck ?? selectedItem.luck}
+                </div>
+              ) : null}
+              {selectedEq?.affixes && selectedEq.affixes.length > 0 && (
+                <div className="inspect-affixes-list">
+                  {selectedEq.affixes.map((af, idx) => (
+                    <div key={idx} className="inspect-affix-row">
+                      极品附加: +{af.value} {af.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {selectedItem.setKey && (
+                <div className="inspect-set-tag">
+                  所属套装: {EQUIPMENT_SETS[selectedItem.setKey]?.name}
+                </div>
+              )}
               <div className="inspect-item-desc">{selectedItem.description}</div>
               {onSell && selectedSlot && (
                 <button
@@ -2218,6 +2270,14 @@ export function App() {
               <h2>第 {g.wave} 波清剿完成 · 比奇行脚商人</h2>
               <div className="shop-gold-info">
                 <span>当前持有金币: <strong>金币 {g.gold}</strong></span>
+                <span>
+                  武器幸运: <strong>+{g.equipment.weapon?.luck ?? 0}</strong>
+                  {g.totalLuck >= 9 ? (
+                    <span className="shop-luck-badge max">【运9大成 · 100%上限】</span>
+                  ) : (
+                    <span className="shop-luck-badge">总幸运: +{g.totalLuck}/9</span>
+                  )}
+                </span>
                 <span>本波收益: +{g.lastWaveGold} (含未拾取50%折算)</span>
               </div>
             </div>
@@ -2232,13 +2292,30 @@ export function App() {
                     <div className="offer-header">
                       <Icon frame={item.icon} />
                       <div className="offer-meta">
-                        <span className={`item-tier tier-${item.tier}`}>{item.name}</span>
+                        <span className={`item-tier tier-${item.tier}`}>
+                          {item.name}
+                          {o.isSuperior && <span className="offer-superior-badge">极品</span>}
+                        </span>
                         <span className="item-price">金币 {o.price}</span>
                       </div>
                     </div>
                     <div className="item-type-tag">
-                      {item.kind === 'equipment' ? '装备' : item.kind === 'passive' ? '被动道具' : '恢复品'}
+                      {item.kind === 'equipment'
+                        ? '装备'
+                        : item.kind === 'passive'
+                        ? '被动道具'
+                        : item.kind === 'oil'
+                        ? '玛法神油'
+                        : '恢复品'}
+                      {o.luck ? <span className="item-luck-pill">幸运 +{o.luck}</span> : null}
                     </div>
+                    {o.affixes && o.affixes.length > 0 && (
+                      <div className="offer-affix-tags">
+                        {o.affixes.map((af, i) => (
+                          <span key={i} className="offer-affix-pill">+{af.value} {af.name}</span>
+                        ))}
+                      </div>
+                    )}
                     <p className="item-desc">{item.description}</p>
 
                     <div className="offer-actions">

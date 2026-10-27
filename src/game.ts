@@ -1,6 +1,7 @@
 import {
   CHAPTERS,
   CLASS_BASES,
+  EQUIPMENT_SETS,
   ITEMS,
   MONSTERS,
   SKILLS,
@@ -8,6 +9,7 @@ import {
   getItem,
   getRandomDropEquipment,
   getSkill,
+  mutateSuperiorEquipment,
 } from './content';
 import {
   Rng,
@@ -1170,6 +1172,63 @@ export class Game {
     };
   }
 
+  get totalLuck(): number {
+    let luck = 0;
+    for (const slot of ['weapon', 'necklace'] as Slot[]) {
+      const eq = this.equipment[slot];
+      if (!eq) continue;
+      const baseItem = getItem(eq.itemId);
+      luck += (eq.luck ?? baseItem.luck ?? 0);
+      if (eq.affixes) {
+        for (const af of eq.affixes) {
+          if (af.type === 'luck') luck += af.value;
+        }
+      }
+    }
+    return luck;
+  }
+
+  get activeSetBonuses(): {
+    setKey: string;
+    name: string;
+    count: number;
+    description: string;
+    pieces: number;
+  }[] {
+    const result: {
+      setKey: string;
+      name: string;
+      count: number;
+      description: string;
+      pieces: number;
+    }[] = [];
+    const setCounts: Record<string, number> = {};
+    for (const e of Object.values(this.equipment)) {
+      if (!e) continue;
+      const baseItem = getItem(e.itemId);
+      if (baseItem.setKey) {
+        setCounts[baseItem.setKey] = (setCounts[baseItem.setKey] ?? 0) + 1;
+      }
+    }
+
+    for (const [setKey, count] of Object.entries(setCounts)) {
+      const setDef = EQUIPMENT_SETS[setKey];
+      if (!setDef) continue;
+      for (const bonus of setDef.bonuses) {
+        if (count >= bonus.pieces) {
+          result.push({
+            setKey,
+            name: setDef.name,
+            count,
+            description: bonus.description,
+            pieces: bonus.pieces,
+          });
+        }
+      }
+    }
+    return result;
+  }
+
   recompute() {
     const list: Bonuses[] = [this.upgrades, this.talentBonuses];
 
@@ -1192,9 +1251,37 @@ export class Game {
       for (let i = 0; i < count; i++) list.push(item.stats);
     }
 
-    // Equipment items
+    // Equipment items & Affixes
     for (const e of Object.values(this.equipment)) {
-      if (e) list.push(getItem(e.itemId).stats);
+      if (!e) continue;
+      const baseItem = getItem(e.itemId);
+      list.push(baseItem.stats);
+      if (e.affixes) {
+        for (const af of e.affixes) {
+          if (af.type !== 'luck') {
+            list.push({ [af.type as StatKey]: af.value });
+          }
+        }
+      }
+    }
+
+    // Set Resonance (套装羁绊加成)
+    const setCounts: Record<string, number> = {};
+    for (const e of Object.values(this.equipment)) {
+      if (!e) continue;
+      const baseItem = getItem(e.itemId);
+      if (baseItem.setKey) {
+        setCounts[baseItem.setKey] = (setCounts[baseItem.setKey] ?? 0) + 1;
+      }
+    }
+    for (const [setKey, count] of Object.entries(setCounts)) {
+      const setDef = EQUIPMENT_SETS[setKey];
+      if (!setDef) continue;
+      for (const bonus of setDef.bonuses) {
+        if (count >= bonus.pieces) {
+          list.push(bonus.stats);
+        }
+      }
     }
 
     // Buff bonuses
@@ -1807,33 +1894,49 @@ export class Game {
             const slot = this.equipmentSlot(item);
             const currentEquipped = this.equipment[slot];
             if (!currentEquipped) {
-              this.equipment[slot] = { itemId: item.id, paid: item.price };
+              this.equipment[slot] = {
+                itemId: item.id,
+                paid: item.price,
+                luck: item.luck,
+                isSuperior: item.isSuperior,
+                affixes: item.affixes ? [...item.affixes] : undefined,
+              };
               this.recompute();
               this.floating.push({
                 id: ++this.id,
                 x: this.player.x,
                 y: this.player.y - 55,
-                text: `【装备】${item.name}`,
-                color: '#ffaa00',
-                life: 1.5,
+                text: item.isSuperior ? `【极品装备】${item.name}` : `【装备】${item.name}`,
+                color: item.isSuperior ? '#c084fc' : '#ffaa00',
+                life: 1.6,
               });
             } else {
               const currentItem = getItem(currentEquipped.itemId);
+              const isSuperiorUpgrade = item.isSuperior && !currentEquipped.isSuperior;
               if (
                 item.tier > currentItem.tier ||
+                isSuperiorUpgrade ||
                 (item.tier === currentItem.tier && item.price > currentItem.price)
               ) {
                 const refund = sellPrice(currentEquipped.paid, currentItem.price);
                 this.gold += refund;
                 this.totalGold += refund;
-                this.equipment[slot] = { itemId: item.id, paid: item.price };
+                this.equipment[slot] = {
+                  itemId: item.id,
+                  paid: item.price,
+                  luck: item.luck,
+                  isSuperior: item.isSuperior,
+                  affixes: item.affixes ? [...item.affixes] : undefined,
+                };
                 this.recompute();
                 this.floating.push({
                   id: ++this.id,
                   x: this.player.x,
                   y: this.player.y - 55,
-                  text: `【换装】${item.name} (旧装备折现 +${refund})`,
-                  color: '#ffaa00',
+                  text: item.isSuperior
+                    ? `【换上极品】${item.name} (旧装备折现 +${refund})`
+                    : `【换装】${item.name} (旧装备折现 +${refund})`,
+                  color: item.isSuperior ? '#c084fc' : '#ffaa00',
                   life: 1.6,
                 });
               } else {
@@ -1939,18 +2042,36 @@ export class Game {
     let flat = 0;
     let bonusPct = 0;
 
+    const luck = this.totalLuck;
+    let rollRatio: number;
+    if (luck >= 9) {
+      rollRatio = 1.0; // 运9大成：100% 刀刀发挥上限威力！
+    } else if (luck > 0) {
+      if (this.rng.next() < luck / 9) {
+        rollRatio = 1.0;
+      } else {
+        rollRatio = this.rng.next();
+      }
+    } else {
+      rollRatio = this.rng.next();
+    }
+
     if (type === 'wizard') {
-      flat = 3 + this.rng.next() * 4 + (this.stats.mc_flat ?? 0);
+      flat = 3 + rollRatio * 4 + (this.stats.mc_flat ?? 0);
       bonusPct = this.stats.mc_bonus_pct ?? 0;
     } else if (type === 'warrior') {
-      flat = 5 + this.rng.next() * 5 + (this.stats.dc_flat ?? 0);
+      flat = 5 + rollRatio * 5 + (this.stats.dc_flat ?? 0);
       bonusPct = this.stats.dc_bonus_pct ?? 0;
     } else {
-      flat = 4 + this.rng.next() * 4 + (this.stats.sc_flat ?? 0);
+      flat = 4 + rollRatio * 4 + (this.stats.sc_flat ?? 0);
       bonusPct = this.stats.sc_bonus_pct ?? 0;
     }
 
     let damage = (base + flat) * (1 + s.power / 100) * (1 + bonusPct / 100) * (this.damageMultiplier ?? 1);
+
+    if (luck >= 9) {
+      damage *= 1.1; // 运9大成额外获得10%极值神圣威力
+    }
 
     // Mind's Eye extra crit chance
     const extraCrit = this.skills.some((sk) => sk.id === 'mind_eye') ? 15 : 0;
@@ -2494,37 +2615,56 @@ export class Game {
     const hasParalyzeRing = Object.values(this.equipment).some(
       (eq) => eq && getItem(eq.itemId).special === 'paralyze'
     );
-    if (hasParalyzeRing && !e.kind.startsWith('boss') && this.rng.next() < 0.12) {
-      e.status.paralyzedUntil = this.clock + 2.0;
+    if (hasParalyzeRing && !e.kind.startsWith('boss') && this.rng.next() < 0.15) {
+      e.status.paralyzedUntil = this.clock + 2.5;
       this.floating.push({
         id: ++this.id,
         x: e.x,
         y: e.y - 60,
-        text: '【麻痹】',
+        text: '【麻痹石化】',
         color: '#fbbf24',
-        life: 0.75,
+        life: 0.85,
       });
     }
 
+    // Lifesteal (吸血属性与虹魔套装)
+    if (this.stats.lifesteal && this.stats.lifesteal > 0 && actualDamage > 0 && this.player.hp < this.maxHP) {
+      const heal = Math.max(1, Math.round(actualDamage * (this.stats.lifesteal / 100)));
+      this.player.hp = Math.min(this.maxHP, this.player.hp + heal);
+      if (this.floating.length < 50 && this.rng.next() < 0.35) {
+        this.floating.push({
+          id: ++this.id,
+          x: this.player.x + (this.rng.next() * 20 - 10),
+          y: this.player.y - 45,
+          text: `+${heal}`,
+          color: '#10b981',
+          life: 0.65,
+        });
+      }
+    }
+
     if (this.floating.length < 45) {
+      const isLuck9 = this.totalLuck >= 9;
       if (isCrit) {
         this.floating.push({
           id: ++this.id,
           x: e.x,
           y: e.y - 48,
-          text: `暴击! ${damage}`,
+          text: isLuck9 ? `运9暴击! ${damage}` : `暴击! ${damage}`,
           color: '#fbbf24',
           life: 0.9,
           type: 'crit',
-          scale: 1.35,
+          scale: isLuck9 ? 1.45 : 1.35,
         });
       } else {
         this.floating.push({
           id: ++this.id,
           x: e.x,
           y: e.y - 40,
-          text: String(damage),
-          color: skill.includes('fire')
+          text: isLuck9 ? `上限! ${damage}` : String(damage),
+          color: isLuck9
+            ? '#fef08a'
+            : skill.includes('fire')
             ? '#f97316'
             : skill.includes('lightning')
             ? '#facc15'
@@ -2575,12 +2715,15 @@ export class Game {
 
       // Boss special ground drops: guaranteed equipment drop + treasure chest!
       if (isBoss) {
-        const bossDropItem = getRandomDropEquipment(
+        let bossDropItem = getRandomDropEquipment(
           this.heroClass,
-          this.chapter === 'temple' ? 4 : 3,
+          this.chapter === 'temple' || this.chapter === 'cangyue' || this.chapter === 'moon' ? 4 : 3,
           4,
           () => this.rng.next()
         );
+        if (this.rng.next() < 0.45) {
+          bossDropItem = mutateSuperiorEquipment(bossDropItem, () => this.rng.next());
+        }
         this.drops.push({
           id: ++this.id,
           x: e.x + (this.rng.next() * 30 - 15),
@@ -2605,12 +2748,15 @@ export class Game {
         if (roll < 0.45) {
           const minTier = this.wave >= 8 ? 2 : 1;
           const maxTier = this.wave >= 8 ? 3 : 2;
-          const dropItem = getRandomDropEquipment(
+          let dropItem = getRandomDropEquipment(
             this.heroClass,
             minTier,
             maxTier,
             () => this.rng.next()
           );
+          if (this.rng.next() < 0.25) {
+            dropItem = mutateSuperiorEquipment(dropItem, () => this.rng.next());
+          }
           this.drops.push({
             id: ++this.id,
             x: e.x + (this.rng.next() * 24 - 12),
@@ -2968,6 +3114,9 @@ export class Game {
         return false;
       }
     }
+    if (item.kind === 'oil') {
+      return Boolean(this.equipment.weapon && (this.equipment.weapon.luck ?? 0) < 7);
+    }
     return item.kind !== 'heal' || this.player.hp < this.maxHP;
   }
 
@@ -2981,13 +3130,29 @@ export class Game {
       const choices = pool.filter(
         (x) => !this.offers.some((o) => o.itemId === x.id) && (i !== 0 || x.kind === 'passive')
       );
-      const item = this.rng.pick(choices.length ? choices : pool);
+      const rawItem = this.rng.pick(choices.length ? choices : pool);
+      let offerItem = rawItem;
+      let isSuperior = false;
+      let affixes = rawItem.affixes;
+      let luck = rawItem.luck;
+
+      // 20% chance for equipment to mutate into Superior in shop
+      if (rawItem.kind === 'equipment' && this.rng.next() < 0.20) {
+        offerItem = mutateSuperiorEquipment(rawItem, () => this.rng.next());
+        isSuperior = true;
+        affixes = offerItem.affixes;
+        luck = offerItem.luck;
+      }
+
       this.offers.push({
         id: ++this.id,
-        itemId: item.id,
-        price: Math.round(item.price * (1 + 0.045 * (this.wave - 1))),
+        itemId: rawItem.id,
+        price: Math.round(offerItem.price * (1 + 0.045 * (this.wave - 1))),
         locked: false,
         sold: false,
+        isSuperior,
+        affixes,
+        luck,
       });
     }
   }
@@ -3019,9 +3184,17 @@ export class Game {
       if (old) {
         this.gold += sellPrice(old.paid, getItem(old.itemId).price);
       }
-      this.equipment[slot] = { itemId: item.id, paid: offer.price };
+      this.equipment[slot] = {
+        itemId: item.id,
+        paid: offer.price,
+        luck: offer.luck ?? item.luck,
+        isSuperior: offer.isSuperior ?? item.isSuperior,
+        affixes: offer.affixes ? [...offer.affixes] : (item.affixes ? [...item.affixes] : undefined),
+      };
     } else if (item.kind === 'passive') {
       this.passives[item.id] = (this.passives[item.id] ?? 0) + 1;
+    } else if (item.kind === 'oil') {
+      this.useBlessingOil();
     } else {
       const healVal = item.id === 'heal-big' ? 75 : 35;
       this.player.hp = Math.min(this.maxHP, this.player.hp + healVal);
@@ -3030,6 +3203,53 @@ export class Game {
     this.recompute();
     this.emit();
     return true;
+  }
+
+  useBlessingOil(): boolean {
+    const wpn = this.equipment.weapon;
+    if (!wpn) return false;
+    const curLuck = wpn.luck ?? 0;
+    if (curLuck >= 7) {
+      this.floating.push({
+        id: ++this.id,
+        x: this.player.x,
+        y: this.player.y - 60,
+        text: '【极限】武器幸运已达上限 +7！',
+        color: '#facc15',
+        life: 1.5,
+      });
+      return false;
+    }
+
+    const chances = [0.85, 0.70, 0.55, 0.40, 0.28, 0.18, 0.10];
+    const chance = chances[curLuck] ?? 0.10;
+    const success = this.rng.next() < chance;
+
+    if (success) {
+      wpn.luck = curLuck + 1;
+      sound.playLevelUp();
+      this.floating.push({
+        id: ++this.id,
+        x: this.player.x,
+        y: this.player.y - 70,
+        text: `【祝福降临】武器幸运 +${wpn.luck}！`,
+        color: '#facc15',
+        life: 2.0,
+      });
+    } else {
+      sound.playClick();
+      this.floating.push({
+        id: ++this.id,
+        x: this.player.x,
+        y: this.player.y - 70,
+        text: '【无效】武器泛起微光，但幸运并未增加',
+        color: '#94a3b8',
+        life: 1.5,
+      });
+    }
+    this.recompute();
+    this.emit();
+    return success;
   }
 
   sell(slot: Slot): boolean {
