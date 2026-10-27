@@ -1665,6 +1665,33 @@ export function App() {
                   >
                     死亡峡谷 · 邪恶钳虫
                   </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_ox');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    苍月海岛 · 牛魔王
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_kong');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    赤月峡谷 · 双头金刚
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_blood');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    赤月峡谷 · 双头血魔
+                  </button>
                 </div>
 
                 <div className="debug-section-label">◇ 波次流程控制</div>

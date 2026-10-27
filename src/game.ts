@@ -1590,6 +1590,62 @@ export class Game {
             life: 1.5,
           });
         }
+      } else if (e.kind === 'boss_ox') {
+        // Ox Demon King: Whirlwind Flame Cleave
+        if (e.shootCD <= 0) {
+          e.shootCD = 4.5;
+          sound.playFireSword();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 50,
+            text: '【牛魔王灭世旋风烈火斩】！',
+            color: '#dc2626',
+            life: 2.0,
+          });
+          this.effects.push({
+            id: ++this.id,
+            kind: 'fire_slash',
+            x: e.x,
+            y: e.y,
+            life: 0.6,
+            total: 0.6,
+            radius: 160,
+          });
+          if (d < 160) {
+            this.hurt(Math.round(e.damage * 1.3));
+          }
+        }
+      } else if (e.kind === 'boss_kong' || e.kind === 'boss_blood') {
+        // Red Moon Kong/Blood: Earthshaker Slam & Toxic Shards
+        if (e.shootCD <= 0) {
+          e.shootCD = 5.0;
+          sound.playCharge();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 50,
+            text: e.kind === 'boss_kong' ? '【双头金刚天崩地裂震】！' : '【双头血魔狂怒血浪】！',
+            color: '#b91c1c',
+            life: 2.0,
+          });
+          const speed = 210;
+          for (let i = 0; i < 8; i++) {
+            const rad = (i * Math.PI) / 4;
+            this.projectiles.push({
+              id: ++this.id,
+              kind: 'enemy_poison',
+              x: e.x,
+              y: e.y,
+              vx: Math.cos(rad) * speed,
+              vy: Math.sin(rad) * speed,
+              damage: Math.round(e.damage * 0.9),
+              life: 2.5,
+              dir: 0,
+              isEnemy: true,
+            });
+          }
+        }
       } else if (e.aiType === 'summoner' && e.shootCD <= 0) {
         e.shootCD = 7.0;
         sound.playSummon();
