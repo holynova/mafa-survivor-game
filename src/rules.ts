@@ -129,48 +129,72 @@ export const expNeeded = (level: number): number => 12 + 8 * level;
  * Spatial partition grid for high-performance entity proximity queries.
  */
 export class SpatialHash<T extends { id: number; x: number; y: number }> {
-  private cells = new Map<string, T[]>();
+  // Use 32-bit integer keys to eliminate string allocations in hot loops
+  private cells = new Map<number, T[]>();
+  private bucketPool: T[][] = [];
+  private activeBuckets: T[][] = [];
 
   constructor(private size = 80) {}
 
   rebuild(entities: T[]) {
+    // Clear active buckets and return them to pool without deallocating
+    for (let i = 0; i < this.activeBuckets.length; i++) {
+      const bucket = this.activeBuckets[i];
+      bucket.length = 0;
+      this.bucketPool.push(bucket);
+    }
+    this.activeBuckets.length = 0;
     this.cells.clear();
-    for (const e of entities) {
-      const key = this.key(e.x, e.y);
+
+    const sz = this.size;
+    for (let i = 0; i < entities.length; i++) {
+      const e = entities[i];
+      const ix = Math.floor(e.x / sz) + 512;
+      const iy = Math.floor(e.y / sz) + 512;
+      const key = (iy << 12) | (ix & 0xfff);
+
       let bucket = this.cells.get(key);
       if (!bucket) {
-        bucket = [];
+        bucket = this.bucketPool.pop() || [];
         this.cells.set(key, bucket);
+        this.activeBuckets.push(bucket);
       }
       bucket.push(e);
     }
   }
 
-  private key(x: number, y: number): string {
-    return `${Math.floor(x / this.size)},${Math.floor(y / this.size)}`;
-  }
-
-  nearby(x: number, y: number, r: number): T[] {
-    const out: T[] = [];
-    const minX = Math.floor((x - r) / this.size);
-    const maxX = Math.floor((x + r) / this.size);
-    const minY = Math.floor((y - r) / this.size);
-    const maxY = Math.floor((y + r) / this.size);
+  forEachNearby(x: number, y: number, r: number, callback: (entity: T) => void): void {
+    const sz = this.size;
+    const minX = Math.floor((x - r) / sz) + 512;
+    const maxX = Math.floor((x + r) / sz) + 512;
+    const minY = Math.floor((y - r) / sz) + 512;
+    const maxY = Math.floor((y + r) / sz) + 512;
     const rSq = r * r;
 
     for (let ix = minX; ix <= maxX; ix++) {
       for (let iy = minY; iy <= maxY; iy++) {
-        const bucket = this.cells.get(`${ix},${iy}`);
+        const key = (iy << 12) | (ix & 0xfff);
+        const bucket = this.cells.get(key);
         if (!bucket) continue;
-        for (const e of bucket) {
+        const len = bucket.length;
+        for (let i = 0; i < len; i++) {
+          const e = bucket[i];
           const dx = e.x - x;
           const dy = e.y - y;
           if (dx * dx + dy * dy <= rSq) {
-            out.push(e);
+            callback(e);
           }
         }
       }
     }
-    return out;
+  }
+
+  nearby(x: number, y: number, r: number, out?: T[]): T[] {
+    const result = out || [];
+    if (out) result.length = 0;
+    this.forEachNearby(x, y, r, (e) => {
+      result.push(e);
+    });
+    return result;
   }
 }

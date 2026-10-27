@@ -155,6 +155,24 @@ export const CHAPTERS: Record<MapChapter, ChapterDef> = {
     monsters: ['black_maggot', 'tongs', 'moth', 'orc_hero', 'evil_snake'],
     bossId: 'boss_dragon',
   },
+  cangyue: {
+    id: 'cangyue',
+    name: '苍月海岛',
+    theme: '碧海金沙 · 牛魔神殿',
+    bossName: '牛魔王',
+    description: '碧海潮生的异域古岛。末波决战手握开山巨斧、狂暴旋风烈火的牛魔之王。',
+    monsters: ['orc_hero', 'red_boar', 'black_boar', 'tongs', 'evil_snake', 'moon_spider'],
+    bossId: 'boss_ox',
+  },
+  moon: {
+    id: 'moon',
+    name: '赤月峡谷',
+    theme: '血色巢穴 · 万蛛魔窟',
+    bossName: '赤月恶魔',
+    description: '盘根错节的血色深渊。在月魔蜘蛛与双头巨魔的狂潮中决战地刺恶魔本体。',
+    monsters: ['moon_spider', 'moth', 'black_maggot', 'evil_snake', 'boss_kong', 'boss_blood'],
+    bossId: 'boss_moon',
+  },
 };
 
 export const skillSchema = z.object({
@@ -1345,6 +1363,14 @@ export const MONSTERS: MonsterDef[] = [
   { id: 'boss_centipede', name: '邪恶钳虫', hp: 1800, damage: 26, speed: 60, exp: 150, aiType: 'charge' },
   { id: 'boss_dragon', name: '触龙神', hp: 3200, damage: 36, speed: 0, exp: 260, aiType: 'ranged' },
   { id: 'boss_moon', name: '赤月恶魔', hp: 3800, damage: 40, speed: 0, exp: 320, aiType: 'ranged' },
+
+  // --- Cangyue Island & Crimson Moon Expansion ---
+  { id: 'boss_ox', name: '牛魔王', hp: 3500, damage: 38, speed: 54, exp: 300, aiType: 'melee' },
+  { id: 'boss_kong', name: '双头金刚', hp: 1600, damage: 28, speed: 50, exp: 120, aiType: 'melee' },
+  { id: 'boss_blood', name: '双头血魔', hp: 1600, damage: 30, speed: 52, exp: 120, aiType: 'melee' },
+  { id: 'moon_spider', name: '月魔蜘蛛', hp: 280, damage: 20, speed: 68, exp: 36, aiType: 'charge' },
+  { id: 'tiger_guard', name: '虎卫', hp: 800, damage: 26, speed: 55, exp: 60, aiType: 'melee' },
+  { id: 'shinsu_real', name: '至尊神兽', hp: 1800, damage: 32, speed: 50, exp: 100, aiType: 'melee' },
 ];
 
 export const TALENTS: TalentDef[] = [

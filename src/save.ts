@@ -43,7 +43,7 @@ export function validateAndRepairProfile(raw: any): ProfileData {
     }
   }
 
-  const validChapters: MapChapter[] = ['bichon', 'mine', 'temple', 'tomb', 'desert'];
+  const validChapters: MapChapter[] = ['bichon', 'mine', 'temple', 'tomb', 'desert', 'cangyue', 'moon'];
   let unlockedChapters: MapChapter[] = ['bichon'];
   if (Array.isArray(raw.unlockedChapters)) {
     const valid = raw.unlockedChapters.filter((c: any) => validChapters.includes(c));
@@ -213,11 +213,13 @@ export const CHAPTER_UNLOCK_COSTS: Record<MapChapter, number> = {
   temple: 12,
   tomb: 25,
   desert: 40,
+  cangyue: 60,
+  moon: 85,
 };
 
 export async function unlockAllChapters(): Promise<ProfileData> {
   const profile = await getProfile();
-  profile.unlockedChapters = ['bichon', 'mine', 'temple', 'tomb', 'desert'];
+  profile.unlockedChapters = ['bichon', 'mine', 'temple', 'tomb', 'desert', 'cangyue', 'moon'];
   await saveProfile(profile);
   return profile;
 }
@@ -296,6 +298,10 @@ export async function saveRun(result: RunResult) {
             ? 'tomb'
             : result.chapter === 'tomb'
             ? 'desert'
+            : result.chapter === 'desert'
+            ? 'cangyue'
+            : result.chapter === 'cangyue'
+            ? 'moon'
             : null;
         if (nextChapter && !profile.unlockedChapters.includes(nextChapter)) {
           profile.unlockedChapters.push(nextChapter);

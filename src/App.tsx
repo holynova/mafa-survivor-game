@@ -301,7 +301,7 @@ export function App() {
   const [selectedChapter, setSelectedChapter] = useState<MapChapter>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       const saved = window.localStorage.getItem('mafa_selected_chapter') as MapChapter | null;
-      if (saved && (saved === 'bichon' || saved === 'mine' || saved === 'temple' || saved === 'tomb' || saved === 'desert')) {
+      if (saved && (saved === 'bichon' || saved === 'mine' || saved === 'temple' || saved === 'tomb' || saved === 'desert' || saved === 'cangyue' || saved === 'moon')) {
         return saved;
       }
     }
@@ -581,7 +581,7 @@ export function App() {
             {/* CHAPTER SELECTOR */}
             <div className="chapter-selector">
               <span className="chapter-label">出征章节：</span>
-              {(['bichon', 'mine', 'temple', 'tomb', 'desert'] as MapChapter[]).map((chapKey) => {
+              {(['bichon', 'mine', 'temple', 'tomb', 'desert', 'cangyue', 'moon'] as MapChapter[]).map((chapKey) => {
                 const chap = CHAPTERS[chapKey];
                 const active = selectedChapter === chapKey;
                 return (
@@ -1569,7 +1569,7 @@ export function App() {
                   ◇ 章节快速切换 (当前: 【{CHAPTERS[game.chapter]?.name}】)
                 </div>
                 <div className="debug-chip-group">
-                  {(['bichon', 'mine', 'temple', 'tomb', 'desert'] as MapChapter[]).map((cKey) => (
+                  {(['bichon', 'mine', 'temple', 'tomb', 'desert', 'cangyue', 'moon'] as MapChapter[]).map((cKey) => (
                     <button
                       key={cKey}
                       className={`debug-chip ${game.chapter === cKey ? 'active' : ''}`}
@@ -2080,7 +2080,7 @@ export function App() {
               {g.choices.map((c: Upgrade, idx: number) => (
                 <div
                   key={c.id}
-                  className="choice-card"
+                  className={`choice-card ${c.isEvolution ? 'choice-card-evolution' : ''}`}
                   onClick={() => {
                     sound.playClick();
                     if (c.id.startsWith('learn-') && g.skills.length >= 6) {
@@ -2091,8 +2091,10 @@ export function App() {
                   }}
                 >
                   <div className="card-key-tag">[{idx + 1}]</div>
-                  <div className={`card-type-tag ${c.kind}`}>
-                    {c.kind === 'skill'
+                  <div className={`card-type-tag ${c.isEvolution ? 'evolution' : c.kind}`}>
+                    {c.isEvolution
+                      ? '神技演化 · 终极奥义'
+                      : c.kind === 'skill'
                       ? c.id.startsWith('learn-')
                         ? g.skills.length >= 6
                           ? '替换新技能'
@@ -2107,7 +2109,7 @@ export function App() {
                   )}
                   <h3 className="card-title">{c.name}</h3>
                   <p className="card-desc">{c.description}</p>
-                  <button className="card-select-btn">选择此项</button>
+                  <button className="card-select-btn">{c.isEvolution ? '神技觉醒' : '选择此项'}</button>
                 </div>
               ))}
             </div>

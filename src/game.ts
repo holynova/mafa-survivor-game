@@ -197,6 +197,277 @@ export const SKILL_ENHANCEMENTS: Record<
   ],
 };
 
+export interface SkillEvolutionDef {
+  name: string;
+  description: string;
+  apply?: (s: Skill) => void;
+}
+
+export const SKILL_EVOLUTIONS: Record<string, SkillEvolutionDef> = {
+  // Warrior
+  half_moon: {
+    name: '大狂暴 · 半月弯刀',
+    description: '【终极演化】半月剑气觉醒为 360 度周身剑气风暴，基础威力提升 80%，全方位剑刃风暴横扫清屏！',
+    apply: (s) => {
+      s.power += 80;
+      s.radius += 50;
+    },
+  },
+  fire_swordplay: {
+    name: '双烈火 · 毁灭绝斩',
+    description: '【终极演化】凝结炽烈玄火，双重烈火剑气同时爆发，威力额外提升 120%，对击中目标触发群体毁灭重击！',
+    apply: (s) => {
+      s.power += 120;
+    },
+  },
+  piercing_swordplay: {
+    name: '破甲 · 逐日剑气',
+    description: '【终极演化】刺杀真气凝聚成贯穿全屏的逐日剑芒，破甲射程提升至 450，穿透所有目标并造成巨额穿透伤害！',
+    apply: (s) => {
+      s.power += 100;
+      s.radius += 100;
+    },
+  },
+  slashing_swordplay: {
+    name: '霸王 · 真攻杀连环',
+    description: '【终极演化】攻杀剑气连环爆发，威力额外提升 80%！',
+    apply: (s) => {
+      s.power += 80;
+    },
+  },
+  savage_charge: {
+    name: '撼地 · 神蛮冲撞',
+    description: '【终极演化】蛮王冲撞势不可挡，伤害提升 80%，冲撞距离增加 40%！',
+    apply: (s) => {
+      s.power += 80;
+      s.radius += 40;
+    },
+  },
+  basic_swordplay: {
+    name: '返璞 · 狂风剑道',
+    description: '【终极演化】返璞归真，人剑合一，本职物理攻击伤害额外提升 40%！',
+    apply: (s) => {
+      s.power += 40;
+    },
+  },
+
+  // Wizard
+  lightning: {
+    name: '九天 · 狂雷神链',
+    description: '【终极演化】九天狂雷从天而降，每次召唤 5 道神雷连续轰顶，附带 1.5 秒雷霆电弧群体麻痹！',
+    apply: (s) => {
+      s.power += 80;
+      s.count += 4;
+    },
+  },
+  firewall: {
+    name: '太古 · 灭世火海',
+    description: '【终极演化】召唤太古地狱火海，持续时间翻倍，覆盖半径扩大，火海上限提升至 8 处！',
+    apply: (s) => {
+      s.power += 80;
+      s.duration += 100;
+      s.radius += 50;
+    },
+  },
+  ice_storm: {
+    name: '极寒 · 暴风雪漩涡',
+    description: '【终极演化】绝对零度暴风雪漩涡，强力将大范围敌人吸扯至风暴中心，并造成持续风暴撕裂与多段重击！',
+    apply: (s) => {
+      s.power += 80;
+      s.radius += 50;
+    },
+  },
+  laser: {
+    name: '超导 · 疾光电影',
+    description: '【终极演化】疾光电影进化为超导聚能光束，射程达到 800 贯穿全屏，伤害提升 100%！',
+    apply: (s) => {
+      s.power += 100;
+    },
+  },
+  shield: {
+    name: '混元 · 金刚不坏盾',
+    description: '【终极演化】法仙护体混元盾，免伤率最高提升至 50%，持续时间大幅提升！',
+    apply: (s) => {
+      s.shieldReduction += 15;
+      s.duration += 30;
+    },
+  },
+  fireball: {
+    name: '九阳 · 连珠爆炎',
+    description: '【终极演化】火球分裂为 3 颗爆裂真火，多弹齐发轰击敌人！',
+    apply: (s) => {
+      s.count += 2;
+      s.power += 60;
+    },
+  },
+  great_fireball: {
+    name: '耀阳 · 极阳真火',
+    description: '【终极演化】大火球升华极阳天火，威力与爆炸范围大幅提升！',
+    apply: (s) => {
+      s.power += 80;
+      s.radius += 40;
+    },
+  },
+  hellfire: {
+    name: '熔火 · 地狱天冲',
+    description: '【终极演化】地狱火真龙贯穿烈焰，火柱大幅拓宽并造成双倍焚烧伤害！',
+    apply: (s) => {
+      s.power += 80;
+      s.radius += 50;
+    },
+  },
+  ring_of_fire: {
+    name: '神威 · 拒之天界',
+    description: '【终极演化】火环狂震，震退范围翻倍并对近身敌人造成震退爆破伤害！',
+    apply: (s) => {
+      s.radius += 60;
+      s.power += 50;
+    },
+  },
+  firebang: {
+    name: '爆裂 · 连环神焰',
+    description: '【终极演化】爆裂火焰连环聚爆，爆炸范围与爆鸣威力大幅提升！',
+    apply: (s) => {
+      s.power += 80;
+      s.radius += 50;
+    },
+  },
+  thunderwave: {
+    name: '天诛 · 十方俱灭',
+    description: '【终极演化】地狱雷光十方俱灭，全方位雷芒环形横扫，伤害大幅提升！',
+    apply: (s) => {
+      s.power += 80;
+      s.radius += 40;
+    },
+  },
+  holy_word: {
+    name: '诛邪 · 天道圣言',
+    description: '【终极演化】天道诛邪律令，对不死妖邪秒杀概率提升至 40%，同时对首领造成高额天罚神伤！',
+    apply: (s) => {
+      s.power += 40;
+      s.count += 2;
+    },
+  },
+  entice: {
+    name: '通神 · 灵兽御统',
+    description: '【终极演化】灵兽御统通神，宠物招募上限提升，所有召唤兽攻防大幅提升！',
+    apply: (s) => {
+      s.count += 1;
+      s.power += 50;
+    },
+  },
+  teleport: {
+    name: '化境 · 缩地成寸',
+    description: '【终极演化】瞬息移动冷却大幅缩减，闪烁后获得短暂无敌与神行加速！',
+    apply: (s) => {
+      s.localCDR += 25;
+    },
+  },
+
+  // Taoist
+  summon_shinsu: {
+    name: '七级 · 至尊烈焰圣兽',
+    description: '【终极演化】唤醒远古至尊喷火麒麟神兽，生命与移动速度翻倍，烈焰龙息覆盖范围大幅扩张！',
+    apply: (s) => {
+      s.power += 100;
+      s.radius += 60;
+    },
+  },
+  summon_skeleton: {
+    name: '双尊 · 狂暴变异双骨',
+    description: '【终极演化】骷髅召唤上限提升至 2 只，且变异为双持巨斧的狂暴骷髅尊者，攻速与伤害翻倍！',
+    apply: (s) => {
+      s.summonLimit = 2;
+      s.power += 80;
+    },
+  },
+  poison: {
+    name: '万毒 · 蚀骨瘟疫',
+    description: '【终极演化】绿红双毒融为蚀骨瘟疫，同时向 5 个目标施毒，持续损血与防御削减大幅加深！',
+    apply: (s) => {
+      s.count += 4;
+      s.poisonPower = (s.poisonPower ?? 0) + 100;
+      s.duration += 50;
+    },
+  },
+  soul_fireball: {
+    name: '乾坤 · 诛邪道符',
+    description: '【终极演化】同时投掷 3 道阴阳太极道符，威力与飞行速度大幅提升！',
+    apply: (s) => {
+      s.count += 2;
+      s.power += 60;
+    },
+  },
+  heal_self: {
+    name: '枯木 · 神圣还阳',
+    description: '【终极演化】自疗效果提升 80%，施法间隔大幅缩短！',
+    apply: (s) => {
+      s.power += 80;
+      s.localCDR += 20;
+    },
+  },
+  mass_heal: {
+    name: '天尊 · 普度甘霖',
+    description: '【终极演化】天尊群疗普降甘露，治疗量与覆盖半径大幅提升！',
+    apply: (s) => {
+      s.healPower = (s.healPower ?? 0) + 80;
+      s.radius += 50;
+    },
+  },
+  spirit_shield: {
+    name: '混元 · 太极幽灵盾',
+    description: '【终极演化】幽灵盾持续时间与魔法防御大幅提升！',
+    apply: (s) => {
+      s.duration += 50;
+      s.power += 50;
+    },
+  },
+  holy_armor: {
+    name: '金刚 · 真武战甲术',
+    description: '【终极演化】神圣战甲持续时间与物理防御大幅提升！',
+    apply: (s) => {
+      s.duration += 50;
+      s.power += 50;
+    },
+  },
+  paralyze_charm: {
+    name: '定身 · 万象止息咒',
+    description: '【终极演化】困魔金阵范围扩大，定身时间延长至 6 秒！',
+    apply: (s) => {
+      s.radius += 60;
+      s.duration += 50;
+    },
+  },
+  spirit_combat: {
+    name: '通玄 · 天人合一',
+    description: '【终极演化】天人合一，道术与普攻伤害大幅跃升 40%！',
+    apply: (s) => {
+      s.power += 40;
+    },
+  },
+  stealth: {
+    name: '神隐 · 太虚匿形',
+    description: '【终极演化】隐身术持续时间延长，隐身期间移动速度提升 25%！',
+    apply: (s) => {
+      s.duration += 50;
+    },
+  },
+  mass_stealth: {
+    name: '神隐 · 移星换宿',
+    description: '【终极演化】全员隐身时间延长 50%！',
+    apply: (s) => {
+      s.duration += 50;
+    },
+  },
+  mind_eye: {
+    name: '通天 · 天眼洞悉',
+    description: '【终极演化】洞察万物破绽，暴击率额外提升 20%！',
+    apply: (s) => {
+      s.power += 20;
+    },
+  },
+};
+
 export class Game {
   phase: Phase = 'lobby';
   heroClass: HeroClass = 'wizard';
@@ -258,6 +529,7 @@ export class Game {
   notice = '';
   result: RunResult | null = null;
   stats: Bonuses = {};
+  recentDeaths: { kind: string; dir: number; x: number; y: number; at: number }[] = [];
 
   input = { x: 0, y: 0 };
   private listeners = new Set<() => void>();
@@ -973,14 +1245,14 @@ export class Game {
       this.player.x = clamp(this.player.x + Math.cos(angle) * chargeSpeed, 30, WORLD.w - 30);
       this.player.y = clamp(this.player.y + Math.sin(angle) * chargeSpeed, 45, WORLD.h - 30);
 
-      // Push and damage enemies in charge path
-      for (const e of this.hash.nearby(this.player.x, this.player.y, 45)) {
+      // Push and damage enemies in charge path (Zero-GC)
+      this.hash.forEachNearby(this.player.x, this.player.y, 45, (e) => {
         if (e.hp > 0 && e.kind !== 'boss') {
           e.x += Math.cos(angle) * 60;
           e.y += Math.sin(angle) * 60;
           this.hit(e, 35, 'savage_charge');
         }
-      }
+      });
     } else {
       // Normal Player Movement
       const ix = this.input.x;
@@ -1055,10 +1327,14 @@ export class Game {
               // Shinsu flame breath
               m.breathUntil = this.clock + 0.6;
               sound.playFirewall();
-              for (const e of this.hash.nearby(m.x + dx * 0.5, m.y + dy * 0.5, 90)) {
-                if (e.hp > 0) this.hit(e, Math.round(m.damage * 1.2), 'shinsu_fire');
-              }
-              m.attackCD = 1.6;
+              const shinsuSkill = this.skills.find((s) => s.id === 'summon_shinsu');
+              const isEvo = !!shinsuSkill?.evolved;
+              const range = isEvo ? 140 : 90;
+              const dmgFactor = isEvo ? 1.6 : 1.2;
+              this.hash.forEachNearby(m.x + dx * 0.5, m.y + dy * 0.5, range, (e) => {
+                if (e.hp > 0) this.hit(e, Math.round(m.damage * dmgFactor), 'shinsu_fire');
+              });
+              m.attackCD = isEvo ? 1.2 : 1.6;
             } else {
               // Skeleton / Charmed melee swing
               sound.playSwordSlash();
@@ -1341,20 +1617,21 @@ export class Game {
       }
 
       if (d > 22) {
-        // Flocking Separation Vector
+        // Flocking Separation Vector (Zero-GC)
         let sx = 0;
         let sy = 0;
-        for (const other of this.hash.nearby(e.x, e.y, 32)) {
-          if (other.id === e.id) continue;
+        this.hash.forEachNearby(e.x, e.y, 32, (other) => {
+          if (other.id === e.id) return;
           const ox = e.x - other.x;
           const oy = e.y - other.y;
-          const dist = Math.hypot(ox, oy);
-          if (dist > 0.1) {
+          const distSq = ox * ox + oy * oy;
+          if (distSq > 0.01 && distSq < 1024) {
+            const dist = Math.sqrt(distSq);
             const push = (32 - dist) * 2;
             sx += (ox / dist) * push;
             sy += (oy / dist) * push;
           }
-        }
+        });
         const rush = e.aiType === 'charge' && Math.sin(this.clock * 1.5 + e.id) > 0.7 ? 1.8 : 1;
         const sp = e.speed * rush;
         e.x = clamp(e.x + ((dx / d) * sp + sx) * dt, 20, WORLD.w - 20);
@@ -1393,8 +1670,11 @@ export class Game {
           p.life = 0;
         }
       } else {
-        // Player projectile hits enemies
-        const target = this.hash.nearby(p.x, p.y, 28).find((e) => e.hp > 0);
+        // Player projectile hits enemies (Zero-GC)
+        let target: Enemy | null = null;
+        this.hash.forEachNearby(p.x, p.y, 28, (e) => {
+          if (!target && e.hp > 0) target = e;
+        });
         if (target && p.life > 0) {
           this.hit(target, p.damage, p.kind ?? 'fireball');
           if (!p.penetrate) p.life = 0;
@@ -1666,9 +1946,13 @@ export class Game {
       sound.playFireball();
     } else if (s.id === 'lightning') {
       if (!targets.length) return;
-      const count = 1 + s.count;
+      const count = s.evolved ? Math.max(5, 2 + s.count) : (1 + s.count);
+      const baseDmg = s.evolved ? 24 : 12;
       for (const e of targets.slice(0, count)) {
-        this.hit(e, this.calcDamage('wizard', 12, s), 'lightning');
+        this.hit(e, this.calcDamage('wizard', baseDmg, s), 'lightning');
+        if (s.evolved && !e.kind.startsWith('boss')) {
+          e.status.paralyzedUntil = this.clock + 1.5;
+        }
         this.effects.push({
           id: ++this.id,
           kind: 'lightning',
@@ -1683,11 +1967,13 @@ export class Game {
     } else if (s.id === 'firewall') {
       if (!targets.length) return;
       const e = targets[0];
+      const maxWalls = s.evolved ? 8 : 4;
       const activeWalls = this.effects.filter((f) => f.kind === 'firewall');
-      if (activeWalls.length >= 4) {
+      if (activeWalls.length >= maxWalls) {
         activeWalls[0].life = 0;
       }
-      const duration = 5 * (1 + s.duration / 100) * (1 + (this.stats.duration ?? 0) / 100);
+      const duration = (s.evolved ? 10 : 5) * (1 + s.duration / 100) * (1 + (this.stats.duration ?? 0) / 100);
+      const r = (s.evolved ? 180 : 125) * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100);
       this.effects.push({
         id: ++this.id,
         kind: 'firewall',
@@ -1695,7 +1981,7 @@ export class Game {
         y: e.y,
         life: duration,
         total: duration,
-        radius: 125 * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100),
+        radius: r,
       });
       sound.playFirewall();
     } else if (s.id === 'hellfire') {
@@ -1737,9 +2023,7 @@ export class Game {
       if (!targets.length) return;
       sound.playLaser();
       const angle = ((this.player.dir - 2) * Math.PI) / 4;
-      const length = 550;
-      const ex = this.player.x + Math.cos(angle) * length;
-      const ey = this.player.y + Math.sin(angle) * length;
+      const length = s.evolved ? 850 : 550;
       this.effects.push({
         id: ++this.id,
         kind: 'laser',
@@ -1750,6 +2034,7 @@ export class Game {
         radius: length,
         angle,
       });
+      const baseDmg = s.evolved ? 32 : 16;
       for (const e of targets) {
         const edx = e.x - this.player.x;
         const edy = e.y - this.player.y;
@@ -1757,15 +2042,15 @@ export class Game {
         const eAngle = Math.atan2(edy, edx);
         let diff = Math.abs(eAngle - angle);
         if (diff > Math.PI) diff = 2 * Math.PI - diff;
-        if (eDist <= length && diff < 0.35) {
-          this.hit(e, this.calcDamage('wizard', 16, s), 'laser');
+        if (eDist <= length && diff < (s.evolved ? 0.45 : 0.35)) {
+          this.hit(e, this.calcDamage('wizard', baseDmg, s), 'laser');
         }
       }
     } else if (s.id === 'ice_storm') {
       if (!targets.length) return;
       sound.playIceStorm();
       const center = targets[0];
-      const r = 110 * (1 + s.radius / 100);
+      const r = (s.evolved ? 165 : 110) * (1 + s.radius / 100);
       this.effects.push({
         id: ++this.id,
         kind: 'ice_storm',
@@ -1775,9 +2060,18 @@ export class Game {
         total: 0.65,
         radius: r,
       });
-      for (const e of this.hash.nearby(center.x, center.y, r)) {
-        if (e.hp > 0) this.hit(e, this.calcDamage('wizard', 17, s), 'ice_storm');
+      if (s.evolved) {
+        // Vortex pull towards storm center
+        this.hash.forEachNearby(center.x, center.y, r * 1.35, (e) => {
+          if (e.hp > 0 && !e.kind.startsWith('boss')) {
+            e.x += (center.x - e.x) * 0.35;
+            e.y += (center.y - e.y) * 0.35;
+          }
+        });
       }
+      this.hash.forEachNearby(center.x, center.y, r, (e) => {
+        if (e.hp > 0) this.hit(e, this.calcDamage('wizard', s.evolved ? 28 : 17, s), 'ice_storm');
+      });
     } else if (s.id === 'ring_of_fire') {
       const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 110);
       if (close.length > 0) {
@@ -1915,11 +2209,14 @@ export class Game {
     } else if (s.id === 'poison') {
       if (!targets.length) return;
       sound.playPoison();
-      const count = 1 + s.count;
+      const count = s.evolved ? Math.max(5, 3 + s.count) : (1 + s.count);
+      const poisonDuration = s.evolved ? 10.0 : 6.0;
+      const defDown = s.evolved ? 8 : 4;
+      const baseDmg = Math.max(2, Math.round((this.stats.sc_flat ?? 0) * (s.evolved ? 0.9 : 0.55)) + (s.evolved ? 8 : 3));
       for (const e of targets.slice(0, count)) {
-        e.status.poisonedUntil = this.clock + 6.0;
-        e.status.poisonDamage = Math.max(2, Math.round((this.stats.sc_flat ?? 0) * 0.55) + 3);
-        e.status.poisonDefDown = 4;
+        e.status.poisonedUntil = this.clock + poisonDuration;
+        e.status.poisonDamage = baseDmg;
+        e.status.poisonDefDown = defDown;
         this.effects.push({
           id: ++this.id,
           kind: 'poison_cloud',
@@ -1927,25 +2224,28 @@ export class Game {
           y: e.y,
           life: 0.6,
           total: 0.6,
-          radius: 35,
+          radius: s.evolved ? 65 : 35,
         });
       }
     } else if (s.id === 'summon_skeleton') {
+      const maxLimit = s.evolved ? 2 : (s.summonLimit ?? 1);
       const skelCount = this.minions.filter((m) => m.kind === 'skeleton').length;
-      if (skelCount < (s.summonLimit ?? 1)) {
+      if (skelCount < maxLimit) {
         sound.playSummon();
         const bonusHP = 1 + (this.stats.summon_hp_pct ?? 0) / 100;
         const bonusDMG = 1 + (this.stats.summon_damage_pct ?? 0) / 100;
+        const hpMultiplier = s.evolved ? 2.0 : 1.0;
+        const dmgMultiplier = s.evolved ? 2.0 : 1.0;
         this.minions.push({
           id: ++this.id,
           kind: 'skeleton',
-          name: '变异骷髅',
+          name: s.evolved ? '狂暴双尊骷髅' : '变异骷髅',
           x: this.player.x + 35,
           y: this.player.y + 35,
-          hp: Math.round(75 * bonusHP),
-          maxHp: Math.round(75 * bonusHP),
-          damage: Math.round(11 * bonusDMG),
-          speed: 175,
+          hp: Math.round(75 * bonusHP * hpMultiplier),
+          maxHp: Math.round(75 * bonusHP * hpMultiplier),
+          damage: Math.round(11 * bonusDMG * dmgMultiplier),
+          speed: s.evolved ? 210 : 175,
           dir: 4,
           attackCD: 0,
           attackRange: 42,
@@ -1958,19 +2258,21 @@ export class Game {
         sound.playSummon();
         const bonusHP = 1 + (this.stats.summon_hp_pct ?? 0) / 100;
         const bonusDMG = 1 + (this.stats.summon_damage_pct ?? 0) / 100;
+        const hpMult = s.evolved ? 2.2 : 1.0;
+        const dmgMult = s.evolved ? 2.0 : 1.0;
         this.minions.push({
           id: ++this.id,
           kind: 'shinsu',
-          name: '烈焰神兽',
+          name: s.evolved ? '7级至尊烈焰圣兽' : '烈焰神兽',
           x: this.player.x - 45,
           y: this.player.y + 40,
-          hp: Math.round(230 * bonusHP),
-          maxHp: Math.round(230 * bonusHP),
-          damage: Math.round(21 * bonusDMG),
-          speed: 190,
+          hp: Math.round(230 * bonusHP * hpMult),
+          maxHp: Math.round(230 * bonusHP * hpMult),
+          damage: Math.round(21 * bonusDMG * dmgMult),
+          speed: s.evolved ? 220 : 190,
           dir: 4,
           attackCD: 0,
-          attackRange: 90,
+          attackRange: s.evolved ? 120 : 90,
           targetId: null,
         });
       }
@@ -2006,11 +2308,11 @@ export class Game {
     } else if (s.id === 'paralyze_charm') {
       if (!targets.length) return;
       const e = targets[0];
-      for (const victim of this.hash.nearby(e.x, e.y, 80)) {
+      this.hash.forEachNearby(e.x, e.y, 80, (victim) => {
         if (!victim.kind.startsWith('boss')) {
           victim.status.paralyzedUntil = this.clock + 3.0;
         }
-      }
+      });
       sound.playSoulFireball();
     }
 
@@ -2018,6 +2320,7 @@ export class Game {
     else if (s.id === 'half_moon') {
       sound.playHalfMoon();
       const angle = ((this.player.dir - 2) * Math.PI) / 4;
+      const radius = s.evolved ? 180 : 110;
       this.effects.push({
         id: ++this.id,
         kind: 'half_moon_sweep',
@@ -2025,9 +2328,10 @@ export class Game {
         y: this.player.y,
         life: 0.35,
         total: 0.35,
-        radius: 110,
-        angle,
+        radius,
+        angle: s.evolved ? 0 : angle,
       });
+      const baseDmg = s.evolved ? 24 : 11;
       for (const e of targets) {
         const edx = e.x - this.player.x;
         const edy = e.y - this.player.y;
@@ -2035,8 +2339,9 @@ export class Game {
         const eAngle = Math.atan2(edy, edx);
         let diff = Math.abs(eAngle - angle);
         if (diff > Math.PI) diff = 2 * Math.PI - diff;
-        if (eDist <= 110 && diff <= Math.PI / 2 + 0.3) {
-          this.hit(e, this.calcDamage('warrior', 11, s), 'half_moon');
+        // Evolved is 360-degree full circle whirlwind
+        if (eDist <= radius && (s.evolved || diff <= Math.PI / 2 + 0.3)) {
+          this.hit(e, this.calcDamage('warrior', baseDmg, s), 'half_moon');
         }
       }
     } else if (s.id === 'slashing_swordplay') {
@@ -2050,7 +2355,20 @@ export class Game {
       if (!targets.length) return;
       sound.playSwordSlash();
       const angle = ((this.player.dir - 2) * Math.PI) / 4;
-      const thrustDist = 130;
+      const thrustDist = s.evolved ? 450 : 130;
+      const baseDmg = s.evolved ? 35 : 17;
+      if (s.evolved) {
+        this.effects.push({
+          id: ++this.id,
+          kind: 'laser',
+          x: this.player.x,
+          y: this.player.y,
+          life: 0.35,
+          total: 0.35,
+          radius: thrustDist,
+          angle,
+        });
+      }
       for (const e of targets) {
         const edx = e.x - this.player.x;
         const edy = e.y - this.player.y;
@@ -2058,26 +2376,31 @@ export class Game {
         const eAngle = Math.atan2(edy, edx);
         let diff = Math.abs(eAngle - angle);
         if (diff > Math.PI) diff = 2 * Math.PI - diff;
-        if (eDist <= thrustDist && diff < 0.4) {
+        if (eDist <= thrustDist && diff < (s.evolved ? 0.5 : 0.4)) {
           // Ignores target defense
-          this.hit(e, this.calcDamage('warrior', 17, s), 'piercing_swordplay');
+          this.hit(e, this.calcDamage('warrior', baseDmg, s), 'piercing_swordplay');
         }
       }
     } else if (s.id === 'fire_swordplay') {
       if (!targets.length) return;
-      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 75);
+      const reach = s.evolved ? 110 : 75;
+      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < reach);
       if (close.length) {
         sound.playFireSword();
-        this.effects.push({
-          id: ++this.id,
-          kind: 'fire_slash',
-          x: close[0].x,
-          y: close[0].y,
-          life: 0.45,
-          total: 0.45,
-          radius: 60,
-        });
-        this.hit(close[0], this.calcDamage('warrior', 30, s), 'fire_swordplay');
+        const baseDmg = s.evolved ? 65 : 30;
+        const hitTargets = s.evolved ? close : [close[0]];
+        for (const target of hitTargets) {
+          this.effects.push({
+            id: ++this.id,
+            kind: 'fire_slash',
+            x: target.x,
+            y: target.y,
+            life: 0.45,
+            total: 0.45,
+            radius: s.evolved ? 80 : 60,
+          });
+          this.hit(target, this.calcDamage('warrior', baseDmg, s), 'fire_swordplay');
+        }
       }
     } else if (s.id === 'savage_charge') {
       sound.playCharge();
@@ -2157,6 +2480,7 @@ export class Game {
     }
 
     if (e.hp <= 0) {
+      this.recentDeaths.push({ kind: e.kind, dir: e.dir, x: e.x, y: e.y, at: this.clock });
       this.kills++;
       this.waveKills++;
       const isBoss = e.kind.startsWith('boss');
@@ -2387,6 +2711,22 @@ export class Game {
       }
     }
 
+    // Offer skill evolutions for existing skills with rank >= 3 and !evolved
+    for (const s of this.skills.filter((s) => s.rank >= 3 && !s.evolved)) {
+      const evo = SKILL_EVOLUTIONS[s.id];
+      if (evo) {
+        candidates.push({
+          id: `evo-${s.id}`,
+          kind: 'skill',
+          skill: s.id,
+          isEvolution: true,
+          name: evo.name,
+          description: evo.description,
+          value: 0,
+        });
+      }
+    }
+
     const list: Upgrade[] = [];
     if (candidates.length) {
       list.push(candidates.shift()!);
@@ -2467,7 +2807,15 @@ export class Game {
     if (c.kind === 'skill') {
       if (c.skill) this.acquiredSkills.add(c.skill);
       let s = this.skills.find((s) => s.id === c.skill);
-      if (!s) {
+      if (c.isEvolution) {
+        if (s && !s.evolved) {
+          s.evolved = true;
+          const evo = SKILL_EVOLUTIONS[s.id];
+          if (evo?.apply) {
+            evo.apply(s);
+          }
+        }
+      } else if (!s) {
         if (this.skills.length >= 6) {
           if (replaceSkillId) {
             const idx = this.skills.findIndex((sk) => sk.id === replaceSkillId);

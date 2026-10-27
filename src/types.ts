@@ -1,5 +1,5 @@
 export type HeroClass = 'wizard' | 'taoist' | 'warrior';
-export type MapChapter = 'bichon' | 'mine' | 'temple' | 'tomb' | 'desert';
+export type MapChapter = 'bichon' | 'mine' | 'temple' | 'tomb' | 'desert' | 'cangyue' | 'moon';
 
 export type StatKey =
   | 'hp_max'
@@ -198,6 +198,7 @@ export interface Skill {
   healPower?: number;
   poisonPower?: number;
   summonLimit?: number;
+  evolved?: boolean;
 }
 
 export interface Upgrade {
@@ -205,6 +206,7 @@ export interface Upgrade {
   kind: 'skill' | 'stat';
   name: string;
   description: string;
+  isEvolution?: boolean;
   skill?: SkillId;
   field?:
     | 'power'

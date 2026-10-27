@@ -152,7 +152,7 @@ class BattleScene extends Phaser.Scene {
   }
 
   private zoom() {
-    return this.scale.width < 768 ? 1.15 : 1.45;
+    return this.scale.width < 768 ? 1.0 : 1.25;
   }
 
   private clearInput() {
@@ -186,6 +186,8 @@ class BattleScene extends Phaser.Scene {
           temple: 'map/00023071',
           tomb: 'map/00022E80',
           desert: 'map/000101AD',
+          cangyue: 'map/000101AD',
+          moon: 'map/0002329A',
         };
         const baseFloorKey = baseFloorMap[game.chapter] || 'map/00001CE5';
         const baseMeta = assets?.frames[baseFloorKey];
@@ -261,6 +263,10 @@ class BattleScene extends Phaser.Scene {
           this.cameras.main.setBackgroundColor('#141210');
         } else if (chap === 'desert') {
           this.cameras.main.setBackgroundColor('#262016');
+        } else if (chap === 'cangyue') {
+          this.cameras.main.setBackgroundColor('#1e241c');
+        } else if (chap === 'moon') {
+          this.cameras.main.setBackgroundColor('#240c0f');
         } else {
           this.cameras.main.setBackgroundColor('#1c261e');
         }
@@ -397,6 +403,14 @@ class BattleScene extends Phaser.Scene {
     if (name === 'boss_dragon') return 'boss_dragon';
     if (name === 'boss_boar') return 'boss_boar';
     if (name === 'boss_moon') return 'boss_moon';
+    if (name === 'boss_ox') return 'boss_ox';
+    if (name === 'boss_kong') return 'boss_kong';
+    if (name === 'boss_blood') return 'boss_blood';
+
+    // Elites & Specific Monsters
+    if (name === 'moon_spider') return 'moon_spider';
+    if (name === 'tiger_guard') return 'tiger_guard';
+    if (name === 'shinsu_real' || name === 'shinsu') return 'shinsu_real';
 
     // Elites & Specific Monsters
     if (name === 'orc_hero') return 'orc_hero';
@@ -567,7 +581,7 @@ class BattleScene extends Phaser.Scene {
   private drawMinion(m: Minion, time: number) {
     if (this.useSprites && assets) {
       const animActor =
-        m.kind === 'skeleton' ? 'summonedSkeleton' : m.kind === 'shinsu' ? 'beast' : 'cat';
+        m.kind === 'skeleton' ? 'summonedSkeleton' : m.kind === 'shinsu' ? 'shinsu_real' : 'tiger_guard';
       const motion = m.attackCD > 0.6 ? 'attack' : 'walk';
       const scale = m.kind === 'shinsu' ? 1.15 : 1;
       this.actor(`minion-${m.id}`, animActor, motion, m.dir, m.x, m.y, time, m.y, 1, scale);
@@ -729,13 +743,11 @@ class BattleScene extends Phaser.Scene {
     } else {
       this.cameras.main.centerOn(game.player.x, game.player.y);
 
-      // Corpses
-      for (const [id, e] of this.lastEnemies) {
-        if (!game.enemies.some((n) => n.id === id) && e.hp <= 0) {
-          this.corpses.push({ kind: e.kind, dir: e.dir, x: e.x, y: e.y, at: t });
-        }
+      // Corpses - O(1) event consumption
+      while (game.recentDeaths.length > 0) {
+        const d = game.recentDeaths.pop()!;
+        this.corpses.push(d);
       }
-      this.lastEnemies = new Map(game.enemies.map((e) => [e.id, e]));
       this.corpses = this.corpses.filter((c) => t - c.at < 1);
       this.corpses.slice(-40).forEach((c, i) => {
         this.actor(
@@ -751,13 +763,26 @@ class BattleScene extends Phaser.Scene {
         );
       });
 
-      // Render Minions (随从)
+      // Camera Frustum Culling bounds (with 80px margin)
+      const cam = this.cameras.main.worldView;
+      const margin = 80;
+      const minX = cam.x - margin;
+      const maxX = cam.right + margin;
+      const minY = cam.top - margin;
+      const maxY = cam.bottom + margin;
+
+      // Render Minions (随从) with Frustum Culling
       for (const m of game.minions) {
-        this.drawMinion(m, t);
+        if (m.x >= minX && m.x <= maxX && m.y >= minY && m.y <= maxY) {
+          this.drawMinion(m, t);
+        }
       }
 
-      // Render Enemies
+      // Render Enemies with Frustum Culling
       for (const e of game.enemies) {
+        if (e.x < minX || e.x > maxX || e.y < minY || e.y > maxY) {
+          continue;
+        }
         const motion = e.windup > 0 ? 'attack' : t - e.hitAt < 0.17 ? 'hurt' : 'walk';
         const isBoss = e.kind.startsWith('boss');
         const scale = isBoss ? 1.6 : e.elite ? 1.3 : 1;
@@ -788,8 +813,11 @@ class BattleScene extends Phaser.Scene {
         }
       }
 
-      // Render Drops
+      // Render Drops with Frustum Culling
       for (const d of game.drops) {
+        if (d.x < minX || d.x > maxX || d.y < minY || d.y > maxY) {
+          continue;
+        }
         if (d.item) {
           // Legendary Equipment Drop: Golden/Violet Pillar of Light & Ground Halo
           const isHighTier = (d.item.tier ?? 1) >= 3;
@@ -1136,7 +1164,12 @@ export function boot() {
     },
     scene: [BattleScene],
     audio: { noAudio: true },
-    render: { roundPixels: true },
+    render: {
+      roundPixels: true,
+      pixelArt: true,
+      antialias: false,
+      powerPreference: 'high-performance',
+    },
     fps: { target: 60 },
   });
   (window as any).__engine = engine;
