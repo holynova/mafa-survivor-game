@@ -2347,10 +2347,11 @@ export class Game {
             if (idx >= 0) {
               this.skills[idx] = this.newSkill(c.skill!);
             } else {
-              return;
+              this.skills[0] = this.newSkill(c.skill!);
             }
           } else {
-            return;
+            // Default to replacing the first skill if not explicitly specified
+            this.skills[0] = this.newSkill(c.skill!);
           }
         } else {
           this.skills.push(this.newSkill(c.skill!));
