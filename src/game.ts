@@ -897,8 +897,8 @@ export class Game {
     }
 
     // Buff bonuses
-    if (this.clock < this.player.holyArmorUntil) list.push({ def_flat: 25 });
-    if (this.clock < this.player.spiritShieldUntil) list.push({ mdef_flat: 25 });
+    if (this.clock < this.player.holyArmorUntil) list.push({ def_flat: 18 });
+    if (this.clock < this.player.spiritShieldUntil) list.push({ mdef_flat: 18 });
 
     this.stats = combine(list);
     this.player.hp = Math.min(this.player.hp, this.maxHP);
@@ -1290,7 +1290,7 @@ export class Game {
       ) {
         const s = this.skills.find((s) => s.id === 'firewall');
         if (s) {
-          this.hit(e, this.calcDamage('wizard', 5, s), 'firewall');
+          this.hit(e, this.calcDamage('wizard', 4, s), 'firewall');
           e.burnAt = this.clock + 0.5;
         }
       }
@@ -1532,7 +1532,7 @@ export class Game {
           y: this.player.y - 20,
           vx: (dx / dist) * speed,
           vy: (dy / dist) * speed,
-          damage: this.calcDamage('wizard', s.id === 'great_fireball' ? 14 : 7, s),
+          damage: this.calcDamage('wizard', s.id === 'great_fireball' ? 10 : 5, s),
           life: 2.2,
           dir: ((Math.round(Math.atan2(dy, dx) / (Math.PI / 8)) + 4) % 16 + 16) % 16,
         });
@@ -1542,7 +1542,7 @@ export class Game {
       if (!targets.length) return;
       const count = 1 + s.count;
       for (const e of targets.slice(0, count)) {
-        this.hit(e, this.calcDamage('wizard', 16, s), 'lightning');
+        this.hit(e, this.calcDamage('wizard', 12, s), 'lightning');
         this.effects.push({
           id: ++this.id,
           kind: 'lightning',
@@ -1561,7 +1561,7 @@ export class Game {
       if (activeWalls.length >= 4) {
         activeWalls[0].life = 0;
       }
-      const duration = 6 * (1 + s.duration / 100) * (1 + (this.stats.duration ?? 0) / 100);
+      const duration = 5 * (1 + s.duration / 100) * (1 + (this.stats.duration ?? 0) / 100);
       this.effects.push({
         id: ++this.id,
         kind: 'firewall',
@@ -1588,7 +1588,7 @@ export class Game {
         radius: length,
         angle,
       });
-      const damage = this.calcDamage('wizard', 22, s);
+      const damage = this.calcDamage('wizard', 16, s);
       for (const e of this.enemies) {
         if (e.hp <= 0) continue;
         const dx = e.x - this.player.x;
@@ -1605,7 +1605,7 @@ export class Game {
         }
       }
     } else if (s.id === 'shield') {
-      this.player.shieldUntil = this.clock + Math.min(7, 6 * (1 + s.duration / 100));
+      this.player.shieldUntil = this.clock + Math.min(6, 5 * (1 + s.duration / 100));
       sound.playShield();
     } else if (s.id === 'laser') {
       if (!targets.length) return;
@@ -1632,7 +1632,7 @@ export class Game {
         let diff = Math.abs(eAngle - angle);
         if (diff > Math.PI) diff = 2 * Math.PI - diff;
         if (eDist <= length && diff < 0.35) {
-          this.hit(e, this.calcDamage('wizard', 22, s), 'laser');
+          this.hit(e, this.calcDamage('wizard', 16, s), 'laser');
         }
       }
     } else if (s.id === 'ice_storm') {
@@ -1650,7 +1650,7 @@ export class Game {
         radius: r,
       });
       for (const e of this.hash.nearby(center.x, center.y, r)) {
-        if (e.hp > 0) this.hit(e, this.calcDamage('wizard', 24, s), 'ice_storm');
+        if (e.hp > 0) this.hit(e, this.calcDamage('wizard', 17, s), 'ice_storm');
       }
     } else if (s.id === 'ring_of_fire') {
       const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 110);
@@ -1670,8 +1670,8 @@ export class Game {
             const dx = e.x - this.player.x;
             const dy = e.y - this.player.y;
             const dist = Math.hypot(dx, dy) || 1;
-            e.x += (dx / dist) * 90;
-            e.y += (dy / dist) * 90;
+            e.x += (dx / dist) * 75;
+            e.y += (dy / dist) * 75;
           }
         }
       }
@@ -1696,10 +1696,10 @@ export class Game {
         radius: 40,
       });
       sound.playLightning();
-      if (target.undead && !target.kind.startsWith('boss') && this.rng.next() < 0.45) {
+      if (target.undead && !target.kind.startsWith('boss') && this.rng.next() < 0.35) {
         this.hit(target, target.hp, 'holy_word'); // instant kill
       } else {
-        this.hit(target, this.calcDamage('wizard', 28, s), 'holy_word');
+        this.hit(target, this.calcDamage('wizard', 20, s), 'holy_word');
       }
     } else if (s.id === 'thunderwave') {
       const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 140);
@@ -1715,13 +1715,13 @@ export class Game {
           radius: 140,
         });
         for (const e of close) {
-          this.hit(e, this.calcDamage('wizard', 18, s), 'thunderwave');
+          this.hit(e, this.calcDamage('wizard', 13, s), 'thunderwave');
         }
       }
     } else if (s.id === 'entice') {
       const charmable = targets.filter((e) => !e.kind.startsWith('boss') && !e.elite);
       const petCount = this.minions.filter((m) => m.kind === 'enticed').length;
-      if (charmable.length && petCount < 3 && this.rng.next() < 0.4) {
+      if (charmable.length && petCount < 3 && this.rng.next() < 0.3) {
         const victim = charmable[0];
         victim.hp = 0; // consumed
         sound.playSummon();
@@ -1759,7 +1759,7 @@ export class Game {
           y: this.player.y - 20,
           vx: (dx / dist) * speed,
           vy: (dy / dist) * speed,
-          damage: this.calcDamage('taoist', 9, s),
+          damage: this.calcDamage('taoist', 7, s),
           life: 2.2,
           dir: ((Math.round(Math.atan2(dy, dx) / (Math.PI / 8)) + 4) % 16 + 16) % 16,
         });
@@ -1768,7 +1768,7 @@ export class Game {
     } else if (s.id === 'heal_self') {
       if (this.player.hp < this.maxHP) {
         sound.playHeal();
-        const healAmt = 30 + Math.round((this.stats.sc_flat ?? 0) * 1.5);
+        const healAmt = 22 + Math.round((this.stats.sc_flat ?? 0) * 1.0);
         this.player.hp = Math.min(this.maxHP, this.player.hp + healAmt);
         this.floating.push({
           id: ++this.id,
@@ -1781,7 +1781,7 @@ export class Game {
       }
     } else if (s.id === 'mass_heal') {
       sound.playHeal();
-      const healAmt = 45 + Math.round((this.stats.sc_flat ?? 0) * 2);
+      const healAmt = 32 + Math.round((this.stats.sc_flat ?? 0) * 1.4);
       this.player.hp = Math.min(this.maxHP, this.player.hp + healAmt);
       for (const m of this.minions) {
         m.hp = Math.min(m.maxHp, m.hp + healAmt);
@@ -1792,8 +1792,8 @@ export class Game {
       const count = 1 + s.count;
       for (const e of targets.slice(0, count)) {
         e.status.poisonedUntil = this.clock + 6.0;
-        e.status.poisonDamage = Math.max(3, Math.round((this.stats.sc_flat ?? 0) * 0.8) + 4);
-        e.status.poisonDefDown = 5;
+        e.status.poisonDamage = Math.max(2, Math.round((this.stats.sc_flat ?? 0) * 0.55) + 3);
+        e.status.poisonDefDown = 4;
         this.effects.push({
           id: ++this.id,
           kind: 'poison_cloud',
@@ -1816,9 +1816,9 @@ export class Game {
           name: '变异骷髅',
           x: this.player.x + 35,
           y: this.player.y + 35,
-          hp: Math.round(90 * bonusHP),
-          maxHp: Math.round(90 * bonusHP),
-          damage: Math.round(14 * bonusDMG),
+          hp: Math.round(75 * bonusHP),
+          maxHp: Math.round(75 * bonusHP),
+          damage: Math.round(11 * bonusDMG),
           speed: 175,
           dir: 4,
           attackCD: 0,
@@ -1838,9 +1838,9 @@ export class Game {
           name: '烈焰神兽',
           x: this.player.x - 45,
           y: this.player.y + 40,
-          hp: Math.round(280 * bonusHP),
-          maxHp: Math.round(280 * bonusHP),
-          damage: Math.round(28 * bonusDMG),
+          hp: Math.round(230 * bonusHP),
+          maxHp: Math.round(230 * bonusHP),
+          damage: Math.round(21 * bonusDMG),
           speed: 190,
           dir: 4,
           attackCD: 0,
@@ -1849,10 +1849,10 @@ export class Game {
         });
       }
     } else if (s.id === 'stealth' || s.id === 'mass_stealth') {
-      this.player.stealthUntil = this.clock + 6.0;
+      this.player.stealthUntil = this.clock + 5.0;
       sound.playHeal();
     } else if (s.id === 'spirit_shield') {
-      this.player.spiritShieldUntil = this.clock + 8.0;
+      this.player.spiritShieldUntil = this.clock + 7.0;
       this.effects.push({
         id: ++this.id,
         kind: 'spirit_shield',
@@ -1865,7 +1865,7 @@ export class Game {
       this.recompute();
       sound.playShield();
     } else if (s.id === 'holy_armor') {
-      this.player.holyArmorUntil = this.clock + 8.0;
+      this.player.holyArmorUntil = this.clock + 7.0;
       this.effects.push({
         id: ++this.id,
         kind: 'holy_armor',
@@ -1882,7 +1882,7 @@ export class Game {
       const e = targets[0];
       for (const victim of this.hash.nearby(e.x, e.y, 80)) {
         if (!victim.kind.startsWith('boss')) {
-          victim.status.paralyzedUntil = this.clock + 4.0;
+          victim.status.paralyzedUntil = this.clock + 3.0;
         }
       }
       sound.playSoulFireball();
@@ -1910,7 +1910,7 @@ export class Game {
         let diff = Math.abs(eAngle - angle);
         if (diff > Math.PI) diff = 2 * Math.PI - diff;
         if (eDist <= 110 && diff <= Math.PI / 2 + 0.3) {
-          this.hit(e, this.calcDamage('warrior', 16, s), 'half_moon');
+          this.hit(e, this.calcDamage('warrior', 11, s), 'half_moon');
         }
       }
     } else if (s.id === 'slashing_swordplay') {
@@ -1918,7 +1918,7 @@ export class Game {
       const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 65);
       if (close.length) {
         sound.playSwordSlash();
-        this.hit(close[0], this.calcDamage('warrior', 18, s), 'slashing_swordplay');
+        this.hit(close[0], this.calcDamage('warrior', 12, s), 'slashing_swordplay');
       }
     } else if (s.id === 'piercing_swordplay') {
       if (!targets.length) return;
@@ -1934,7 +1934,7 @@ export class Game {
         if (diff > Math.PI) diff = 2 * Math.PI - diff;
         if (eDist <= thrustDist && diff < 0.4) {
           // Ignores target defense
-          this.hit(e, this.calcDamage('warrior', 24, s), 'piercing_swordplay');
+          this.hit(e, this.calcDamage('warrior', 17, s), 'piercing_swordplay');
         }
       }
     } else if (s.id === 'fire_swordplay') {
@@ -1951,7 +1951,7 @@ export class Game {
           total: 0.45,
           radius: 60,
         });
-        this.hit(close[0], this.calcDamage('warrior', 45, s), 'fire_swordplay');
+        this.hit(close[0], this.calcDamage('warrior', 30, s), 'fire_swordplay');
       }
     } else if (s.id === 'savage_charge') {
       sound.playCharge();
@@ -1963,7 +1963,7 @@ export class Game {
     s.cd = this.infiniteCooldown
       ? 0.05
       : Math.max(
-          0.35,
+          0.25,
           baseDef.cooldown *
             (1 - (this.stats.cooldown_reduction ?? 0) / 100) *
             (1 - s.localCDR / 100)
