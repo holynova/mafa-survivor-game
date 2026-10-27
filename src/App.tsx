@@ -298,7 +298,23 @@ export function App() {
   const [runs, setRuns] = useState<RunResult[]>([]);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [selectedClass, setSelectedClass] = useState<HeroClass>('wizard');
-  const [selectedChapter, setSelectedChapter] = useState<MapChapter>('bichon');
+  const [selectedChapter, setSelectedChapter] = useState<MapChapter>(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const saved = window.localStorage.getItem('mafa_selected_chapter') as MapChapter | null;
+      if (saved && (saved === 'bichon' || saved === 'mine' || saved === 'temple')) {
+        return saved;
+      }
+    }
+    return 'bichon';
+  });
+
+  const handleSelectChapter = (chap: MapChapter) => {
+    sound.playClick();
+    setSelectedChapter(chap);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('mafa_selected_chapter', chap);
+    }
+  };
   const [customSeed, setCustomSeed] = useState('');
   const [copiedSeed, setCopiedSeed] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -568,31 +584,23 @@ export function App() {
               {(['bichon', 'mine', 'temple'] as MapChapter[]).map((chapKey) => {
                 const chap = CHAPTERS[chapKey];
                 const active = selectedChapter === chapKey;
-                const isUnlocked =
-                  profile?.unlockedChapters?.includes(chapKey) ?? chapKey === 'bichon';
                 return (
                   <button
                     key={chapKey}
-                    className={`chap-btn ${active ? 'active' : ''} ${!isUnlocked ? 'locked-chap' : ''}`}
-                    onClick={() => {
-                      sound.playClick();
-                      if (!isUnlocked) {
-                        setUnlockModal(chapKey);
-                        return;
-                      }
-                      setSelectedChapter(chapKey);
-                    }}
+                    className={`chap-btn ${active ? 'active' : ''}`}
+                    onClick={() => handleSelectChapter(chapKey)}
                   >
                     <span className="chap-name">{chap.name}</span>
                     <span className="chap-boss">({chap.bossName})</span>
-                    {!isUnlocked && (
-                      <span className="chap-lock-tag">
-                        【{CHAPTER_UNLOCK_COSTS[chapKey]} 结晶解锁】
-                      </span>
-                    )}
                   </button>
                 );
               })}
+            </div>
+
+            {/* Selected Chapter Preview Banner */}
+            <div className="selected-chapter-preview">
+              <span className="chap-theme-badge">【{CHAPTERS[selectedChapter].theme}】</span>
+              <span className="chap-desc-snippet">{CHAPTERS[selectedChapter].description}</span>
             </div>
 
             {/* SEED INPUT */}
@@ -1557,6 +1565,25 @@ export function App() {
             {/* TAB 2: WAVES & BOSSES */}
             {debugTab === 'waves' && (
               <div>
+                <div className="debug-section-label">
+                  ◇ 章节快速切换 (当前: 【{CHAPTERS[game.chapter]?.name}】)
+                </div>
+                <div className="debug-chip-group">
+                  {(['bichon', 'mine', 'temple'] as MapChapter[]).map((cKey) => (
+                    <button
+                      key={cKey}
+                      className={`debug-chip ${game.chapter === cKey ? 'active' : ''}`}
+                      onClick={() => {
+                        game.switchChapter(cKey);
+                        handleSelectChapter(cKey);
+                        setShowSandbox(false);
+                      }}
+                    >
+                      {CHAPTERS[cKey].name} ({CHAPTERS[cKey].bossName})
+                    </button>
+                  ))}
+                </div>
+
                 <div className="debug-section-label">◇ 波次快速直达 (当前: 第 {game.wave}/{game.maxWaves} 波)</div>
                 <div className="debug-chip-group">
                   {[1, 3, 6, 9, game.maxWaves].map((w) => (

@@ -258,4 +258,34 @@ describe('Game Engine State Machine & Combat', () => {
     expect(g.result?.skillIds).toContain('fireball');
     expect(g.result?.skillIds).toContain('lightning');
   });
+
+  it('correctly initializes and spawns monsters for chosen chapter', () => {
+    // Test Mine chapter (废弃矿洞)
+    g.start('warrior', 'mine', 'trial', 176);
+    expect(g.chapter).toBe('mine');
+    g.spawnEnemy();
+    expect(g.enemies.length).toBe(1);
+    expect(['maggot', 'skeleton', 'skeleton_warrior', 'skeleton_archer', 'zombie']).toContain(
+      g.enemies[0].kind
+    );
+
+    // Test Temple chapter (祖玛神庙)
+    g.start('taoist', 'temple', 'trial', 176);
+    expect(g.chapter).toBe('temple');
+    g.spawnEnemy();
+    expect(g.enemies.length).toBe(1);
+    expect([
+      'woma_warrior',
+      'woma_hero',
+      'fire_woma',
+      'zuma_guard',
+      'zuma_archer',
+      'zuma_statue',
+    ]).toContain(g.enemies[0].kind);
+
+    // Test hot-switching chapter via switchChapter
+    g.switchChapter('mine');
+    expect(g.chapter).toBe('mine');
+    expect(g.enemies.length).toBe(0);
+  });
 });

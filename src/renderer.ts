@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { game, WORLD } from './game';
 import { SCENERY, getItem } from './content';
 import { sound } from './audio';
-import type { Enemy, Fx, Minion, Projectile, Manifest } from './types';
+import type { Enemy, Fx, Minion, Projectile, Manifest, MapChapter } from './types';
 import { assetUrl } from './utils';
 import { onManifestLoaded } from './assetLoader';
 
@@ -32,6 +32,7 @@ class BattleScene extends Phaser.Scene {
   private spaceKey!: Phaser.Input.Keyboard.Key;
   private accumulator = 0;
   private lastRun = '';
+  private lastChapter: MapChapter = 'bichon';
   private seen = new Set<string>();
   private drag: { id: number; x: number; y: number } | null = null;
   private corpses: { kind: string; dir: number; x: number; y: number; at: number }[] = [];
@@ -209,16 +210,27 @@ class BattleScene extends Phaser.Scene {
         const terrainImg = this.add.image(0, 0, 'terrain').setOrigin(0).setDepth(-100);
         const chap = game.chapter;
         if (chap === 'mine') {
-          terrainImg.setTint(0x788898);
+          // 废弃矿洞: 幽暗青灰地下矿坑岩板
+          terrainImg.setTint(0x404855);
+          this.cameras.main.setBackgroundColor('#10141a');
         } else if (chap === 'temple') {
-          terrainImg.setTint(0xc89878);
+          // 祖玛神庙: 古老赤褐古祭坛石砖
+          terrainImg.setTint(0x7c3828);
+          this.cameras.main.setBackgroundColor('#240e0b');
         } else {
+          // 比奇荒野: 原版明媚林地开阔草甸
           terrainImg.clearTint();
+          this.cameras.main.setBackgroundColor('#1c261e');
         }
         this.groundImages.push(terrainImg);
 
         for (const o of map.objects) {
           if (o.depth === 0) continue;
+          // 地下矿洞与神庙内部过滤掉地表茂密橡树树冠 (depth === 3)
+          if ((chap === 'mine' || chap === 'temple') && o.depth === 3) {
+            continue;
+          }
+
           const key = 'map/' + o.texture.toString(16).toUpperCase().padStart(8, '0');
           const f = assets.frames[key];
           if (!f) continue;
@@ -229,9 +241,9 @@ class BattleScene extends Phaser.Scene {
             .setDepth(o.depth === 3 ? 2000 : o.y + (o.depth === 1 ? -1 : 0))
             .setAlpha(o.alpha ? 0.38 : 1);
           if (chap === 'mine') {
-            image.setTint(0x8898a8);
+            image.setTint(0x353d47);
           } else if (chap === 'temple') {
-            image.setTint(0xd0a080);
+            image.setTint(0x8a4535);
           }
           this.groundImages.push(image);
           this.mapObjects.push({ image, alpha: o.alpha ? 0.38 : 1 });
@@ -586,8 +598,9 @@ class BattleScene extends Phaser.Scene {
       this.paintGround();
     }
 
-    if (this.lastRun !== game.runId) {
+    if (this.lastRun !== game.runId || this.lastChapter !== game.chapter) {
       this.lastRun = game.runId;
+      this.lastChapter = game.chapter;
       this.clearInput();
       this.corpses = [];
       this.lastEnemies.clear();

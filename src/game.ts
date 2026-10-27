@@ -847,9 +847,37 @@ export class Game {
 
     this.recompute();
     this.phase = 'battle';
+    const chapDef = CHAPTERS[this.chapter];
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 65,
+      text: `【出征】${chapDef?.name ?? '比奇荒野'} · 决战 ${chapDef?.bossName ?? '骷髅精灵'}`,
+      color: '#fde047',
+      life: 2.5,
+    });
     this.emit();
     this.saveActiveRun();
     sound.startBgm();
+  }
+
+  switchChapter(chapter: MapChapter) {
+    this.chapter = chapter;
+    this.isSandbox = true;
+    this.bossSpawned = false;
+    this.bossKilled = false;
+    this.enemies = [];
+    this.projectiles = [];
+    const chapDef = CHAPTERS[chapter];
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 70,
+      text: `【切换章节】${chapDef?.name ?? chapter} · 首领 ${chapDef?.bossName ?? ''}`,
+      color: '#38bdf8',
+      life: 2.2,
+    });
+    this.emit();
   }
 
   newSkill(id: SkillId): Skill {
