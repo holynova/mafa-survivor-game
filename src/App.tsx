@@ -40,6 +40,20 @@ import { assetUrl } from './utils';
 
 let framePositions: Record<string, { x: number; y: number }> = {};
 let assetManifest: Manifest | null = null;
+let artVersion = 0;
+const artListeners = new Set<() => void>();
+
+export function useArtReady() {
+  return useSyncExternalStore(
+    (cb) => {
+      artListeners.add(cb);
+      return () => {
+        artListeners.delete(cb);
+      };
+    },
+    () => artVersion
+  );
+}
 
 export async function loadArtPositions() {
   try {
@@ -64,12 +78,15 @@ export async function loadArtPositions() {
         } catch {}
       })
     );
+    artVersion++;
+    artListeners.forEach((fn) => fn());
   } catch (e) {
     console.warn('loadArtPositions warning:', e);
   }
 }
 
 export function Icon({ frame, className = '' }: { frame?: string; className?: string }) {
+  useArtReady();
   const m = assetManifest ?? assets;
   let targetFrame = frame;
   if (targetFrame && m && !m.frames[targetFrame]) {
@@ -273,10 +290,10 @@ export function App() {
                     <Icon
                       frame={
                         selectedClass === 'wizard'
-                          ? 'item/海魂'
+                          ? 'wizard/idle/0/0'
                           : selectedClass === 'taoist'
-                            ? 'item/降魔'
-                            : 'item/斩马刀'
+                            ? 'taoist/idle/0/0'
+                            : 'warrior/idle/0/0'
                       }
                     />
                   </div>

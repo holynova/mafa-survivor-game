@@ -175,7 +175,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 11.0,
     description: '释放环形烈焰冲击波，猛烈推开周围迫近的非Boss魔物。',
     heroClass: 'wizard',
-    asset: 'magic/ring_of_fire',
+    asset: 'repulse/2',
   },
   {
     id: 'entice',
@@ -183,7 +183,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 7.0,
     description: '以法力诱惑普通魔物倒戈，收归为随从宝宝一同杀敌（上限2~3只）。',
     heroClass: 'wizard',
-    asset: 'magic/entice',
+    asset: 'charm/1',
   },
   {
     id: 'hellfire',
@@ -191,7 +191,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 2.2,
     description: '向前喷涌出贯通直线的地狱烈焰，重创路径上的成排魔物。',
     heroClass: 'wizard',
-    asset: 'magic/hellfire',
+    asset: 'hellfire/0',
   },
   {
     id: 'lightning',
@@ -207,7 +207,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 1.65,
     description: '凝聚高烈度强力火球轰击目标，伤害显著高于基础火球。',
     heroClass: 'wizard',
-    asset: 'magic/great_fireball',
+    asset: 'bigfireball/0/0',
   },
   {
     id: 'teleport',
@@ -215,7 +215,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 24.0,
     description: '危机时刻穿梭空间脱离险境（空格键或危急自动触发）。',
     heroClass: 'wizard',
-    asset: 'magic/teleport',
+    asset: 'teleport/0',
   },
   {
     id: 'firebang',
@@ -223,7 +223,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 2.6,
     description: '在敌群密集处引爆 3×3 范围烈焰，造成高额范围伤害。',
     heroClass: 'wizard',
-    asset: 'magic/firebang',
+    asset: 'explosion/2',
   },
   {
     id: 'firewall',
@@ -239,7 +239,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 3.2,
     description: '激发一道贯穿屏幕的疾速电光光束，瞬间穿透成行成列的魔物。',
     heroClass: 'wizard',
-    asset: 'magic/laser',
+    asset: 'beam/0/0',
   },
   {
     id: 'thunderwave',
@@ -247,7 +247,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 4.5,
     description: '引爆自身为中心的环形狂暴雷池，重创周身全部包围魔物。',
     heroClass: 'wizard',
-    asset: 'magic/thunderwave',
+    asset: 'nova/1',
   },
   {
     id: 'shield',
@@ -263,7 +263,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 7.5,
     description: '念诵圣言，有概率直接秒杀不死系魔物；对Boss造成大额比例伤害。',
     heroClass: 'wizard',
-    asset: 'magic/holy_word',
+    asset: 'holy/1',
   },
   {
     id: 'ice_storm',
@@ -271,7 +271,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 4.0,
     description: '在目标区域召唤极寒暴风雪，造成无视魔法防御的强力大范围伤害。',
     heroClass: 'wizard',
-    asset: 'magic/ice_storm',
+    asset: 'ice/2',
   },
 
   // --- TAOIST (13) ---
@@ -281,7 +281,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 8.0,
     description: '以道符之力沐浴灵光，回复自身及随从的生命值。',
     heroClass: 'taoist',
-    asset: 'magic/heal_self',
+    asset: 'item/治愈术',
   },
   {
     id: 'spirit_combat',
@@ -289,7 +289,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 0,
     description: '【常驻被动】凝聚精神念力，道术伤害 +15%，基础命中与暴击提升。',
     heroClass: 'taoist',
-    asset: 'magic/spirit_combat',
+    asset: 'item/精神力战法',
     passive: true,
   },
   {
@@ -298,7 +298,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 5.0,
     description: '向魔物泼洒红绿双色蛊毒，使其持续损血并削弱其物理/魔法防御。',
     heroClass: 'taoist',
-    asset: 'magic/poison',
+    asset: 'item/施毒术',
   },
   {
     id: 'soul_fireball',
@@ -306,7 +306,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 1.4,
     description: '驱役道家灵符化为离火飞弹，精准轰击远方魔物。',
     heroClass: 'taoist',
-    asset: 'magic/soul_fireball',
+    asset: 'item/灵魂火符',
   },
   {
     id: 'summon_skeleton',
@@ -314,7 +314,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 15.0,
     description: '破土唤醒手持重斧的变异骷髅仆从，忠心追击周围魔物。',
     heroClass: 'taoist',
-    asset: 'magic/summon_skeleton',
+    asset: 'item/召唤骷髅',
   },
   {
     id: 'stealth',
@@ -322,7 +322,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 20.0,
     description: '捏诀隐去身形，使普通魔物在短时间内丧失追击目标。',
     heroClass: 'taoist',
-    asset: 'magic/stealth',
+    asset: 'item/隐身术',
   },
   {
     id: 'mass_stealth',
@@ -330,7 +330,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 25.0,
     description: '为自身及身侧所有召唤随从施加隐匿屏障，降低围攻压力。',
     heroClass: 'taoist',
-    asset: 'magic/mass_stealth',
+    asset: 'item/集体隐身术',
   },
   {
     id: 'spirit_shield',
@@ -338,7 +338,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 18.0,
     description: '施展金光幽灵护罩，短时间内大幅提升魔法防御 MDEF。',
     heroClass: 'taoist',
-    asset: 'magic/spirit_shield',
+    asset: 'item/幽灵盾',
   },
   {
     id: 'holy_armor',
@@ -346,7 +346,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 18.0,
     description: '降下神圣战甲真言，短时间内大幅提升物理防御 DEF。',
     heroClass: 'taoist',
-    asset: 'magic/holy_armor',
+    asset: 'item/神圣战甲术',
   },
   {
     id: 'mind_eye',
@@ -354,7 +354,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 8.0,
     description: '洞察魔物灵魂气血，揭示Boss生命并在攻击时更容易击中其弱点。',
     heroClass: 'taoist',
-    asset: 'magic/mind_eye',
+    asset: 'item/困魔咒',
   },
   {
     id: 'paralyze_charm',
@@ -362,7 +362,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 14.0,
     description: '画地为牢形成灵光结界，困禁结界内的非Boss魔物使其无法移动。',
     heroClass: 'taoist',
-    asset: 'magic/paralyze_charm',
+    asset: 'item/困魔咒',
   },
   {
     id: 'mass_heal',
@@ -370,7 +370,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 12.0,
     description: '降下大范围疗愈甘霖，同时治愈自身与整支召唤大军。',
     heroClass: 'taoist',
-    asset: 'magic/mass_heal',
+    asset: 'item/群体治愈术',
   },
   {
     id: 'summon_shinsu',
@@ -378,7 +378,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 28.0,
     description: '召唤玛法至尊喷火神兽！身躯硬朗，喷吐大范围高温烈火焚尽魔物。',
     heroClass: 'taoist',
-    asset: 'magic/summon_shinsu',
+    asset: 'item/召唤神兽',
   },
 
   // --- WARRIOR (6) ---
@@ -388,7 +388,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 0,
     description: '【常驻被动】千锤百炼的剑术根基，物理攻击力 +20%，命中率大幅提高。',
     heroClass: 'warrior',
-    asset: 'magic/basic_swordplay',
+    asset: 'item/基本剑术',
     passive: true,
   },
   {
@@ -397,7 +397,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 2.0,
     description: '挥剑时凝聚内劲，每隔数击爆发出撕裂空气的超额暴击斩击。',
     heroClass: 'warrior',
-    asset: 'magic/slashing_swordplay',
+    asset: 'item/攻杀剑术',
   },
   {
     id: 'piercing_swordplay',
@@ -405,7 +405,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 2.7,
     description: '向前刺出 2 格距离的破空剑气，无视目标护甲造成贯穿伤害。',
     heroClass: 'warrior',
-    asset: 'magic/piercing_swordplay',
+    asset: 'item/刺杀剑术',
   },
   {
     id: 'half_moon',
@@ -413,7 +413,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 3.0,
     description: '长剑挥舞划出如半月般的锐利刀光，大范围横扫面前 180° 全部敌人。',
     heroClass: 'warrior',
-    asset: 'magic/half_moon',
+    asset: 'item/半月弯刀',
   },
   {
     id: 'savage_charge',
@@ -421,7 +421,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 12.0,
     description: '以浑身神力向前极速冲撞，将沿途魔物猛力推开并施加击晕硬直。',
     heroClass: 'warrior',
-    asset: 'magic/savage_charge',
+    asset: 'item/野蛮冲撞',
   },
   {
     id: 'fire_swordplay',
@@ -429,7 +429,7 @@ export const SKILLS: SkillDef[] = [
     cooldown: 6.5,
     description: '将烈火精灵附于剑锋之上，轰然劈出造成毁天灭地的 2.5 倍致命伤害！',
     heroClass: 'warrior',
-    asset: 'magic/fire_swordplay',
+    asset: 'item/烈火剑法',
   },
 ];
 

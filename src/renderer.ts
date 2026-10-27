@@ -92,6 +92,8 @@ class BattleScene extends Phaser.Scene {
   }
 
   create() {
+    (window as any).__scene = this;
+    console.log('[BattleScene.create] assets present?', !!assets, 'pages:', assets?.pages?.length);
     if (!assets) {
       const cached = this.cache.json.get('manifest') as Manifest | undefined;
       if (cached) {
@@ -198,20 +200,24 @@ class BattleScene extends Phaser.Scene {
 
     const map = assets?.world;
     if (this.useSprites && map && assets) {
-      let texture = this.textures.get('terrain') as Phaser.Textures.CanvasTexture;
-      if (!texture) {
-        texture = this.textures.createCanvas('terrain', WORLD.w, WORLD.h)!;
+      let texture: Phaser.Textures.CanvasTexture | null = null;
+      if (this.textures.exists('terrain')) {
+        texture = this.textures.get('terrain') as Phaser.Textures.CanvasTexture;
+      } else {
+        texture = this.textures.createCanvas('terrain', WORLD.w, WORLD.h);
       }
-      if (texture) {
+      if (texture && texture.context) {
         const context = texture.context;
         context.imageSmoothingEnabled = false;
+        context.clearRect(0, 0, WORLD.w, WORLD.h);
         const paint = (key: string, x: number, y: number, bottom = false) => {
           const meta = assets?.frames[key];
           if (!meta) return;
+          if (!this.textures.exists(meta.texture)) return;
           const f = this.textures.getFrame(meta.texture, key);
           if (!f || !f.source?.image) return;
           context.drawImage(
-            f.source.image as HTMLImageElement,
+            f.source.image as CanvasImageSource,
             f.cutX,
             f.cutY,
             f.cutWidth,
@@ -240,6 +246,7 @@ class BattleScene extends Phaser.Scene {
           const key = 'map/' + o.texture.toString(16).toUpperCase().padStart(8, '0');
           const f = assets.frames[key];
           if (!f) continue;
+          if (!this.textures.exists(f.texture)) continue;
           const image = this.add
             .image(o.x, o.y, f.texture, key)
             .setOrigin(0, 1)
@@ -310,9 +317,10 @@ class BattleScene extends Phaser.Scene {
 
   private draw(key: string, frame: string, x: number, y: number, depth: number, alpha = 1, scale = 1, offset = true) {
     if (!this.useSprites || !assets?.frames[frame]) return;
+    const f = assets.frames[frame];
+    if (!this.textures.exists(f.texture)) return;
     this.seen.add(key);
     let image = this.bodies.get(key);
-    const f = assets.frames[frame];
     if (!image) {
       image = this.pool.pop() ?? this.add.image(0, 0, f.texture, frame);
       this.bodies.set(key, image);
@@ -989,4 +997,5 @@ export function boot() {
     render: { roundPixels: true },
     fps: { target: 60 },
   });
+  (window as any).__engine = engine;
 }
