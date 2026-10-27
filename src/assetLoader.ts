@@ -18,6 +18,9 @@ export let assetManifest: Manifest | null = null;
 
 export const MIR_CORE_UI_ASSETS = [
   'mainbar.png',
+  'mainbar_center.png',
+  'mainbar_title.png',
+  'quick_bar.png',
   'hp_ball.png',
   'mp_ball.png',
   'equip_panel.png',

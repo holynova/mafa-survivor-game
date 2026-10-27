@@ -1830,6 +1830,12 @@ export function App() {
               className="mir2-mainbar-frame"
               style={{ backgroundImage: `url(${assetUrl('assets/mir/ui/mainbar.png')})` }}
             >
+              {/* Authentic Mir2 Center Console Stone Frame & Log Underlay */}
+              <div
+                className="mir2-mainbar-center-bg"
+                style={{ backgroundImage: `url(${assetUrl('assets/mir/ui/mainbar_center.png')})` }}
+              />
+
               {/* LEFT: AUTHENTIC DUAL BLOOD/MANA ORB (阴阳红蓝太极血球) */}
               <div
                 className="mir2-blood-orb-socket"
@@ -1865,22 +1871,29 @@ export function App() {
                   <span className="orb-divider">/</span>
                   <span className="orb-num-max">{g.maxHP}</span>
                 </div>
-                {/* Character Name & Level tag below orb */}
+                {/* Character Name & Level tag in wooden plaque */}
                 <div className="mir2-hero-badge">
                   <span>Lv.{g.level}</span>
                   <span>{g.base.name}</span>
                 </div>
               </div>
 
-              {/* CENTER: SKILL SLOTS + TELEMETRY + EXP BAR */}
+              {/* CENTER: QUICK SKILLS BELT + RETRO TELEMETRY + EXP BAR */}
               <div className="mir2-center-console">
-                {/* Top Row: Quick Skills Bar (1 - 6) */}
-                <div className="mir2-skills-belt">
+                {/* Authentic 6-slot Quick Skills Belt */}
+                <div
+                  className="mir2-quick-belt"
+                  style={{ backgroundImage: `url(${assetUrl('assets/mir/ui/quick_bar.png')})` }}
+                >
                   {[0, 1, 2, 3, 4, 5].map((slotIdx) => {
                     const skill = g.skills[slotIdx];
                     if (!skill) {
                       return (
-                        <div key={slotIdx} className="mir2-skill-slot empty-slot">
+                        <div
+                          key={slotIdx}
+                          className="mir2-quick-slot empty-slot"
+                          style={{ left: `${17 + 42 * slotIdx}px`, top: '6px' }}
+                        >
                           <span className="slot-key">{slotIdx + 1}</span>
                         </div>
                       );
@@ -1897,7 +1910,8 @@ export function App() {
                     return (
                       <div
                         key={slotIdx}
-                        className={`mir2-skill-slot active-slot skill-${skill.id}`}
+                        className={`mir2-quick-slot active-slot skill-${skill.id}`}
+                        style={{ left: `${17 + 42 * slotIdx}px`, top: '6px' }}
                         title={`${def.name} (Lv.${skill.rank})\n${def.description}`}
                       >
                         <Icon frame={def.asset} />
@@ -1914,23 +1928,22 @@ export function App() {
                   })}
                 </div>
 
-                {/* Middle Row: Battlefield Telemetry (波次、倒计时、战绩) */}
-                <div className="mir2-telemetry-row">
-                  <span className="mir2-tele-chap">
-                    【{CHAPTERS[g.chapter]?.name}】第 {g.wave}/{g.maxWaves} 波
-                  </span>
-                  <span className="mir2-tele-timer">
-                    剩余: {Math.max(0, Math.ceil(g.duration - g.waveTime))}s
-                  </span>
-                  <span className="mir2-tele-kills">
-                    击杀: <strong>{g.kills}</strong>
-                  </span>
-                  <span className="mir2-tele-gold">
-                    金币: <strong>{g.gold}</strong>
-                  </span>
+                {/* Middle Row: Battlefield Telemetry styled like Mir2 chat log */}
+                <div className="mir2-telemetry-chat">
+                  <div className="mir2-chat-line">
+                    <span className="mir2-chat-tag">[战况]</span>
+                    <span className="mir2-chat-highlight">【{CHAPTERS[g.chapter]?.name}】第 {g.wave}/{g.maxWaves} 波</span>
+                    <span className="mir2-chat-timer">剩余 {Math.max(0, Math.ceil(g.duration - g.waveTime))}s</span>
+                  </div>
+                  <div className="mir2-chat-line">
+                    <span className="mir2-chat-tag">[斩获]</span>
+                    <span className="mir2-chat-stat">击杀: <strong>{g.kills}</strong></span>
+                    <span className="mir2-chat-gold">金币: <strong>{g.gold}</strong></span>
+                    <span className="mir2-chat-highlight">境界: <strong>Lv.{g.level}</strong></span>
+                  </div>
                 </div>
 
-                {/* Bottom Row: Exp Bar across console */}
+                {/* Bottom Row: Exp Bar aligned with center frame groove */}
                 <div
                   className="mir2-exp-track"
                   title={`经验: ${g.exp} / ${expNeeded(g.level)}`}
@@ -1951,57 +1964,40 @@ export function App() {
                 </div>
               </div>
 
-              {/* RIGHT: AUTHENTIC MIR 2 METALLIC ACTION BUTTONS */}
+              {/* RIGHT: AUTHENTIC MIR 2 CONSOLE BUTTONS OVERLAID ON OVAL */}
               <div className="mir2-actions-cluster">
-                {/* Row 1 */}
-                <div className="mir2-btn-row">
-                  <button
-                    className="mir2-metal-btn btn-equip"
-                    title="人物装备 (F10 或 B)"
-                    onClick={() => {
-                      sound.playClick();
-                      setShowEquipModal((s) => !s);
-                    }}
-                  >
-                    <span className="btn-label">装备</span>
-                  </button>
-                  <button
-                    className="mir2-metal-btn btn-skill"
-                    title="技能藏经阁 (F11 或 K)"
-                    onClick={() => {
-                      sound.playClick();
-                      setShowCompendium((s) => !s);
-                    }}
-                  >
-                    <span className="btn-label">技能</span>
-                  </button>
-                </div>
-
-                {/* Row 2 */}
-                <div className="mir2-btn-row">
-                  <button
-                    className="mir2-metal-btn btn-bag"
-                    title="随身包裹 (F9)"
-                    onClick={() => {
-                      sound.playClick();
-                      setShowEquipModal((s) => !s);
-                    }}
-                  >
-                    <span className="btn-label">包裹</span>
-                  </button>
-                  <button
-                    className="mir2-metal-btn btn-opt"
-                    title="暂停 / 选项 (ESC)"
-                    onClick={() => {
-                      sound.playClick();
-                      game.pause();
-                    }}
-                  >
-                    <span className="btn-label">
-                      {g.phase === 'paused' ? '继续' : '设置'}
-                    </span>
-                  </button>
-                </div>
+                <button
+                  className="mir2-console-btn btn-bag"
+                  title="随身包裹 (F9)"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowEquipModal((s) => !s);
+                  }}
+                />
+                <button
+                  className="mir2-console-btn btn-equip"
+                  title="人物状态与装备 (F10 或 B)"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowEquipModal((s) => !s);
+                  }}
+                />
+                <button
+                  className="mir2-console-btn btn-skill"
+                  title="技能藏经阁 (F11 或 K)"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowCompendium((s) => !s);
+                  }}
+                />
+                <button
+                  className="mir2-console-btn btn-opt"
+                  title="系统设置 / 暂停 (ESC)"
+                  onClick={() => {
+                    sound.playClick();
+                    game.pause();
+                  }}
+                />
               </div>
             </div>
           </footer>
