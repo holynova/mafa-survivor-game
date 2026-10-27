@@ -124,18 +124,36 @@ export const CHAPTERS: Record<MapChapter, ChapterDef> = {
     name: '废弃矿洞',
     theme: '阴湿矿道 · 幽暗古墓',
     bossName: '尸王',
-    description: '充斥着僵尸与白骨的阴森坑道。末波决战操纵铁链地动的万尸之王。',
-    monsters: ['maggot', 'skeleton', 'skeleton_warrior', 'skeleton_archer', 'zombie'],
+    description: '充斥着僵尸与铁轨坑道的幽深矿洞。末波决战操纵铁链地动的万尸之王。',
+    monsters: ['maggot', 'skeleton', 'skeleton_warrior', 'skeleton_archer', 'zombie', 'black_maggot', 'tongs'],
     bossId: 'boss_mine',
   },
   temple: {
     id: 'temple',
     name: '祖玛神庙',
     theme: '古老祭坛 · 神秘石殿',
-    bossName: '沃玛教主',
-    description: '古老邪恶教派的核心圣地。面对高护甲的祖玛卫士与全屏电弧的狂暴教主。',
-    monsters: ['woma_warrior', 'woma_hero', 'fire_woma', 'zuma_guard', 'zuma_archer', 'zuma_statue'],
-    bossId: 'boss_temple',
+    bossName: '祖玛教主',
+    description: '古老邪恶教派的核心圣地。面对高护甲的祖玛卫士、雕像与狂暴的远古教主。',
+    monsters: ['zuma_guard', 'zuma_archer', 'zuma_statue', 'woma_warrior', 'woma_hero', 'moth'],
+    bossId: 'boss_zuma',
+  },
+  tomb: {
+    id: 'tomb',
+    name: '石墓洞窟',
+    theme: '幽冥石墓 · 狂暴野猪',
+    bossName: '白野猪',
+    description: '机关重重的古墓石室。末波决战手握流星重锤的白野猪与邪恶毒蛇。',
+    monsters: ['red_boar', 'black_boar', 'black_maggot', 'moth', 'evil_snake'],
+    bossId: 'boss_boar',
+  },
+  desert: {
+    id: 'desert',
+    name: '盟重土城',
+    theme: '苍茫大漠 · 黄沙古城',
+    bossName: '触龙神',
+    description: '黄沙漫天的盟重荒漠。与飞蛾、恶蛆、钳虫厮杀，末波决战破地而出的千年毒龙。',
+    monsters: ['black_maggot', 'tongs', 'moth', 'orc_hero', 'evil_snake'],
+    bossId: 'boss_dragon',
   },
 };
 
@@ -1297,20 +1315,36 @@ export const MONSTERS: MonsterDef[] = [
 
   // --- Mine & Catacombs ---
   { id: 'maggot', name: '洞蛆', hp: 26, damage: 3, speed: 65, exp: 4, aiType: 'charge' },
+  { id: 'black_maggot', name: '黑色恶蛆', hp: 85, damage: 9, speed: 82, exp: 14, aiType: 'charge' },
+  { id: 'tongs', name: '钳虫', hp: 160, damage: 14, speed: 44, exp: 22, aiType: 'melee' },
   { id: 'skeleton', name: '骷髅', hp: 50, damage: 6, speed: 44, exp: 6, aiType: 'melee', undead: true },
   { id: 'skeleton_warrior', name: '骷髅战士', hp: 70, damage: 8, speed: 46, exp: 8, aiType: 'melee', undead: true },
   { id: 'skeleton_archer', name: '骷髅弓箭手', hp: 60, damage: 7, speed: 30, exp: 8, aiType: 'ranged', undead: true },
   { id: 'zombie', name: '僵尸', hp: 110, damage: 10, speed: 28, exp: 12, aiType: 'melee', undead: true },
-  { id: 'boss_mine', name: '尸王', hp: 1350, damage: 22, speed: 45, exp: 120, aiType: 'summoner', undead: true },
+  { id: 'boss_mine', name: '尸王', hp: 1450, damage: 24, speed: 45, exp: 120, aiType: 'summoner', undead: true },
 
-  // --- Zuma Temple ---
+  // --- Zuma & Woma Temple ---
   { id: 'woma_warrior', name: '沃玛战士', hp: 95, damage: 9, speed: 46, exp: 12, aiType: 'melee' },
   { id: 'woma_hero', name: '沃玛勇士', hp: 140, damage: 13, speed: 48, exp: 18, aiType: 'charge' },
   { id: 'fire_woma', name: '火焰沃玛', hp: 90, damage: 12, speed: 36, exp: 16, aiType: 'ranged' },
-  { id: 'zuma_guard', name: '祖玛卫士', hp: 165, damage: 14, speed: 42, exp: 24, aiType: 'melee' },
-  { id: 'zuma_archer', name: '祖玛弓箭手', hp: 85, damage: 10, speed: 32, exp: 16, aiType: 'ranged' },
-  { id: 'zuma_statue', name: '祖玛雕像', hp: 120, damage: 11, speed: 45, exp: 20, aiType: 'melee' },
+  { id: 'moth', name: '楔蛾', hp: 95, damage: 11, speed: 62, exp: 16, aiType: 'ranged' },
+  { id: 'zuma_guard', name: '祖玛卫士', hp: 220, damage: 18, speed: 44, exp: 28, aiType: 'melee' },
+  { id: 'zuma_archer', name: '祖玛弓箭手', hp: 120, damage: 14, speed: 34, exp: 20, aiType: 'ranged' },
+  { id: 'zuma_statue', name: '祖玛雕像', hp: 180, damage: 15, speed: 46, exp: 24, aiType: 'melee' },
   { id: 'boss_temple', name: '沃玛教主', hp: 1950, damage: 26, speed: 52, exp: 160, aiType: 'summoner' },
+  { id: 'boss_woma', name: '沃玛教主', hp: 1950, damage: 26, speed: 52, exp: 160, aiType: 'summoner' },
+  { id: 'boss_zuma', name: '祖玛教主', hp: 2500, damage: 34, speed: 52, exp: 220, aiType: 'summoner' },
+
+  // --- Stone Tomb & Pig Cave ---
+  { id: 'red_boar', name: '红野猪', hp: 220, damage: 16, speed: 48, exp: 28, aiType: 'melee' },
+  { id: 'black_boar', name: '黑野猪', hp: 260, damage: 18, speed: 46, exp: 32, aiType: 'melee' },
+  { id: 'evil_snake', name: '邪恶毒蛇', hp: 680, damage: 22, speed: 64, exp: 65, aiType: 'charge' },
+  { id: 'boss_boar', name: '白野猪', hp: 2100, damage: 30, speed: 56, exp: 180, aiType: 'melee' },
+
+  // --- Desert & Centipede Canyon ---
+  { id: 'boss_centipede', name: '邪恶钳虫', hp: 1800, damage: 26, speed: 60, exp: 150, aiType: 'charge' },
+  { id: 'boss_dragon', name: '触龙神', hp: 3200, damage: 36, speed: 0, exp: 260, aiType: 'ranged' },
+  { id: 'boss_moon', name: '赤月恶魔', hp: 3800, damage: 40, speed: 0, exp: 320, aiType: 'ranged' },
 ];
 
 export const TALENTS: TalentDef[] = [

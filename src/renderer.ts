@@ -167,7 +167,7 @@ class BattleScene extends Phaser.Scene {
     this.mapObjects = [];
     this.groundGfx.clear();
 
-    const map = assets?.world;
+    const map = (assets?.worlds && assets.worlds[game.chapter]) || assets?.world;
     if (this.useSprites && map && assets) {
       let texture: Phaser.Textures.CanvasTexture | null = null;
       if (this.textures.exists('terrain')) {
@@ -210,27 +210,21 @@ class BattleScene extends Phaser.Scene {
         const terrainImg = this.add.image(0, 0, 'terrain').setOrigin(0).setDepth(-100);
         const chap = game.chapter;
         if (chap === 'mine') {
-          // 废弃矿洞: 幽暗青灰地下矿坑岩板
-          terrainImg.setTint(0x404855);
-          this.cameras.main.setBackgroundColor('#10141a');
+          this.cameras.main.setBackgroundColor('#0c0f14');
         } else if (chap === 'temple') {
-          // 祖玛神庙: 古老赤褐古祭坛石砖
-          terrainImg.setTint(0x7c3828);
-          this.cameras.main.setBackgroundColor('#240e0b');
+          this.cameras.main.setBackgroundColor('#16100d');
+        } else if (chap === 'tomb') {
+          this.cameras.main.setBackgroundColor('#141210');
+        } else if (chap === 'desert') {
+          this.cameras.main.setBackgroundColor('#262016');
         } else {
-          // 比奇荒野: 原版明媚林地开阔草甸
-          terrainImg.clearTint();
           this.cameras.main.setBackgroundColor('#1c261e');
         }
+        terrainImg.clearTint();
         this.groundImages.push(terrainImg);
 
         for (const o of map.objects) {
           if (o.depth === 0) continue;
-          // 地下矿洞与神庙内部过滤掉地表茂密橡树树冠 (depth === 3)
-          if ((chap === 'mine' || chap === 'temple') && o.depth === 3) {
-            continue;
-          }
-
           const key = 'map/' + o.texture.toString(16).toUpperCase().padStart(8, '0');
           const f = assets.frames[key];
           if (!f) continue;
@@ -240,11 +234,7 @@ class BattleScene extends Phaser.Scene {
             .setOrigin(0, 1)
             .setDepth(o.depth === 3 ? 2000 : o.y + (o.depth === 1 ? -1 : 0))
             .setAlpha(o.alpha ? 0.38 : 1);
-          if (chap === 'mine') {
-            image.setTint(0x353d47);
-          } else if (chap === 'temple') {
-            image.setTint(0x8a4535);
-          }
+          image.clearTint();
           this.groundImages.push(image);
           this.mapObjects.push({ image, alpha: o.alpha ? 0.38 : 1 });
         }
@@ -354,11 +344,34 @@ class BattleScene extends Phaser.Scene {
   }
 
   private resolveAnimName(name: string): string {
-    if (name.startsWith('boss')) return 'boss';
+    // Bosses
+    if (name === 'boss_bichon' || name === 'boss') return 'boss';
+    if (name === 'boss_mine') return 'boss_mine';
+    if (name === 'boss_temple' || name === 'boss_woma') return 'boss_temple';
+    if (name === 'boss_zuma') return 'boss_zuma';
+    if (name === 'boss_centipede') return 'boss_centipede';
+    if (name === 'boss_dragon') return 'boss_dragon';
+    if (name === 'boss_boar') return 'boss_boar';
+    if (name === 'boss_moon') return 'boss_moon';
+
+    // Elites & Specific Monsters
+    if (name === 'orc_hero') return 'orc_hero';
+    if (name === 'black_maggot') return 'black_maggot';
+    if (name === 'tongs') return 'tongs';
+    if (name === 'moth') return 'moth';
+    if (name === 'red_boar') return 'red_boar';
+    if (name === 'black_boar') return 'black_boar';
+    if (name === 'evil_snake') return 'evil_snake';
+    if (name === 'zuma_guard') return 'zuma_guard';
+    if (name === 'zuma_statue') return 'zuma_statue';
+    if (name === 'zuma_archer') return 'zuma_archer';
+
+    // Standard Monsters
     if (name.startsWith('orc')) return 'orc';
     if (name.startsWith('skeleton')) return 'skeleton';
     if (name === 'zombie') return 'zombie';
-    if (name.startsWith('woma') || name.startsWith('zuma')) return 'orc';
+    if (name.startsWith('woma')) return 'orc';
+    if (name.startsWith('zuma')) return 'zuma_guard';
     if (name === 'maggot') return 'cat';
     if (name === 'spider') return 'scarecrow';
     if (name === 'shinsu') return 'beast';

@@ -211,11 +211,13 @@ export const CHAPTER_UNLOCK_COSTS: Record<MapChapter, number> = {
   bichon: 0,
   mine: 5,
   temple: 12,
+  tomb: 25,
+  desert: 40,
 };
 
 export async function unlockAllChapters(): Promise<ProfileData> {
   const profile = await getProfile();
-  profile.unlockedChapters = ['bichon', 'mine', 'temple'];
+  profile.unlockedChapters = ['bichon', 'mine', 'temple', 'tomb', 'desert'];
   await saveProfile(profile);
   return profile;
 }

@@ -283,9 +283,56 @@ describe('Game Engine State Machine & Combat', () => {
       'zuma_statue',
     ]).toContain(g.enemies[0].kind);
 
+    // Test Tomb chapter (石墓洞窟)
+    g.start('wizard', 'tomb', 'trial', 176);
+    expect(g.chapter).toBe('tomb');
+    g.spawnEnemy();
+    expect(g.enemies.length).toBe(1);
+    expect(['red_boar', 'black_boar', 'black_maggot', 'moth', 'evil_snake']).toContain(g.enemies[0].kind);
+
+    // Test Desert chapter (盟重土城)
+    g.start('warrior', 'desert', 'trial', 176);
+    expect(g.chapter).toBe('desert');
+    g.spawnEnemy();
+    expect(g.enemies.length).toBe(1);
+    expect(['black_maggot', 'tongs', 'moth', 'orc_hero', 'evil_snake']).toContain(g.enemies[0].kind);
+
     // Test hot-switching chapter via switchChapter
     g.switchChapter('mine');
     expect(g.chapter).toBe('mine');
     expect(g.enemies.length).toBe(0);
+  });
+
+  it('correctly spawns all distinct authentic chapter bosses and elites', () => {
+    g.start('wizard', 'temple', 'trial', 176);
+    
+    // Test spawning Zuma Leader
+    g.spawnSpecificBoss('boss_zuma');
+    expect(g.boss?.kind).toBe('boss_zuma');
+    expect(g.boss?.name).toBe('祖玛教主');
+
+    // Test spawning White Boar
+    g.spawnSpecificBoss('boss_boar');
+    expect(g.enemies.some(e => e.kind === 'boss_boar' && e.name === '白野猪')).toBe(true);
+
+    // Test spawning Dragon Centipede
+    g.spawnSpecificBoss('boss_dragon');
+    expect(g.enemies.some(e => e.kind === 'boss_dragon' && e.name === '触龙神')).toBe(true);
+
+    // Test spawning Corpse King
+    g.spawnSpecificBoss('boss_mine');
+    expect(g.enemies.some(e => e.kind === 'boss_mine' && e.name === '尸王')).toBe(true);
+
+    // Test spawning Evil Pincer Centipede
+    g.spawnSpecificBoss('boss_centipede');
+    expect(g.enemies.some(e => e.kind === 'boss_centipede' && e.name === '邪恶钳虫')).toBe(true);
+
+    // Test spawning elites
+    g.spawnEnemy('zuma_guard');
+    expect(g.enemies.some(e => e.kind === 'zuma_guard' && e.name === '祖玛卫士')).toBe(true);
+    g.spawnEnemy('red_boar');
+    expect(g.enemies.some(e => e.kind === 'red_boar' && e.name === '红野猪')).toBe(true);
+    g.spawnEnemy('black_maggot');
+    expect(g.enemies.some(e => e.kind === 'black_maggot' && e.name === '黑色恶蛆')).toBe(true);
   });
 });

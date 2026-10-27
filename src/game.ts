@@ -649,9 +649,10 @@ export class Game {
 
   spawnSpecificBoss(bossKind: string) {
     this.isSandbox = true;
-    const kind = bossKind === 'boss_woma' ? 'boss_temple' : bossKind;
+    const kind = bossKind;
     this.spawnEnemy(kind);
-    const bossName = kind === 'boss_temple' ? '沃玛教主' : kind === 'boss_mine' ? '尸王' : '骷髅精灵';
+    const foundMonster = MONSTERS.find((m) => m.id === kind);
+    const bossName = foundMonster?.name ?? (kind === 'boss_zuma' ? '祖玛教主' : kind === 'boss_boar' ? '白野猪' : kind === 'boss_dragon' ? '触龙神' : kind === 'boss_centipede' ? '邪恶钳虫' : kind === 'boss_temple' ? '沃玛教主' : kind === 'boss_mine' ? '尸王' : '骷髅精灵');
     this.floating.push({
       id: ++this.id,
       x: this.player.x,
@@ -1215,6 +1216,103 @@ export class Game {
               isEnemy: true,
             });
           }
+        }
+      } else if (e.kind === 'boss_zuma') {
+        // Zuma Leader: Roar of stone, summons Zuma guards and statues
+        if (e.shootCD <= 0) {
+          e.shootCD = 6.0;
+          sound.playHolyWord();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 45,
+            text: '【祖玛教主石化唤醒】！',
+            color: '#dc2626',
+            life: 1.5,
+          });
+          this.spawnEnemy('zuma_guard');
+          this.spawnEnemy('zuma_statue');
+          this.effects.push({
+            id: ++this.id,
+            kind: 'firewall',
+            x: e.x,
+            y: e.y,
+            life: 3.0,
+            total: 3.0,
+            radius: 80,
+          });
+        }
+      } else if (e.kind === 'boss_boar') {
+        // White Boar: Furious Meteor Slam
+        if (e.shootCD <= 0) {
+          e.shootCD = 4.5;
+          sound.playCharge();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 45,
+            text: '【白野猪重锤扫击】！',
+            color: '#ea580c',
+            life: 1.5,
+          });
+          e.speed = 88;
+          this.effects.push({
+            id: ++this.id,
+            kind: 'half_moon_sweep',
+            x: e.x,
+            y: e.y,
+            life: 0.5,
+            total: 0.5,
+            radius: 130,
+          });
+          if (d < 130) {
+            this.hurt(Math.round(e.damage * 0.9));
+          }
+        }
+      } else if (e.kind === 'boss_dragon') {
+        // Dragon Centipede: Stationary Toxic Nova
+        if (e.shootCD <= 0) {
+          e.shootCD = 5.0;
+          sound.playHellfire();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 50,
+            text: '【触龙神全屏剧毒吐息】！',
+            color: '#16a34a',
+            life: 1.8,
+          });
+          const speed = 190;
+          for (let dir12 = 0; dir12 < 12; dir12++) {
+            const rad = (dir12 * Math.PI) / 6;
+            this.projectiles.push({
+              id: ++this.id,
+              kind: 'enemy_poison',
+              x: e.x,
+              y: e.y,
+              vx: Math.cos(rad) * speed,
+              vy: Math.sin(rad) * speed,
+              damage: Math.round(e.damage * 0.85),
+              life: 3.2,
+              dir: 0,
+              isEnemy: true,
+            });
+          }
+        }
+      } else if (e.kind === 'boss_centipede') {
+        // Evil Centipede: High Speed Pincer Charge
+        if (e.shootCD <= 0) {
+          e.shootCD = 4.0;
+          e.speed = 110;
+          sound.playCharge();
+          this.floating.push({
+            id: ++this.id,
+            x: e.x,
+            y: e.y - 40,
+            text: '【邪恶钳虫极速突进】！',
+            color: '#ca8a04',
+            life: 1.5,
+          });
         }
       } else if (e.aiType === 'summoner' && e.shootCD <= 0) {
         e.shootCD = 7.0;

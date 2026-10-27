@@ -1,5 +1,5 @@
 export type HeroClass = 'wizard' | 'taoist' | 'warrior';
-export type MapChapter = 'bichon' | 'mine' | 'temple';
+export type MapChapter = 'bichon' | 'mine' | 'temple' | 'tomb' | 'desert';
 
 export type StatKey =
   | 'hp_max'
@@ -338,6 +338,24 @@ export interface Manifest {
       alpha: boolean;
     }[];
   };
+  worlds?: Record<
+    string,
+    {
+      width: number;
+      height: number;
+      cellWidth: number;
+      cellHeight: number;
+      walk: number[];
+      tiles: { texture: number; x: number; y: number }[];
+      objects: {
+        texture: number;
+        x: number;
+        y: number;
+        depth: number;
+        alpha: boolean;
+      }[];
+    }
+  >;
   pages: {
     key: string;
     image: string;

@@ -581,7 +581,7 @@ export function App() {
             {/* CHAPTER SELECTOR */}
             <div className="chapter-selector">
               <span className="chapter-label">出征章节：</span>
-              {(['bichon', 'mine', 'temple'] as MapChapter[]).map((chapKey) => {
+              {(['bichon', 'mine', 'temple', 'tomb', 'desert'] as MapChapter[]).map((chapKey) => {
                 const chap = CHAPTERS[chapKey];
                 const active = selectedChapter === chapKey;
                 return (
@@ -1623,11 +1623,47 @@ export function App() {
                   <button
                     className="debug-chip"
                     onClick={() => {
+                      game.spawnSpecificBoss('boss_zuma');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    祖玛神庙 · 祖玛教主
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
                       game.spawnSpecificBoss('boss_temple');
                       setShowSandbox(false);
                     }}
                   >
-                    祖玛神庙 · 沃玛教主
+                    沃玛神殿 · 沃玛教主
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_boar');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    石墓洞窟 · 白野猪
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_dragon');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    盟重荒漠 · 触龙神
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_centipede');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    死亡峡谷 · 邪恶钳虫
                   </button>
                 </div>
 
