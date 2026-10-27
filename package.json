@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite --host 127.0.0.1 --clearScreen false",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "assets:fetch": "python3 tools/import-assets.py",
