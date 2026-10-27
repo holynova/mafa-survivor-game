@@ -353,6 +353,17 @@ export function App() {
         setShowSandbox(false);
         setShowEquipModal(false);
         setReplaceTargetChoice(null);
+      } else if (game.phase === 'upgrade' && !replaceTargetChoice) {
+        const choiceIdx = e.key === '1' ? 0 : e.key === '2' ? 1 : e.key === '3' ? 2 : -1;
+        if (choiceIdx >= 0 && game.choices[choiceIdx]) {
+          const c = game.choices[choiceIdx];
+          sound.playClick();
+          if (c.id.startsWith('learn-') && game.skills.length >= 6) {
+            setReplaceTargetChoice(c);
+          } else {
+            game.choose(c.id);
+          }
+        }
       }
     };
     window.addEventListener('keydown', handleKey);
