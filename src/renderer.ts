@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { game, WORLD } from './game';
-import { SCENERY } from './content';
+import { SCENERY, getItem } from './content';
 import { sound } from './audio';
 import type { Enemy, Fx, Minion, Projectile, Manifest } from './types';
 import { assetUrl } from './utils';
@@ -283,10 +283,10 @@ class BattleScene extends Phaser.Scene {
     this.groundGfx.strokeRect(20, 30, WORLD.w - 40, WORLD.h - 50);
   }
 
-  private draw(key: string, frame: string, x: number, y: number, depth: number, alpha = 1, scale = 1, offset = true) {
-    if (!this.useSprites || !assets?.frames[frame]) return;
+  private draw(key: string, frame: string, x: number, y: number, depth: number, alpha = 1, scale = 1, offset = true): boolean {
+    if (!this.useSprites || !assets?.frames[frame]) return false;
     const f = assets.frames[frame];
-    if (!this.textures.exists(f.texture)) return;
+    if (!this.textures.exists(f.texture)) return false;
     this.seen.add(key);
     let image = this.bodies.get(key);
     if (!image) {
@@ -304,6 +304,7 @@ class BattleScene extends Phaser.Scene {
       .setAlpha(alpha)
       .setScale(scale)
       .clearTint();
+    return true;
   }
 
   private drawAnim(
@@ -612,14 +613,7 @@ class BattleScene extends Phaser.Scene {
 
     for (const object of this.mapObjects) {
       const i = object.image;
-      const occludes =
-        game.phase !== 'lobby' &&
-        i.depth > game.player.y &&
-        i.x < game.player.x + 50 &&
-        i.x + i.width > game.player.x - 50 &&
-        i.y - i.height < game.player.y + 20 &&
-        i.y > game.player.y - 85;
-      i.setAlpha(occludes ? 0.12 : object.alpha);
+      i.setAlpha(object.alpha);
     }
 
     if (game.phase === 'battle') {
@@ -725,8 +719,12 @@ class BattleScene extends Phaser.Scene {
 
           // Ground Pulsing Ring
           this.gfx.lineStyle(1.5, beamColor, 0.85).strokeEllipse(d.x, d.y + 2, 18, 9);
-          this.gfx.fillStyle(beamColor, 0.95).fillCircle(d.x, d.y - 2, 6);
-          this.gfx.fillStyle(coreColor, 1).fillCircle(d.x, d.y - 2, 2.5);
+          if (d.item.icon) {
+            this.draw(`drop-item-${d.id}`, d.item.icon, d.x, d.y - 4, d.y, 1, 0.8, false);
+          } else {
+            this.gfx.fillStyle(beamColor, 0.95).fillCircle(d.x, d.y - 2, 6);
+            this.gfx.fillStyle(coreColor, 1).fillCircle(d.x, d.y - 2, 2.5);
+          }
         } else if (d.isChest) {
           // Golden Treasure Chest
           this.gfx.fillStyle(0xf59e0b, 0.35).fillRect(d.x - 2, d.y - 32, 4, 32);
@@ -737,11 +735,13 @@ class BattleScene extends Phaser.Scene {
           this.gfx.fillStyle(0xd97706, 1).fillRect(d.x - 9, d.y - 10, 18, 5);
           // Golden Trim & Keyhole
           this.gfx.fillStyle(0xfde047, 1).fillRect(d.x - 2, d.y - 5, 4, 5);
-        } else if (d.exp > 0) {
-          this.gfx.fillStyle(0x38bdf8, 0.9).fillCircle(d.x, d.y, 4);
-          this.gfx.fillStyle(0xf0f9ff, 1).fillCircle(d.x, d.y, 1.5);
         } else {
-          this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x, d.y, 3.5);
+          // Authentic Mir 2 Gold Coin Sprite (item/金币（小）)
+          const drawn = this.draw(`drop-${d.id}`, 'item/金币（小）', d.x, d.y, d.y, 1, 1, false);
+          if (!drawn) {
+            this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x, d.y, 4);
+            this.gfx.fillStyle(0xfde047, 1).fillCircle(d.x, d.y, 2);
+          }
         }
       }
 
@@ -778,16 +778,53 @@ class BattleScene extends Phaser.Scene {
       for (const f of game.effects) {
         const progress = Math.max(0, Math.min(1, 1 - f.life / f.total));
         if (f.kind === 'firewall') {
-          const drawn = this.drawAnim(`effect-${f.id}`, 'firewall', (f.total - f.life) * 8, f.x, f.y, f.y, 0.95, 1, true);
-          if (!drawn) {
-            const r = f.radius / 64;
-            [[0, 0], [-28, 0], [28, 0], [0, -16], [0, 16]].forEach(([ox, oy]) => {
+          // Natural flame cycle ~8 FPS (not hyperactive 80 FPS)
+          const fireAnimTime = (f.total - f.life) * 0.8;
+          // Cluster of flame pillars covering the expanded firewall area
+          const cluster = [
+            [0, 0, 1.3],
+            [-46, 12, 1.15],
+            [46, 12, 1.15],
+            [-24, -22, 1.05],
+            [24, -22, 1.05],
+          ];
+          for (let ci = 0; ci < cluster.length; ci++) {
+            const [ox, oy, sc] = cluster[ci];
+            const drawn = this.drawAnim(
+              `effect-${f.id}-${ci}`,
+              'firewall',
+              fireAnimTime + ci * 0.15,
+              f.x + ox,
+              f.y + oy,
+              f.y + oy,
+              0.95,
+              sc,
+              true
+            );
+            if (!drawn) {
               this.gfx.fillStyle(0xea580c, 0.45);
-              this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 24 * r);
-              this.gfx.fillStyle(0xfacc15, 0.7);
-              this.gfx.fillCircle(f.x + ox * r, f.y + oy * r, 12 * r);
-            });
+              this.gfx.fillCircle(f.x + ox, f.y + oy, 32);
+              this.gfx.fillStyle(0xfacc15, 0.75);
+              this.gfx.fillCircle(f.x + ox, f.y + oy, 16);
+            }
           }
+        } else if (f.kind === 'hellfire') {
+          // Wizard Hellfire: Linear piercing flame cone
+          const drawn = this.drawAnim(`effect-${f.id}`, 'hellfire', progress, f.x, f.y, f.y + 10, 1, 1.35, false);
+          if (!drawn && f.angle !== undefined) {
+            const ex = f.x + Math.cos(f.angle) * f.radius;
+            const ey = f.y + Math.sin(f.angle) * f.radius;
+            this.gfx.lineStyle(12, 0xea580c, 0.85);
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+            this.gfx.lineStyle(4, 0xfde047, 1);
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+          }
+        } else if (f.kind === 'holy_armor') {
+          // Taoist Holy Armor one-shot cast effect (plays once, ~0.8s)
+          this.drawAnim(`effect-${f.id}`, 'armor', progress, f.x, f.y, f.y + 2, 0.95, 1, false);
+        } else if (f.kind === 'spirit_shield') {
+          // Taoist Spirit Shield one-shot cast effect (plays once, ~0.8s)
+          this.drawAnim(`effect-${f.id}`, 'ghost', progress, f.x, f.y, f.y + 2, 0.95, 1, false);
         } else if (f.kind === 'lightning') {
           const drawn = this.drawAnim(`effect-${f.id}`, 'lightning', progress, f.x, f.y, f.y + 10, 1, 1, false);
           if (!drawn) {
@@ -862,6 +899,68 @@ class BattleScene extends Phaser.Scene {
         t < game.player.hitUntil ? 0.65 : 1
       );
 
+      // Render Player Dynamic Weapon and Armor Appearance
+      const equippedWpn = game.equipment.weapon ? getItem(game.equipment.weapon.itemId) : null;
+      const equippedArm = game.equipment.armor ? getItem(game.equipment.armor.itemId) : null;
+
+      // Armor Appearance & Sheen
+      if (equippedArm) {
+        if (equippedArm.id === 'arm-war-god') {
+          // 战神盔甲: Golden warlord shoulder plate and aura
+          this.gfx.fillStyle(0xf59e0b, 0.75).fillCircle(game.player.x - 10, game.player.y - 22, 4);
+          this.gfx.fillStyle(0xf59e0b, 0.75).fillCircle(game.player.x + 10, game.player.y - 22, 4);
+          this.gfx.lineStyle(2, 0xfde047, 0.6).strokeEllipse(game.player.x, game.player.y + 4, 34, 16);
+        } else if (equippedArm.id === 'arm-devil-robe') {
+          // 恶魔长袍: Arcane violet embroidery sheen
+          this.gfx.fillStyle(0xa855f7, 0.7).fillCircle(game.player.x - 9, game.player.y - 20, 3.5);
+          this.gfx.fillStyle(0xa855f7, 0.7).fillCircle(game.player.x + 9, game.player.y - 20, 3.5);
+          this.gfx.lineStyle(2, 0xc084fc, 0.55).strokeEllipse(game.player.x, game.player.y + 4, 32, 15);
+        } else if (equippedArm.id === 'arm-ghost-robe') {
+          // 幽灵战衣: Luminous jade celestial daoist aura
+          this.gfx.fillStyle(0x38bdf8, 0.7).fillCircle(game.player.x - 9, game.player.y - 20, 3.5);
+          this.gfx.fillStyle(0x38bdf8, 0.7).fillCircle(game.player.x + 9, game.player.y - 20, 3.5);
+          this.gfx.lineStyle(2, 0x38bdf8, 0.6).strokeEllipse(game.player.x, game.player.y + 4, 32, 15);
+        } else if (equippedArm.id === 'arm-heavy-armor') {
+          // 重盔甲: Steel cuirass sheen
+          this.gfx.fillStyle(0x94a3b8, 0.65).fillCircle(game.player.x - 9, game.player.y - 20, 3);
+          this.gfx.fillStyle(0x94a3b8, 0.65).fillCircle(game.player.x + 9, game.player.y - 20, 3);
+        }
+      }
+
+      // Weapon Appearance in Hand
+      if (equippedWpn) {
+        const dir = game.player.dir;
+        const handOffsets: [number, number][] = [
+          [10, -18],  // 0: Up
+          [16, -14],  // 1: Up-Right
+          [18, -8],   // 2: Right
+          [14, -2],   // 3: Down-Right
+          [8, 0],     // 4: Down
+          [-8, 0],    // 5: Down-Left
+          [-18, -8],  // 6: Left
+          [-14, -16], // 7: Up-Left
+        ];
+        const [hox, hoy] = handOffsets[dir] ?? [8, 0];
+        const wx = game.player.x + hox;
+        const wy = game.player.y + hoy;
+        const wDepth = (dir === 0 || dir === 7) ? game.player.y - 0.2 : game.player.y + 1.2;
+
+        if (equippedWpn.icon) {
+          this.draw('hero-weapon', equippedWpn.icon, wx, wy, wDepth, 0.95, 0.5, false);
+        }
+
+        // Elemental Weapon Glow
+        if (equippedWpn.id === 'wpn-judgment') {
+          this.gfx.fillStyle(0x38bdf8, 0.85).fillCircle(wx, wy - 4, 3.5);
+        } else if (equippedWpn.id === 'wpn-dragon-sword') {
+          this.gfx.fillStyle(0x4ade80, 0.85).fillCircle(wx, wy - 4, 3.5);
+        } else if (equippedWpn.id === 'wpn-bone-staff') {
+          this.gfx.fillStyle(0xef4444, 0.85).fillCircle(wx, wy - 4, 3.5);
+        } else if (equippedWpn.id === 'wpn-purgatory') {
+          this.gfx.fillStyle(0xdc2626, 0.85).fillCircle(wx, wy - 4, 4);
+        }
+      }
+
       // Player Shields & Buff Auras
       if (t < game.player.shieldUntil) {
         const drawn = this.drawAnim('player-shield', 'shield', t * 5, game.player.x, game.player.y, game.player.y + 2, 0.9, 1, true);
@@ -873,18 +972,10 @@ class BattleScene extends Phaser.Scene {
         }
       }
       if (t < game.player.holyArmorUntil) {
-        const drawn = this.drawAnim('player-armor', 'armor', t * 5, game.player.x, game.player.y, game.player.y + 2, 0.9, 1, true);
-        if (!drawn) {
-          this.gfx.lineStyle(2, 0x3b82f6, 0.8);
-          this.gfx.strokeCircle(game.player.x, game.player.y - 10, 30);
-        }
+        this.gfx.lineStyle(1.5, 0x3b82f6, 0.45).strokeCircle(game.player.x, game.player.y - 10, 28);
       }
       if (t < game.player.spiritShieldUntil) {
-        const drawn = this.drawAnim('player-ghost', 'ghost', t * 5, game.player.x, game.player.y, game.player.y + 2, 0.9, 1, true);
-        if (!drawn) {
-          this.gfx.lineStyle(2, 0xa855f7, 0.8);
-          this.gfx.strokeCircle(game.player.x, game.player.y - 10, 34);
-        }
+        this.gfx.lineStyle(1.5, 0xa855f7, 0.45).strokeCircle(game.player.x, game.player.y - 10, 30);
       }
 
       // Base ring

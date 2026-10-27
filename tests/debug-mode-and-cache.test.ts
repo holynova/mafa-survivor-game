@@ -82,6 +82,44 @@ describe('Developer Test Mode & Cheats', () => {
     expect(game.equipment.weapon?.itemId).toBe('wpn-judgment');
   });
 
+  it('should equip a basic weapon by default on start', () => {
+    expect(game.equipment.weapon).toBeDefined();
+    expect(game.equipment.weapon?.itemId).toBe('wpn-wood');
+  });
+
+  it('should cast hellfire and create flame effect', () => {
+    game.addSkillDirectly('hellfire', 1);
+    const hellfire = game.skills.find(s => s.id === 'hellfire');
+    expect(hellfire).toBeDefined();
+    game.cast(hellfire!);
+    expect(game.effects.some(f => f.kind === 'hellfire')).toBe(true);
+  });
+
+  it('should allow replacing an existing skill when skill slots are full (6/6)', () => {
+    // Fill to 6 skills
+    const skillsToAdd = ['lightning', 'shield', 'ice_storm', 'laser', 'firewall'] as const;
+    for (const sk of skillsToAdd) {
+      game.addSkillDirectly(sk, 1);
+    }
+    expect(game.skills.length).toBe(6);
+
+    // Enter upgrade phase
+    game.beginUpgrade();
+    expect(game.phase).toBe('upgrade');
+
+    // A replacement skill should be offered
+    const learnChoice = game.choices.find(c => c.id.startsWith('learn-'));
+    expect(learnChoice).toBeDefined();
+    expect(learnChoice?.name).toContain('替换习得');
+
+    // Replace firewall with the new skill
+    const newSkillId = learnChoice!.skill!;
+    game.choose(learnChoice!.id, 'firewall');
+    expect(game.skills.some(s => s.id === newSkillId)).toBe(true);
+    expect(game.skills.some(s => s.id === 'firewall')).toBe(false);
+    expect(game.skills.length).toBe(6);
+  });
+
   it('should support max level cheat', () => {
     game.maxLevelCheat();
     expect(game.level).toBe(30);

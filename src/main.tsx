@@ -1,9 +1,12 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { game } from './game';
 import { preloadAllAssets } from './assetLoader';
 import { boot } from './renderer';
 import './style.css';
+
+(window as any).game = game;
 
 const container = document.getElementById('root');
 if (container) {

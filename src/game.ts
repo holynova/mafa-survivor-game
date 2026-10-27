@@ -836,6 +836,14 @@ export class Game {
     this.skills = [this.newSkill(base.startingSkill)];
     this.acquiredSkills = new Set([base.startingSkill]);
     this.acquiredEquipments = new Set();
+
+    // Default Starting Basic Weapon (木剑)
+    const baseWpn = getItem('wpn-wood');
+    if (baseWpn) {
+      this.equipment.weapon = { itemId: baseWpn.id, paid: 0 };
+      this.acquiredEquipments.add(baseWpn.id);
+    }
+
     this.recompute();
     this.phase = 'battle';
     this.emit();
@@ -1560,9 +1568,41 @@ export class Game {
         y: e.y,
         life: duration,
         total: duration,
-        radius: 64 * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100),
+        radius: 125 * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100),
       });
       sound.playFirewall();
+    } else if (s.id === 'hellfire') {
+      sound.playHellfire();
+      const angle = targets.length
+        ? Math.atan2(targets[0].y - this.player.y, targets[0].x - this.player.x)
+        : ((this.player.dir - 2) * Math.PI) / 4;
+      const length = 320 * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100);
+      this.effects.push({
+        id: ++this.id,
+        kind: 'hellfire',
+        x: this.player.x,
+        y: this.player.y,
+        life: 0.75,
+        total: 0.75,
+        radius: length,
+        angle,
+      });
+      const damage = this.calcDamage('wizard', 22, s);
+      for (const e of this.enemies) {
+        if (e.hp <= 0) continue;
+        const dx = e.x - this.player.x;
+        const dy = e.y - this.player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist <= length) {
+          const a = Math.atan2(dy, dx);
+          let diff = Math.abs(a - angle);
+          while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
+          if (diff < 0.45 || dist < 45) {
+            this.hit(e, damage, 'hellfire');
+            e.burnAt = this.clock + 0.6;
+          }
+        }
+      }
     } else if (s.id === 'shield') {
       this.player.shieldUntil = this.clock + Math.min(7, 6 * (1 + s.duration / 100));
       sound.playShield();
@@ -1812,10 +1852,28 @@ export class Game {
       sound.playHeal();
     } else if (s.id === 'spirit_shield') {
       this.player.spiritShieldUntil = this.clock + 8.0;
+      this.effects.push({
+        id: ++this.id,
+        kind: 'spirit_shield',
+        x: this.player.x,
+        y: this.player.y,
+        life: 0.8,
+        total: 0.8,
+        radius: 0,
+      });
       this.recompute();
       sound.playShield();
     } else if (s.id === 'holy_armor') {
       this.player.holyArmorUntil = this.clock + 8.0;
+      this.effects.push({
+        id: ++this.id,
+        kind: 'holy_armor',
+        x: this.player.x,
+        y: this.player.y,
+        life: 0.8,
+        total: 0.8,
+        radius: 0,
+      });
       this.recompute();
       sound.playShield();
     } else if (s.id === 'paralyze_charm') {
@@ -2157,15 +2215,18 @@ export class Game {
     );
     const candidates: Upgrade[] = [];
 
-    // Offer new skill if slots < 6
-    if (availableSkills.length && this.skills.length < 6) {
+    // Offer new skill: if slots < 6 or allow replacement if slots >= 6
+    if (availableSkills.length) {
       const newSkill = this.rng.pick(availableSkills);
+      const isReplace = this.skills.length >= 6;
       candidates.push({
         id: `learn-${newSkill.id}`,
         kind: 'skill',
         skill: newSkill.id,
-        name: `习得 · ${newSkill.name}`,
-        description: newSkill.description,
+        name: isReplace ? `替换习得 · ${newSkill.name}` : `习得 · ${newSkill.name}`,
+        description: isReplace
+          ? `【技能槽已满 6/6】选择后可替换遗忘当前一个已有技能。${newSkill.description}`
+          : newSkill.description,
         value: 0,
       });
     }
@@ -2271,7 +2332,7 @@ export class Game {
     return list;
   }
 
-  choose(id: string) {
+  choose(id: string, replaceSkillId?: SkillId) {
     if (this.phase !== 'upgrade') return;
     const c = this.choices.find((c) => c.id === id);
     if (!c) return;
@@ -2280,8 +2341,20 @@ export class Game {
       if (c.skill) this.acquiredSkills.add(c.skill);
       let s = this.skills.find((s) => s.id === c.skill);
       if (!s) {
-        if (this.skills.length >= 6) return;
-        this.skills.push(this.newSkill(c.skill!));
+        if (this.skills.length >= 6) {
+          if (replaceSkillId) {
+            const idx = this.skills.findIndex((sk) => sk.id === replaceSkillId);
+            if (idx >= 0) {
+              this.skills[idx] = this.newSkill(c.skill!);
+            } else {
+              return;
+            }
+          } else {
+            return;
+          }
+        } else {
+          this.skills.push(this.newSkill(c.skill!));
+        }
       } else {
         if (s.rank >= 3 || !c.field) return;
         s.rank++;
@@ -2295,6 +2368,7 @@ export class Game {
       }
     }
 
+    this.recompute();
     this.choices = [];
     this.phase = 'battle';
 

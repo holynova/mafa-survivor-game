@@ -156,6 +156,7 @@ export interface Fx extends Entity {
   kind:
     | 'lightning'
     | 'firewall'
+    | 'hellfire'
     | 'hit'
     | 'cast'
     | 'laser'
@@ -166,7 +167,9 @@ export interface Fx extends Entity {
     | 'heal_sparkle'
     | 'half_moon_sweep'
     | 'fire_slash'
-    | 'savage_trail';
+    | 'savage_trail'
+    | 'spirit_shield'
+    | 'holy_armor';
   life: number;
   total: number;
   radius: number;

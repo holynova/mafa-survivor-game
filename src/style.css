@@ -2565,3 +2565,350 @@ body, html {
   color: #ffffff;
   border-color: #38bdf8;
 }
+
+/* Floating HUD Equipment Button */
+.hud-equip-pill {
+  position: fixed;
+  top: 118px;
+  left: 16px;
+  z-index: 1000;
+  pointer-events: auto;
+  background: rgba(28, 20, 10, 0.94);
+  border: 1px solid #d97706;
+  color: #fde047;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.hud-equip-pill:hover {
+  background: #b45309;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+  transform: translateY(-1px);
+}
+
+/* Authentic Mir 2 Character Equipment Panel (F10) */
+.mir2-equip-modal-panel {
+  max-width: 780px !important;
+  width: 95%;
+  background: #111712 !important;
+  border: 2px solid #85612f !important;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(217, 119, 6, 0.2) !important;
+}
+
+.mir2-char-panel {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 680px) {
+  .mir2-char-panel {
+    flex-direction: column;
+  }
+}
+
+.mir2-char-doll-col {
+  background: #0c120e;
+  border: 1px solid #3d2b14;
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 280px;
+  flex-shrink: 0;
+}
+
+.doll-slot-row.doll-top {
+  display: flex;
+  justify-content: center;
+}
+
+.doll-middle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+}
+
+.doll-col-left,
+.doll-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doll-center-preview {
+  width: 120px;
+  height: 236px;
+  background: radial-gradient(circle, #253327 0%, #0c120e 75%);
+  border: 1px solid #2d3b2e;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.doll-avatar-figure {
+  width: 64px;
+  height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed #524229;
+  border-radius: 4px;
+}
+
+.doll-avatar-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fde047;
+  margin-top: 6px;
+}
+
+.doll-avatar-lvl {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.mir2-slot-box {
+  width: 54px;
+  height: 54px;
+  background: #171f19;
+  border: 1px solid #45351e;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.mir2-slot-box:hover {
+  border-color: #d97706;
+  background: #233027;
+  transform: scale(1.04);
+}
+
+.mir2-slot-box.selected {
+  border-color: #facc15;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+  background: #2b3b2f;
+}
+
+.mir2-slot-watermark {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 9px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.mir2-slot-item {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mir2-slot-placeholder {
+  width: 28px;
+  height: 28px;
+  border: 1px dashed #334436;
+  border-radius: 2px;
+}
+
+/* Attributes & Item Inspection Column */
+.mir2-char-stats-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.char-stats-card {
+  background: #0f1611;
+  border: 1px solid #3d2b14;
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 12px;
+}
+
+.char-stats-title {
+  grid-column: span 2;
+  font-size: 13px;
+  font-weight: 700;
+  color: #facc15;
+  border-bottom: 1px solid #2d2417;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.char-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.char-stat-row strong {
+  font-weight: 700;
+}
+
+.char-item-inspect-card {
+  background: #141c16;
+  border: 1px solid #543c1c;
+  border-radius: 6px;
+  padding: 12px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.inspect-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.inspect-item-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fef08a;
+}
+
+.inspect-item-name.tier-1 { color: #f1f5f9; }
+.inspect-item-name.tier-2 { color: #60a5fa; }
+.inspect-item-name.tier-3 { color: #c084fc; }
+.inspect-item-name.tier-4 { color: #f59e0b; }
+
+.inspect-item-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.inspect-item-desc {
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.5;
+  background: #0c120e;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #28372a;
+}
+
+.inspect-sell-btn {
+  margin-top: 10px;
+  background: #7f1d1d;
+  border: 1px solid #ef4444;
+  color: #fef2f2;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.inspect-sell-btn:hover {
+  background: #991b1b;
+  border-color: #f87171;
+}
+
+.inspect-empty-prompt {
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+  padding: 16px 0;
+}
+
+/* Replace Skill Modal */
+.replace-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+@media (max-width: 680px) {
+  .replace-skills-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.replace-skill-card {
+  background: #111712;
+  border: 1px solid #4a381e;
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.replace-skill-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.replace-skill-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fef08a;
+}
+
+.replace-skill-lvl {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.replace-skill-desc {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin: 0;
+  flex: 1;
+}
+
+.replace-confirm-btn {
+  background: #b45309;
+  border: 1px solid #f59e0b;
+  color: #ffffff;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.replace-confirm-btn:hover {
+  background: #d97706;
+  border-color: #fde047;
+}
+

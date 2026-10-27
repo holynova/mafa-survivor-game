@@ -128,6 +128,163 @@ export function Icon({ frame, className = '' }: { frame?: string; className?: st
   );
 }
 
+export function Mir2EquipmentView({
+  game,
+  onSell,
+}: {
+  game: Game;
+  onSell?: (slot: Slot) => void;
+}) {
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>('weapon');
+  const selectedEq = selectedSlot ? game.equipment[selectedSlot] : null;
+  const selectedItem = selectedEq ? getItem(selectedEq.itemId) : null;
+
+  const renderSlotBox = (slot: Slot) => {
+    const eq = game.equipment[slot];
+    const item = eq ? getItem(eq.itemId) : null;
+    const isSelected = selectedSlot === slot;
+
+    return (
+      <div
+        key={slot}
+        className={`mir2-slot-box ${item ? 'equipped' : 'empty'} ${isSelected ? 'selected' : ''}`}
+        onClick={() => {
+          sound.playClick();
+          setSelectedSlot(slot);
+        }}
+        title={item ? `${item.name} (${SLOT_NAMES[slot]})` : `【${SLOT_NAMES[slot]}】空`}
+      >
+        <div className="mir2-slot-watermark">{SLOT_NAMES[slot]}</div>
+        {item ? (
+          <div className="mir2-slot-item">
+            <Icon frame={item.icon} />
+          </div>
+        ) : (
+          <div className="mir2-slot-placeholder" />
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="mir2-char-panel">
+      <div className="mir2-char-doll-col">
+        {/* Helmet (Top Center) */}
+        <div className="doll-slot-row doll-top">
+          {renderSlotBox('helmet')}
+        </div>
+
+        {/* Upper Body: Weapon (Left) - Standee (Center) - Armor (Right) */}
+        <div className="doll-middle-row">
+          <div className="doll-col-left">
+            {renderSlotBox('weapon')}
+            {renderSlotBox('necklace')}
+            {renderSlotBox('braceletL')}
+            {renderSlotBox('ringL')}
+          </div>
+
+          <div className="doll-center-preview">
+            <div className={`doll-avatar-figure ${game.heroClass}`}>
+              <div className="doll-avatar-name">{CLASS_BASES[game.heroClass]?.name}</div>
+              <div className="doll-avatar-lvl">Lv.{game.level}</div>
+            </div>
+          </div>
+
+          <div className="doll-col-right">
+            {renderSlotBox('armor')}
+            <div style={{ height: '54px' }} />
+            {renderSlotBox('braceletR')}
+            {renderSlotBox('ringR')}
+          </div>
+        </div>
+      </div>
+
+      {/* Attributes & Inspection Column */}
+      <div className="mir2-char-stats-col">
+        <div className="char-stats-card">
+          <div className="char-stats-title">玛法勇士 · 人物战斗属性</div>
+          <div className="char-stat-row">
+            <span>生命气血:</span>
+            <strong style={{ color: '#4ade80' }}>{Math.round(game.player.hp)} / {game.maxHP}</strong>
+          </div>
+          <div className="char-stat-row">
+            <span>物理攻击 (DC):</span>
+            <strong style={{ color: '#facc15' }}>
+              {10 + (game.stats.dc_flat ?? 0)}
+              {game.stats.dc_bonus_pct ? ` (+${game.stats.dc_bonus_pct}%)` : ''}
+            </strong>
+          </div>
+          <div className="char-stat-row">
+            <span>魔法攻击 (MC):</span>
+            <strong style={{ color: '#60a5fa' }}>
+              {8 + (game.stats.mc_flat ?? 0)}
+              {game.stats.mc_bonus_pct ? ` (+${game.stats.mc_bonus_pct}%)` : ''}
+            </strong>
+          </div>
+          <div className="char-stat-row">
+            <span>道术攻击 (SC):</span>
+            <strong style={{ color: '#38bdf8' }}>
+              {8 + (game.stats.sc_flat ?? 0)}
+              {game.stats.sc_bonus_pct ? ` (+${game.stats.sc_bonus_pct}%)` : ''}
+            </strong>
+          </div>
+          <div className="char-stat-row">
+            <span>物理防御 (DEF):</span>
+            <strong>{game.stats.def_flat ?? 0}</strong>
+          </div>
+          <div className="char-stat-row">
+            <span>魔法防御 (MDEF):</span>
+            <strong>{game.stats.mdef_flat ?? 0}</strong>
+          </div>
+          <div className="char-stat-row">
+            <span>暴击几率:</span>
+            <strong>{game.stats.crit_chance ?? 0}%</strong>
+          </div>
+          <div className="char-stat-row">
+            <span>移动速度:</span>
+            <strong>{Math.round(game.moveSpeed)} px/s</strong>
+          </div>
+        </div>
+
+        {/* Selected Item Details */}
+        <div className="char-item-inspect-card">
+          {selectedItem ? (
+            <div>
+              <div className="inspect-item-header">
+                <Icon frame={selectedItem.icon} />
+                <div>
+                  <div className={`inspect-item-name tier-${selectedItem.tier ?? 1}`}>
+                    {selectedItem.name}
+                  </div>
+                  <div className="inspect-item-sub">
+                    {selectedItem.slot ? SLOT_NAMES[selectedItem.slot] : '道具'} · 档次 Tier {selectedItem.tier ?? 1}
+                  </div>
+                </div>
+              </div>
+              <div className="inspect-item-desc">{selectedItem.description}</div>
+              {onSell && selectedSlot && (
+                <button
+                  className="inspect-sell-btn"
+                  onClick={() => {
+                    sound.playGem();
+                    onSell(selectedSlot);
+                  }}
+                >
+                  折价变卖 (返还金币 {sellPrice(selectedEq!.paid, selectedItem.price)})
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="inspect-empty-prompt">
+              点击左侧装备格查看装备属性与变卖
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   useSyncExternalStore(game.subscribe, () => game.version);
   const g = game;
@@ -151,6 +308,8 @@ export function App() {
   const [guideMsg, setGuideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeRunSnapshot, setActiveRunSnapshot] = useState<ActiveRunSnapshot | null>(null);
   const [showSandbox, setShowSandbox] = useState(false);
+  const [showEquipModal, setShowEquipModal] = useState(false);
+  const [replaceTargetChoice, setReplaceTargetChoice] = useState<Upgrade | null>(null);
   const [debugTab, setDebugTab] = useState<'quick' | 'waves' | 'skills' | 'equip' | 'multipliers'>('quick');
   const [preloadState, setPreloadState] = useState<PreloadState>(getPreloadState());
   const [unlockModal, setUnlockModal] = useState<MapChapter | null>(null);
@@ -166,6 +325,13 @@ export function App() {
       if (e.key === '`' || e.key === '~' || e.key === 'F1') {
         e.preventDefault();
         setShowSandbox((s) => !s);
+      } else if (e.key === 'F10' || e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        setShowEquipModal((s) => !s);
+      } else if (e.key === 'Escape') {
+        setShowSandbox(false);
+        setShowEquipModal(false);
+        setReplaceTargetChoice(null);
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -1572,6 +1738,31 @@ export function App() {
         </div>
       )}
 
+      {/* AUTHENTIC LEGEND OF MIR 2 EQUIPMENT & STATS MODAL (F10) */}
+      {showEquipModal && (
+        <div className="modal-container equip-modal">
+          <div className="panel gold-panel mir2-equip-modal-panel">
+            <div className="upgrade-header" style={{ marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2>玛法大陆 · 勇士装备与属性 (F10)</h2>
+                <button
+                  className="guide-close-btn"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowEquipModal(false);
+                  }}
+                >
+                  关闭 (ESC/F10)
+                </button>
+              </div>
+              <p>传奇 1.76 原版八格装备栏布局与人物即时战斗属性一览</p>
+            </div>
+
+            <Mir2EquipmentView game={g} />
+          </div>
+        </div>
+      )}
+
       {/* IN-GAME BATTLE HUD */}
       {(g.phase === 'battle' || g.phase === 'upgrade' || g.phase === 'shop' || g.phase === 'paused') && (
         <div className="hud-container">
@@ -1585,6 +1776,18 @@ export function App() {
             }}
           >
             【◈ 调试调测】
+          </button>
+
+          {/* FLOATING EQUIPMENT BUTTON */}
+          <button
+            className="hud-equip-pill"
+            title="快捷键: F10 或 B"
+            onClick={() => {
+              sound.playClick();
+              setShowEquipModal((s) => !s);
+            }}
+          >
+            【◈ 装备 (F10)】
           </button>
           {/* TOP BAR */}
           <header className="top-hud">
@@ -1701,12 +1904,22 @@ export function App() {
                   className="choice-card"
                   onClick={() => {
                     sound.playClick();
-                    game.choose(c.id);
+                    if (c.id.startsWith('learn-') && g.skills.length >= 6) {
+                      setReplaceTargetChoice(c);
+                    } else {
+                      game.choose(c.id);
+                    }
                   }}
                 >
                   <div className="card-key-tag">[{idx + 1}]</div>
                   <div className={`card-type-tag ${c.kind}`}>
-                    {c.kind === 'skill' ? (c.id.startsWith('learn-') ? '领悟新技能' : '技能进阶') : '属性增幅'}
+                    {c.kind === 'skill'
+                      ? c.id.startsWith('learn-')
+                        ? g.skills.length >= 6
+                          ? '替换新技能'
+                          : '领悟新技能'
+                        : '技能进阶'
+                      : '属性增幅'}
                   </div>
                   {c.skill && (
                     <div className="choice-icon-wrap">
@@ -1718,6 +1931,61 @@ export function App() {
                   <button className="card-select-btn">选择此项</button>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REPLACE SKILL MODAL (When full 6 skills) */}
+      {replaceTargetChoice && (
+        <div className="modal-container replace-skill-modal">
+          <div className="panel gold-panel upgrade-panel" style={{ maxWidth: '720px' }}>
+            <div className="upgrade-header">
+              <h2>技能领悟 · 技能替换</h2>
+              <p style={{ color: '#facc15' }}>
+                当前技能槽已达上限 (6/6)，习得新技能【{getSkill(replaceTargetChoice.skill!).name}】需选择遗忘替换当前一个技能：
+              </p>
+            </div>
+
+            <div className="replace-skills-grid">
+              {g.skills.map((s) => {
+                const def = getSkill(s.id);
+                return (
+                  <div key={s.id} className="replace-skill-card">
+                    <div className="replace-skill-header">
+                      <Icon frame={def.asset} />
+                      <div>
+                        <div className="replace-skill-title">{def.name}</div>
+                        <div className="replace-skill-lvl">当前 Lv.{s.rank}</div>
+                      </div>
+                    </div>
+                    <p className="replace-skill-desc">{def.description}</p>
+                    <button
+                      className="replace-confirm-btn"
+                      onClick={() => {
+                        sound.playLevelUp();
+                        game.choose(replaceTargetChoice.id, s.id);
+                        setReplaceTargetChoice(null);
+                      }}
+                    >
+                      遗忘此技能并替换
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+              <button
+                className="guide-close-btn"
+                style={{ float: 'none', padding: '6px 20px' }}
+                onClick={() => {
+                  sound.playClick();
+                  setReplaceTargetChoice(null);
+                }}
+              >
+                返回重新选择强化
+              </button>
             </div>
           </div>
         </div>
@@ -1786,38 +2054,12 @@ export function App() {
               })}
             </div>
 
-            {/* Equipped Items Drawer */}
-            <div className="equipment-strip">
-              <h4>当前穿戴装备 (8槽固定栏位)</h4>
-              <div className="equip-slots-grid">
-                {(['weapon', 'armor', 'helmet', 'necklace', 'braceletL', 'braceletR', 'ringL', 'ringR'] as Slot[]).map((slot) => {
-                  const eq = g.equipment[slot];
-                  const item = eq ? getItem(eq.itemId) : null;
-                  return (
-                    <div key={slot} className={`equip-slot-box ${item ? 'has-item' : 'empty'}`}>
-                      <div className="slot-title">{SLOT_NAMES[slot]}</div>
-                      {item ? (
-                        <div className="slot-item-info">
-                          <Icon frame={item.icon} />
-                          <span className="item-name">{item.name}</span>
-                          <button
-                            className="sell-btn"
-                            onClick={() => {
-                              sound.playGem();
-                              game.sell(slot);
-                            }}
-                            title={`折价变卖 (返还金币 ${sellPrice(eq!.paid, item.price)})`}
-                          >
-                            卖出
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="slot-empty-text">空</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+            {/* Equipped Items Drawer - Authentic Mir 2 Layout */}
+            <div className="equipment-strip" style={{ marginTop: '14px' }}>
+              <h4 style={{ color: '#facc15', marginBottom: '8px' }}>
+                当前穿戴装备 · 传奇 1.76 原版八格神装 (点击装备格可查看详情与变卖)
+              </h4>
+              <Mir2EquipmentView game={g} onSell={(slot) => game.sell(slot)} />
             </div>
 
             {/* Shop Footer Controls */}
@@ -1894,28 +2136,10 @@ export function App() {
               </div>
             </div>
 
-            {/* Equipped Items Section */}
+            {/* Equipped Items Section - Authentic Mir 2 Layout */}
             <div className="pause-equipped-section">
-              <h4>当前穿戴装备 (8槽)</h4>
-              <div className="equip-slots-grid">
-                {(['weapon', 'armor', 'helmet', 'necklace', 'braceletL', 'braceletR', 'ringL', 'ringR'] as Slot[]).map((slot) => {
-                  const eq = g.equipment[slot];
-                  const item = eq ? getItem(eq.itemId) : null;
-                  return (
-                    <div key={slot} className={`equip-slot-box ${item ? 'has-item' : 'empty'}`}>
-                      <div className="slot-title">{SLOT_NAMES[slot]}</div>
-                      {item ? (
-                        <div className="slot-item-info">
-                          <Icon frame={item.icon} />
-                          <span className="item-name">{item.name}</span>
-                        </div>
-                      ) : (
-                        <span className="slot-empty-text">空</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <h4 style={{ color: '#facc15', marginBottom: '8px' }}>当前穿戴装备 · 传奇 1.76 原版八格神装</h4>
+              <Mir2EquipmentView game={g} />
             </div>
 
             {/* Passive Items Section */}
