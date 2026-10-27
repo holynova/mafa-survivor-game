@@ -20,6 +20,8 @@ import {
   saveRun,
   upgradeTalent,
   unlockChapter,
+  unlockAllChapters,
+  addCrystals,
   CHAPTER_UNLOCK_COSTS,
   exportSaveData,
   importSaveData,
@@ -37,52 +39,63 @@ import type {
 } from './types';
 import { assets, setAssetManifest, type Manifest } from './renderer';
 import { assetUrl } from './utils';
-
-let framePositions: Record<string, { x: number; y: number }> = {};
-let assetManifest: Manifest | null = null;
-let artVersion = 0;
-const artListeners = new Set<() => void>();
+import {
+  subscribePreload,
+  getPreloadState,
+  isAssetsReady,
+  preloadAllAssets,
+  framePositions,
+  assetManifest,
+  type PreloadState,
+} from './assetLoader';
 
 export function useArtReady() {
   return useSyncExternalStore(
-    (cb) => {
-      artListeners.add(cb);
-      return () => {
-        artListeners.delete(cb);
-      };
-    },
-    () => artVersion
+    subscribePreload,
+    () => getPreloadState().loadedCount
   );
 }
 
-export async function loadArtPositions() {
-  try {
-    const r = await fetch(assetUrl('assets/mir/manifest.json'));
-    if (!r.ok) {
-      console.error('Failed to fetch manifest.json:', r.status, r.statusText, r.url);
-      return;
-    }
-    const manifest = (await r.json()) as Manifest;
-    assetManifest = manifest;
-    setAssetManifest(manifest);
-    framePositions = {};
-    await Promise.all(
-      manifest.pages.map(async (page) => {
-        try {
-          const resp = await fetch(assetUrl('assets/mir/' + page.data));
-          if (!resp.ok) return;
-          const atlas = await resp.json();
-          for (const [key, val] of Object.entries(atlas.frames)) {
-            framePositions[key] = (val as { frame: { x: number; y: number } }).frame;
-          }
-        } catch {}
-      })
-    );
-    artVersion++;
-    artListeners.forEach((fn) => fn());
-  } catch (e) {
-    console.warn('loadArtPositions warning:', e);
-  }
+export function AssetLoadingOverlay({
+  state,
+  onRetry,
+}: {
+  state: PreloadState;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="asset-loading-overlay">
+      <div className="asset-loading-box">
+        <div className="asset-loading-title">玛法幸存者 · 核心资源预载入</div>
+        <div className="asset-loading-subtitle">
+          正在预加载传奇 1.76 原版美术图集、比奇荒野地图与经典法术音效，并写入本地持久缓存
+        </div>
+
+        <div className="asset-progress-track">
+          <div
+            className="asset-progress-fill"
+            style={{ width: `${Math.min(100, Math.max(0, state.progress))}%` }}
+          />
+          <div className="asset-progress-percent">{state.progress}%</div>
+        </div>
+
+        <div className="asset-loading-status">{state.statusText}</div>
+
+        <div className="asset-loading-meta">
+          <span className="asset-cache-badge">
+            ◇ 资源加载进度: {state.loadedCount} / {state.totalCount} 项
+          </span>
+          {state.phase === 'error' ? (
+            <button className="asset-retry-btn" onClick={onRetry}>
+              载入异常，点击重试
+            </button>
+          ) : (
+            <span>持久缓存保护 · 免重复网络流量</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function Icon({ frame, className = '' }: { frame?: string; className?: string }) {
@@ -138,7 +151,26 @@ export function App() {
   const [guideMsg, setGuideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeRunSnapshot, setActiveRunSnapshot] = useState<ActiveRunSnapshot | null>(null);
   const [showSandbox, setShowSandbox] = useState(false);
+  const [debugTab, setDebugTab] = useState<'quick' | 'waves' | 'skills' | 'equip' | 'multipliers'>('quick');
+  const [preloadState, setPreloadState] = useState<PreloadState>(getPreloadState());
   const [unlockModal, setUnlockModal] = useState<MapChapter | null>(null);
+
+  useEffect(() => {
+    return subscribePreload(() => {
+      setPreloadState({ ...getPreloadState() });
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === '`' || e.key === '~' || e.key === 'F1') {
+        e.preventDefault();
+        setShowSandbox((s) => !s);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   useEffect(() => {
     getProfile().then(setProfile);
@@ -168,8 +200,15 @@ export function App() {
     setMuted(next);
   };
 
-  const handleStart = (mode: Mode) => {
+  const handleStart = (mode: Mode, debug = false) => {
+    if (!isAssetsReady()) {
+      return;
+    }
     sound.playClick();
+    if (debug) {
+      game.isDebugMode = true;
+      game.isSandbox = true;
+    }
     const seedNum = customSeed.trim() ? parseInt(customSeed.trim(), 10) : undefined;
     game.start(
       selectedClass,
@@ -194,6 +233,14 @@ export function App() {
 
   return (
     <div className="game-overlay">
+      {/* ASSET PRELOAD OVERLAY: Blocks lobby until 100% complete and cached */}
+      {preloadState.phase !== 'complete' && (
+        <AssetLoadingOverlay
+          state={preloadState}
+          onRetry={() => preloadAllAssets()}
+        />
+      )}
+
       {/* Sound Toggle Floating Button */}
       <button
         className="sound-toggle-btn"
@@ -358,17 +405,34 @@ export function App() {
             <div className="mode-select-grid">
               <button
                 className="mode-btn primary-btn"
+                disabled={!isAssetsReady()}
                 onClick={() => handleStart('normal')}
               >
                 <div className="btn-title">标准远征 (Normal)</div>
-                <div className="btn-desc">12 波次 × 75 秒 · 15 分钟决战章节 Boss</div>
+                <div className="btn-desc">
+                  {isAssetsReady() ? '12 波次 × 75 秒 · 15 分钟决战章节 Boss' : '核心资源预载入中...'}
+                </div>
               </button>
               <button
                 className="mode-btn secondary-btn"
+                disabled={!isAssetsReady()}
                 onClick={() => handleStart('trial')}
               >
                 <div className="btn-title">快速试炼 (Trial)</div>
-                <div className="btn-desc">3 波次 × 35 秒 · 快速测试流派构筑</div>
+                <div className="btn-desc">
+                  {isAssetsReady() ? '3 波次 × 35 秒 · 快速测试流派构筑' : '核心资源预载入中...'}
+                </div>
+              </button>
+              <button
+                className="mode-btn debug-mode-btn"
+                disabled={!isAssetsReady()}
+                onClick={() => {
+                  handleStart('normal', true);
+                  setShowSandbox(true);
+                }}
+              >
+                <div className="btn-title">【快速测试模式】</div>
+                <div className="btn-desc">开启调试沙盒 · 自由跳波/自选满级技能/Boss调测</div>
               </button>
             </div>
 
@@ -1172,106 +1236,338 @@ export function App() {
                   setShowSandbox(false);
                 }}
               >
-                关闭
+                关闭 (ESC)
               </button>
             </div>
 
             <div className="sandbox-desc">
-              【提示】开启测试工具后该局游戏将自动标记为沙盒模式，退出时不计入正式排行榜或战绩记录，供数值调参与快速验证！
+              【提示】开启测试工具后该局游戏将自动标记为沙盒测试，退出时不计入正式排行榜或历史战绩，支持波次跳转、全技能满级与神装调测！
             </div>
 
-            <div className="sandbox-grid">
-              <button
-                className={`sandbox-btn ${game.isInvincible ? 'active' : ''}`}
-                onClick={() => {
-                  game.toggleInvincible();
-                }}
-              >
-                无敌模式: {game.isInvincible ? '【已开启】' : '【已关闭】'}
-              </button>
-
-              <button
-                className="sandbox-btn"
-                onClick={() => {
-                  game.healFull();
-                }}
-              >
-                全额回满生命
-              </button>
-
-              <button
-                className="sandbox-btn"
-                onClick={() => {
-                  game.addCheatGold(500);
-                }}
-              >
-                增加 500 金币
-              </button>
-
-              <button
-                className="sandbox-btn"
-                onClick={() => {
-                  game.addCheatLevel();
-                  setShowSandbox(false);
-                }}
-              >
-                立即提升 1 级 (选技)
-              </button>
-
-              <button
-                className="sandbox-btn"
-                onClick={() => {
-                  game.resetCooldowns();
-                }}
-              >
-                清空全技能 CD
-              </button>
-
-              <button
-                className="sandbox-btn"
-                onClick={() => {
-                  game.spawnBossCheat();
-                  setShowSandbox(false);
-                }}
-              >
-                召唤当前章节 Boss
-              </button>
-
-              <button
-                className="sandbox-btn"
-                onClick={() => {
-                  game.skipWaveCheat();
-                  setShowSandbox(false);
-                }}
-              >
-                跳过波次 (进商店)
-              </button>
-
-              <button
-                className={`sandbox-btn ${game.debugAssets ? 'active' : ''}`}
-                onClick={() => {
-                  game.toggleDebugAssets();
-                }}
-              >
-                替身灰盒 (ART-09): {game.debugAssets ? '【已开启】' : '【已关闭】'}
-              </button>
-            </div>
-
-            <div className="speed-buttons-row">
-              <span style={{ fontSize: '13px', color: '#94a3b8' }}>运行速度:</span>
-              {[1, 2, 4].map((spd) => (
+            {/* TAB NAVIGATION */}
+            <div className="debug-tabs">
+              {[
+                { key: 'quick', label: '一键神力' },
+                { key: 'waves', label: '波次与首领' },
+                { key: 'skills', label: '全技能自选' },
+                { key: 'equip', label: '神装穿戴' },
+                { key: 'multipliers', label: '倍率调优' },
+              ].map((t) => (
                 <button
-                  key={spd}
-                  className={`speed-btn ${game.timeScale === spd ? 'active' : ''}`}
+                  key={t.key}
+                  className={`debug-tab-btn ${debugTab === t.key ? 'active' : ''}`}
                   onClick={() => {
                     sound.playClick();
-                    game.setTimeScale(spd);
+                    setDebugTab(t.key as any);
                   }}
                 >
-                  {spd}x 倍速
+                  {t.label}
                 </button>
               ))}
             </div>
+
+            {/* TAB 1: QUICK POWERS */}
+            {debugTab === 'quick' && (
+              <div className="sandbox-grid">
+                <button
+                  className={`sandbox-btn ${game.isInvincible ? 'active' : ''}`}
+                  onClick={() => game.toggleInvincible()}
+                >
+                  无敌模式: {game.isInvincible ? '【已开启】' : '【已关闭】'}
+                </button>
+
+                <button
+                  className={`sandbox-btn ${game.infiniteCooldown ? 'active' : ''}`}
+                  onClick={() => game.toggleInfiniteCooldown()}
+                >
+                  全技能0冷却: {game.infiniteCooldown ? '【已开启】' : '【已关闭】'}
+                </button>
+
+                <button className="sandbox-btn" onClick={() => game.healFull()}>
+                  全额回满生命
+                </button>
+
+                <button className="sandbox-btn" onClick={() => game.killAllEnemies()}>
+                  秒杀全屏魔物
+                </button>
+
+                <button className="sandbox-btn" onClick={() => game.collectAllDrops()}>
+                  吸附全图掉落物
+                </button>
+
+                <button className="sandbox-btn" onClick={() => game.addCheatGold(1000)}>
+                  增加 1,000 金币
+                </button>
+
+                <button className="sandbox-btn" onClick={() => game.addCheatGold(10000)}>
+                  增加 10,000 金币
+                </button>
+
+                <button
+                  className="sandbox-btn"
+                  onClick={() => {
+                    game.addCheatLevel();
+                    setShowSandbox(false);
+                  }}
+                >
+                  立即提升 1 级 (选技)
+                </button>
+
+                <button className="sandbox-btn" onClick={() => game.maxLevelCheat()}>
+                  直升满级 Lv.30
+                </button>
+
+                <button
+                  className="sandbox-btn"
+                  onClick={async () => {
+                    const prof = await addCrystals(9999);
+                    setProfile(prof);
+                    sound.playGem();
+                  }}
+                >
+                  增加 9999 玛法结晶
+                </button>
+
+                <button
+                  className="sandbox-btn"
+                  onClick={async () => {
+                    const prof = await unlockAllChapters();
+                    setProfile(prof);
+                    sound.playLevelUp();
+                  }}
+                >
+                  一键解锁全部章节
+                </button>
+
+                <button
+                  className={`sandbox-btn ${game.debugAssets ? 'active' : ''}`}
+                  onClick={() => game.toggleDebugAssets()}
+                >
+                  替身灰盒: {game.debugAssets ? '【已开启】' : '【已关闭】'}
+                </button>
+              </div>
+            )}
+
+            {/* TAB 2: WAVES & BOSSES */}
+            {debugTab === 'waves' && (
+              <div>
+                <div className="debug-section-label">◇ 波次快速直达 (当前: 第 {game.wave}/{game.maxWaves} 波)</div>
+                <div className="debug-chip-group">
+                  {[1, 3, 6, 9, game.maxWaves].map((w) => (
+                    <button
+                      key={w}
+                      className={`debug-chip ${game.wave === w ? 'active' : ''}`}
+                      onClick={() => {
+                        game.jumpToWave(w);
+                        setShowSandbox(false);
+                      }}
+                    >
+                      {w === game.maxWaves ? `第 ${w} 波 (首领决战)` : `第 ${w} 波`}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="debug-section-label">◇ 章节首领 Boss 即时召唤</div>
+                <div className="debug-chip-group">
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_bichon');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    比奇荒野 · 骷髅精灵
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_mine');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    废弃矿洞 · 尸王
+                  </button>
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.spawnSpecificBoss('boss_woma');
+                      setShowSandbox(false);
+                    }}
+                  >
+                    祖玛神庙 · 沃玛教主
+                  </button>
+                </div>
+
+                <div className="debug-section-label">◇ 波次流程控制</div>
+                <div className="debug-chip-group">
+                  <button
+                    className="debug-chip"
+                    onClick={() => {
+                      game.skipWaveCheat();
+                      setShowSandbox(false);
+                    }}
+                  >
+                    跳过当前波次 (结算进商店)
+                  </button>
+                  <button className="debug-chip" onClick={() => game.killAllEnemies()}>
+                    秒杀全屏魔物
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: SKILLS SELECT */}
+            {debugTab === 'skills' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div className="debug-section-label" style={{ margin: 0 }}>
+                    ◇ 当前职业技能库 ({CLASS_BASES[game.heroClass]?.name})
+                  </div>
+                  <button
+                    className="debug-mini-btn"
+                    style={{ background: '#0284c7', color: '#fff', padding: '4px 10px' }}
+                    onClick={() => game.maxAllSkills()}
+                  >
+                    一键全技能 8 级满配 MAX
+                  </button>
+                </div>
+
+                <div className="debug-skill-list">
+                  {SKILLS.filter((s) => s.heroClass === game.heroClass).map((def) => {
+                    const current = game.skills.find((s) => s.id === def.id);
+                    const lvl = current?.rank || 0;
+                    return (
+                      <div key={def.id} className="debug-skill-row">
+                        <div className="debug-skill-info">
+                          <Icon frame={def.asset} />
+                          <div>
+                            <strong>{def.name}</strong>
+                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '6px' }}>
+                              {lvl > 0 ? `Lv.${lvl}/8` : '未习得'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="debug-skill-btns">
+                          <button
+                            className="debug-mini-btn"
+                            onClick={() => game.addSkillDirectly(def.id, Math.min(8, lvl + 1))}
+                          >
+                            +1 级
+                          </button>
+                          <button
+                            className="debug-mini-btn"
+                            onClick={() => game.addSkillDirectly(def.id, 8)}
+                          >
+                            满级 (8)
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: EQUIPMENT */}
+            {debugTab === 'equip' && (
+              <div>
+                <div className="debug-section-label">◇ 传奇名兵神甲 (一键穿戴测试)</div>
+                <div className="debug-chip-group">
+                  {[
+                    { id: 'wpn-judgment', name: '裁决之杖' },
+                    { id: 'wpn-bone-staff', name: '骨玉权杖' },
+                    { id: 'wpn-dragon-sword', name: '龙纹剑' },
+                    { id: 'wpn-purgatory', name: '炼狱' },
+                    { id: 'arm-war-god', name: '战神盔甲' },
+                    { id: 'arm-devil-robe', name: '恶魔长袍' },
+                    { id: 'arm-ghost-robe', name: '幽灵战衣' },
+                    { id: 'helm-black-iron', name: '黑铁头盔' },
+                    { id: 'neck-life', name: '生命项链' },
+                    { id: 'brac-sanying', name: '三眼手镯' },
+                  ].map((eq) => (
+                    <button
+                      key={eq.id}
+                      className="debug-chip"
+                      onClick={() => game.equipItemDirectly(eq.id)}
+                    >
+                      {eq.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="debug-section-label">◇ 当前已穿戴装备</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginTop: '6px' }}>
+                  {Object.entries(game.equipment).map(([slot, equipped]) => {
+                    const item = equipped ? getItem(equipped.itemId) : null;
+                    return (
+                      <div key={slot} className="debug-skill-row" style={{ fontSize: '12px' }}>
+                        <span style={{ color: '#94a3b8' }}>{SLOT_NAMES[slot as Slot]}:</span>
+                        <strong style={{ color: item ? '#facc15' : '#64748b' }}>
+                          {item ? item.name : '无'}
+                        </strong>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 5: MULTIPLIERS */}
+            {debugTab === 'multipliers' && (
+              <div>
+                <div className="debug-section-label">◇ 游戏运行速度</div>
+                <div className="debug-chip-group">
+                  {[1, 2, 4, 8].map((spd) => (
+                    <button
+                      key={spd}
+                      className={`debug-chip ${game.timeScale === spd ? 'active' : ''}`}
+                      onClick={() => {
+                        sound.playClick();
+                        game.setTimeScale(spd);
+                      }}
+                    >
+                      {spd}x 倍速
+                    </button>
+                  ))}
+                </div>
+
+                <div className="debug-section-label">◇ 伤害输出倍率</div>
+                <div className="debug-chip-group">
+                  {[
+                    { val: 1, label: '1x (标准)' },
+                    { val: 5, label: '5x (强力)' },
+                    { val: 50, label: '50x (狂暴)' },
+                    { val: 999, label: '999x (秒杀)' },
+                  ].map((m) => (
+                    <button
+                      key={m.val}
+                      className={`debug-chip ${game.damageMultiplier === m.val ? 'active' : ''}`}
+                      onClick={() => game.setDamageMultiplier(m.val)}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="debug-section-label">◇ 玩家移动速度</div>
+                <div className="debug-chip-group">
+                  {[
+                    { val: 1, label: '1x (正常)' },
+                    { val: 2, label: '2x (飞奔)' },
+                    { val: 3, label: '3x (瞬行)' },
+                    { val: 5, label: '5x (闪电)' },
+                  ].map((m) => (
+                    <button
+                      key={m.val}
+                      className={`debug-chip ${game.speedMultiplier === m.val ? 'active' : ''}`}
+                      onClick={() => game.setSpeedMultiplier(m.val)}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1279,6 +1575,17 @@ export function App() {
       {/* IN-GAME BATTLE HUD */}
       {(g.phase === 'battle' || g.phase === 'upgrade' || g.phase === 'shop' || g.phase === 'paused') && (
         <div className="hud-container">
+          {/* FLOATING DEBUG BUTTON */}
+          <button
+            className="hud-debug-pill"
+            title="快捷键: ~ 或 F1"
+            onClick={() => {
+              sound.playClick();
+              setShowSandbox((s) => !s);
+            }}
+          >
+            【◈ 调试调测】
+          </button>
           {/* TOP BAR */}
           <header className="top-hud">
             {/* HP Bar */}

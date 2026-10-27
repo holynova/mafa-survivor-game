@@ -275,6 +275,10 @@ export class Game {
   timeScale = 1;
   isInvincible = false;
   debugAssets = false;
+  isDebugMode = false;
+  infiniteCooldown = false;
+  damageMultiplier = 1;
+  speedMultiplier = 1;
   private saveTimer = 0;
 
   static ACTIVE_RUN_KEY = 'mafa_active_run_snapshot';
@@ -453,6 +457,229 @@ export class Game {
     this.endWave();
   }
 
+  toggleDebugMode() {
+    this.isDebugMode = !this.isDebugMode;
+    this.isSandbox = true;
+    sound.playClick();
+    this.emit();
+  }
+
+  toggleInfiniteCooldown() {
+    this.infiniteCooldown = !this.infiniteCooldown;
+    this.isSandbox = true;
+    sound.playClick();
+    if (this.infiniteCooldown) {
+      for (const s of this.skills) s.cd = 0;
+    }
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: this.infiniteCooldown ? '【全技能 0 冷却: 开启】' : '【0 冷却: 关闭】',
+      color: this.infiniteCooldown ? '#a855f7' : '#94a3b8',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  setDamageMultiplier(mult: number) {
+    this.damageMultiplier = Math.max(1, mult);
+    this.isSandbox = true;
+    sound.playClick();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: `【伤害倍率: ${mult}x】`,
+      color: '#f97316',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  setSpeedMultiplier(mult: number) {
+    this.speedMultiplier = Math.max(1, mult);
+    this.isSandbox = true;
+    sound.playClick();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: `【移速倍率: ${mult}x】`,
+      color: '#38bdf8',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  jumpToWave(waveNum: number) {
+    this.isSandbox = true;
+    const clamped = Math.max(1, Math.min(this.maxWaves, waveNum));
+    this.wave = clamped;
+    this.waveTime = 0;
+    this.spawnTimer = 0;
+    this.bossSpawned = false;
+    this.spawned = 0;
+    this.enemies = [];
+    this.projectiles = [];
+    if (this.wave === this.maxWaves) {
+      this.bossSpawned = true;
+      this.spawnBossCheat();
+    }
+    sound.playLevelUp();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 65,
+      text: `【调试跳转】第 ${this.wave} 波`,
+      color: '#38bdf8',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
+  killAllEnemies() {
+    this.isSandbox = true;
+    const count = this.enemies.length;
+    for (const e of [...this.enemies]) {
+      this.hit(e, 999999, 'fireball');
+    }
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: `【全屏秒杀】消灭 ${count} 只魔物`,
+      color: '#ef4444',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
+  collectAllDrops() {
+    this.isSandbox = true;
+    const count = this.drops.length;
+    for (const d of this.drops) {
+      this.gold += d.gold;
+      this.waveGold += d.gold;
+      this.totalGold += d.gold;
+      this.exp += d.exp;
+      if (d.item) {
+        const item = d.item;
+        this.acquiredEquipments.add(item.id);
+        const slot = this.equipmentSlot(item);
+        if (!this.equipment[slot]) {
+          this.equipment[slot] = { itemId: item.id, paid: item.price };
+        }
+      }
+    }
+    this.drops = [];
+    this.recompute();
+    sound.playGem();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 45,
+      text: `【全图吸附】拾取 ${count} 件掉落物`,
+      color: '#ffd700',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  addSkillDirectly(skillId: SkillId, rank: number = 1) {
+    this.isSandbox = true;
+    const def = getSkill(skillId);
+    if (!def) return;
+    let s = this.skills.find(x => x.id === skillId);
+    if (!s) {
+      s = this.newSkill(skillId);
+      this.skills.push(s);
+      this.acquiredSkills.add(skillId);
+    }
+    s.rank = Math.min(8, Math.max(1, rank));
+    s.power = (s.rank - 1) * 20;
+    this.recompute();
+    sound.playLevelUp();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 50,
+      text: `【习得技能】${def.name} Lv.${s.rank}`,
+      color: '#a855f7',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
+  maxAllSkills() {
+    this.isSandbox = true;
+    for (const def of SKILLS.filter(s => s.heroClass === this.heroClass)) {
+      this.addSkillDirectly(def.id, 8);
+    }
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 50,
+      text: '【全技能满级】Lv.8 MAX',
+      color: '#facc15',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
+  equipItemDirectly(itemId: string) {
+    this.isSandbox = true;
+    const item = getItem(itemId);
+    if (!item) return;
+    const slot = this.equipmentSlot(item);
+    this.equipment[slot] = { itemId: item.id, paid: item.price };
+    this.acquiredEquipments.add(item.id);
+    this.recompute();
+    sound.playGem();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 55,
+      text: `【装备神兵】${item.name}`,
+      color: '#eab308',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
+  spawnSpecificBoss(bossKind: string) {
+    this.isSandbox = true;
+    this.spawnEnemy(bossKind);
+    const bossName = bossKind === 'boss_woma' ? '沃玛教主' : bossKind === 'boss_mine' ? '尸王' : '骷髅精灵';
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 65,
+      text: `【召唤首领】${bossName}`,
+      color: '#ef4444',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
+  maxLevelCheat() {
+    this.isSandbox = true;
+    this.level = 30;
+    this.exp = expNeeded(30);
+    this.recompute();
+    this.player.hp = this.maxHP;
+    sound.playLevelUp();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player.x,
+      y: this.player.y - 50,
+      text: '【直升满级】Lv. 30 登峰造极',
+      color: '#f59e0b',
+      life: 1.5,
+    });
+    this.emit();
+  }
+
   toggleInvincible() {
     this.isInvincible = !this.isInvincible;
     this.isSandbox = true;
@@ -527,7 +754,7 @@ export class Game {
 
   get moveSpeed() {
     const bonus = 1 + (this.stats.move_speed ?? 0) / 100;
-    return this.base.speed * bonus;
+    return this.base.speed * bonus * (this.speedMultiplier ?? 1);
   }
 
   get pickupRadius() {
@@ -1004,7 +1231,9 @@ export class Game {
 
     // Auto-Casting Scheduler with independent cooldowns
     for (const s of this.skills) {
-      if (s.cd > 0) {
+      if (this.infiniteCooldown) {
+        s.cd = Math.max(0, s.cd - dt);
+      } else if (s.cd > 0) {
         s.cd = Math.max(0, s.cd - dt);
       }
       if (s.cd === 0) {
@@ -1250,7 +1479,7 @@ export class Game {
       bonusPct = this.stats.sc_bonus_pct ?? 0;
     }
 
-    let damage = (base + flat) * (1 + s.power / 100) * (1 + bonusPct / 100);
+    let damage = (base + flat) * (1 + s.power / 100) * (1 + bonusPct / 100) * (this.damageMultiplier ?? 1);
 
     // Mind's Eye extra crit chance
     const extraCrit = this.skills.some((sk) => sk.id === 'mind_eye') ? 15 : 0;
@@ -1672,12 +1901,14 @@ export class Game {
 
     // Set cooldown respecting CDR cap and local CDR
     const baseDef = getSkill(s.id);
-    s.cd = Math.max(
-      0.35,
-      baseDef.cooldown *
-        (1 - (this.stats.cooldown_reduction ?? 0) / 100) *
-        (1 - s.localCDR / 100)
-    );
+    s.cd = this.infiniteCooldown
+      ? 0.05
+      : Math.max(
+          0.35,
+          baseDef.cooldown *
+            (1 - (this.stats.cooldown_reduction ?? 0) / 100) *
+            (1 - s.localCDR / 100)
+        );
 
     this.player.castUntil = this.clock + 0.2;
     if (!this.player.moving && targets.length) {

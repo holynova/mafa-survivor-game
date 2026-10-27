@@ -199,6 +199,13 @@ export const CHAPTER_UNLOCK_COSTS: Record<MapChapter, number> = {
   temple: 12,
 };
 
+export async function unlockAllChapters(): Promise<ProfileData> {
+  const profile = await getProfile();
+  profile.unlockedChapters = ['bichon', 'mine', 'temple'];
+  await saveProfile(profile);
+  return profile;
+}
+
 export async function unlockChapter(
   chapter: MapChapter,
   useCrystals = false

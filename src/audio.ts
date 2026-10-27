@@ -1,4 +1,5 @@
 import { assetUrl } from './utils';
+import { fetchWithCache } from './cache';
 
 export const MIR_AUDIO_MAP: Record<string, string> = {
   fireball: '04000010.WAV',
@@ -219,16 +220,19 @@ class SoundSystem {
   }
 
   private async loadBuffer(path: string): Promise<AudioBuffer | null> {
-    if (typeof window === 'undefined' || !this.ctx) return null;
+    if (typeof window === 'undefined') return null;
+    this.initCtx();
+    if (!this.ctx) return null;
     if (this.buffers.has(path)) return this.buffers.get(path)!;
     if (this.loading.has(path)) return this.loading.get(path)!;
 
     const promise = (async () => {
       try {
-        const resp = await fetch(path);
+        const resp = await fetchWithCache(path);
         if (!resp.ok) return null;
         const arrayBuf = await resp.arrayBuffer();
-        const audioBuf = await this.ctx!.decodeAudioData(arrayBuf);
+        if (!this.ctx) return null;
+        const audioBuf = await this.ctx.decodeAudioData(arrayBuf);
         this.buffers.set(path, audioBuf);
         return audioBuf;
       } catch {
@@ -240,6 +244,25 @@ class SoundSystem {
 
     this.loading.set(path, promise);
     return promise;
+  }
+
+  async preloadAudioKey(key: string): Promise<AudioBuffer | null> {
+    this.initCtx();
+    const mirFile = MIR_AUDIO_MAP[key] || (key.toUpperCase().endsWith('.WAV') ? key : null);
+    const path = mirFile ? assetUrl(`assets/mir/audio/${mirFile}`) : assetUrl(`assets/sound/${key}`);
+    return this.loadBuffer(path);
+  }
+
+  async preloadAllAudio(onStep?: (done: number, total: number, name: string) => void): Promise<void> {
+    this.initCtx();
+    const entries = Object.entries(MIR_AUDIO_MAP);
+    let done = 0;
+    const total = entries.length;
+    for (const [key, file] of entries) {
+      await this.preloadAudioKey(key);
+      done++;
+      if (onStep) onStep(done, total, file);
+    }
   }
 
   play(key: string, volume = 0.5) {

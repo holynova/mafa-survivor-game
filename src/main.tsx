@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { App, loadArtPositions } from './App';
+import { App } from './App';
+import { preloadAllAssets } from './assetLoader';
 import { boot } from './renderer';
 import './style.css';
 
@@ -10,9 +11,9 @@ if (container) {
   root.render(<App />);
 }
 
-loadArtPositions()
+preloadAllAssets()
   .then(() => boot())
   .catch((e) => {
-    console.warn('Could not preload art positions, booting anyway:', e);
+    console.warn('Could not preload art and audio assets, booting anyway:', e);
     boot();
   });

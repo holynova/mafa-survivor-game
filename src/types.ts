@@ -318,3 +318,42 @@ export interface ProfileData {
   unlockedSkills?: string[];
   unlockedEquipments?: string[];
 }
+
+export interface Manifest {
+  world?: {
+    width: number;
+    height: number;
+    cellWidth: number;
+    cellHeight: number;
+    walk: number[];
+    tiles: { texture: number; x: number; y: number }[];
+    objects: {
+      texture: number;
+      x: number;
+      y: number;
+      depth: number;
+      alpha: boolean;
+    }[];
+  };
+  pages: {
+    key: string;
+    image: string;
+    data: string;
+    width: number;
+    height: number;
+  }[];
+  animations: Record<string, string[]>;
+  frames: Record<
+    string,
+    {
+      dx: number;
+      dy: number;
+      width: number;
+      height: number;
+      texture: string;
+      originX: number;
+      originY: number;
+    }
+  >;
+  rightsStatus?: string;
+}

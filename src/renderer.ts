@@ -2,52 +2,20 @@ import Phaser from 'phaser';
 import { game, WORLD } from './game';
 import { SCENERY } from './content';
 import { sound } from './audio';
-import type { Enemy, Fx, Minion, Projectile } from './types';
+import type { Enemy, Fx, Minion, Projectile, Manifest } from './types';
 import { assetUrl } from './utils';
+import { onManifestLoaded } from './assetLoader';
 
-export interface Manifest {
-  world?: {
-    width: number;
-    height: number;
-    cellWidth: number;
-    cellHeight: number;
-    walk: number[];
-    tiles: { texture: number; x: number; y: number }[];
-    objects: {
-      texture: number;
-      x: number;
-      y: number;
-      depth: number;
-      alpha: boolean;
-    }[];
-  };
-  pages: {
-    key: string;
-    image: string;
-    data: string;
-    width: number;
-    height: number;
-  }[];
-  animations: Record<string, string[]>;
-  frames: Record<
-    string,
-    {
-      dx: number;
-      dy: number;
-      width: number;
-      height: number;
-      texture: string;
-      originX: number;
-      originY: number;
-    }
-  >;
-  rightsStatus?: string;
-}
+export type { Manifest };
 
 export let assets: Manifest | null = null;
 export function setAssetManifest(m: Manifest) {
   assets = m;
 }
+
+onManifestLoaded((m) => {
+  assets = m;
+});
 let rendererReady = false;
 export const readyListeners = new Set<() => void>();
 export const isReady = () => rendererReady;
