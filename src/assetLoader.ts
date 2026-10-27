@@ -107,7 +107,7 @@ export async function preloadAllAssets(): Promise<void> {
       state.statusText = '正在加载玛法大陆世界地图与动作规范 (manifest.json)...';
       notify();
 
-      const manifest = await fetchJsonWithCache<Manifest>(assetUrl('assets/mir/manifest.json'));
+      const manifest = await fetchJsonWithCache<Manifest>(assetUrl('assets/mir/manifest.json?v=1.76-v2'));
       assetManifest = manifest;
       manifestListeners.forEach((fn) => fn(manifest));
 

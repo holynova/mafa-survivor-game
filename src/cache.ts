@@ -3,7 +3,7 @@
  * Prevents redundant network requests across page reloads and game sessions.
  */
 
-export const ASSET_CACHE_NAME = 'mir2-assets-cache-v1';
+export const ASSET_CACHE_NAME = 'mir2-assets-cache-v2';
 
 export async function fetchWithCache(url: string, init?: RequestInit): Promise<Response> {
   if (typeof window !== 'undefined' && 'caches' in window) {

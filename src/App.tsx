@@ -1569,7 +1569,7 @@ export function App() {
                   ◇ 章节快速切换 (当前: 【{CHAPTERS[game.chapter]?.name}】)
                 </div>
                 <div className="debug-chip-group">
-                  {(['bichon', 'mine', 'temple'] as MapChapter[]).map((cKey) => (
+                  {(['bichon', 'mine', 'temple', 'tomb', 'desert'] as MapChapter[]).map((cKey) => (
                     <button
                       key={cKey}
                       className={`debug-chip ${game.chapter === cKey ? 'active' : ''}`}

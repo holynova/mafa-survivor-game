@@ -52,7 +52,7 @@ class BattleScene extends Phaser.Scene {
         this.load.atlas(page.key, assetUrl('assets/mir/' + page.image), assetUrl('assets/mir/' + page.data));
       }
     } else {
-      this.load.json('manifest', assetUrl('assets/mir/manifest.json'));
+      this.load.json('manifest', assetUrl('assets/mir/manifest.json?v=1.76-v2'));
     }
 
     this.load.on('loaderror', (file: any) => {
