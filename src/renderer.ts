@@ -27,6 +27,7 @@ class BattleScene extends Phaser.Scene {
   private labels = new Map<number, Phaser.GameObjects.Text>();
   private gfx!: Phaser.GameObjects.Graphics;
   private groundGfx!: Phaser.GameObjects.Graphics;
+  private shadowGfx!: Phaser.GameObjects.Graphics;
   private keys!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
   private spaceKey!: Phaser.Input.Keyboard.Key;
@@ -87,6 +88,7 @@ class BattleScene extends Phaser.Scene {
     this.cameras.main.setZoom(this.zoom());
 
     this.groundGfx = this.add.graphics().setDepth(-100);
+    this.shadowGfx = this.add.graphics().setDepth(1.5);
     this.gfx = this.add.graphics().setDepth(5000);
 
     this.paintGround();
@@ -348,7 +350,24 @@ class BattleScene extends Phaser.Scene {
     this.groundGfx.strokeRect(20, 30, WORLD.w - 40, WORLD.h - 50);
   }
 
-  private draw(key: string, frame: string, x: number, y: number, depth: number, alpha = 1, scale = 1, offset = true): boolean {
+  private drawGroundShadow(x: number, y: number, rx: number, ry: number, alpha = 0.38) {
+    this.shadowGfx.fillStyle(0x020302, alpha * 0.45);
+    this.shadowGfx.fillEllipse(x, y, rx * 1.25, ry * 1.25);
+    this.shadowGfx.fillStyle(0x020302, alpha);
+    this.shadowGfx.fillEllipse(x, y, rx, ry);
+  }
+
+  private draw(
+    key: string,
+    frame: string,
+    x: number,
+    y: number,
+    depth: number,
+    alpha = 1,
+    scale = 1,
+    offset = true,
+    tint?: number
+  ): boolean {
     if (!this.useSprites || !assets?.frames[frame]) return false;
     const f = assets.frames[frame];
     if (!this.textures.exists(f.texture)) return false;
@@ -367,8 +386,12 @@ class BattleScene extends Phaser.Scene {
       .setPosition(offset ? x - ox : x, offset ? y - oy : y)
       .setDepth(depth)
       .setAlpha(alpha)
-      .setScale(scale)
-      .clearTint();
+      .setScale(scale);
+    if (tint !== undefined) {
+      image.setTint(tint);
+    } else {
+      image.clearTint();
+    }
     return true;
   }
 
@@ -381,7 +404,8 @@ class BattleScene extends Phaser.Scene {
     depth: number,
     alpha = 1,
     scale = 1,
-    loop = false
+    loop = false,
+    tint?: number
   ): boolean {
     if (!this.useSprites || !assets?.animations[animName]) return false;
     const frames = assets.animations[animName];
@@ -389,7 +413,7 @@ class BattleScene extends Phaser.Scene {
     const idx = loop
       ? Math.floor(progress * 10) % frames.length
       : Math.min(frames.length - 1, Math.max(0, Math.floor(progress * frames.length)));
-    this.draw(key, frames[idx], x, y, depth, alpha, scale);
+    this.draw(key, frames[idx], x, y, depth, alpha, scale, true, tint);
     return true;
   }
 
@@ -706,6 +730,7 @@ class BattleScene extends Phaser.Scene {
 
     this.seen.clear();
     this.gfx.clear();
+    this.shadowGfx.clear();
     const t = game.clock;
 
     for (const object of this.mapObjects) {
@@ -722,13 +747,15 @@ class BattleScene extends Phaser.Scene {
 
     if (game.phase === 'lobby') {
       this.cameras.main.centerOn(WORLD.w / 2, WORLD.h / 2);
+      this.drawGroundShadow(WORLD.w / 2, WORLD.h / 2 + 3, 34, 16, 0.42);
       this.actor('hero', game.heroClass, 'idle', 5, WORLD.w / 2, WORLD.h / 2, _time / 1000, 100);
       [
-        ['scarecrow', 230, -140],
-        ['cat', 300, 90],
-        ['orc', -110, 160],
-        ['rakecat', -210, -130],
-      ].forEach(([name, ox, oy], i) => {
+        ['scarecrow', 230, -140, 30, 14],
+        ['cat', 300, 90, 24, 12],
+        ['orc', -110, 160, 32, 15],
+        ['rakecat', -210, -130, 26, 13],
+      ].forEach(([name, ox, oy, rx, ry], i) => {
+        this.drawGroundShadow(WORLD.w / 2 + Number(ox), WORLD.h / 2 + Number(oy) + 2, Number(rx), Number(ry), 0.38);
         this.actor(
           `lobby-${i}`,
           String(name),
@@ -743,6 +770,9 @@ class BattleScene extends Phaser.Scene {
     } else {
       this.cameras.main.centerOn(game.player.x, game.player.y);
 
+      // Player ground shadow
+      this.drawGroundShadow(game.player.x, game.player.y + 3, 34, 16, 0.45);
+
       // Corpses - O(1) event consumption
       while (game.recentDeaths.length > 0) {
         const d = game.recentDeaths.pop()!;
@@ -750,6 +780,10 @@ class BattleScene extends Phaser.Scene {
       }
       this.corpses = this.corpses.filter((c) => t - c.at < 1);
       this.corpses.slice(-40).forEach((c, i) => {
+        const corpseAlpha = Math.max(0, 1 - (t - c.at));
+        if (corpseAlpha > 0.05) {
+          this.drawGroundShadow(c.x, c.y + 2, 28, 13, 0.32 * corpseAlpha);
+        }
         this.actor(
           `corpse-${i}`,
           c.kind,
@@ -759,7 +793,7 @@ class BattleScene extends Phaser.Scene {
           c.y,
           Math.min(0.9, t - c.at),
           c.y,
-          1 - (t - c.at)
+          corpseAlpha
         );
       });
 
@@ -771,20 +805,27 @@ class BattleScene extends Phaser.Scene {
       const minY = cam.top - margin;
       const maxY = cam.bottom + margin;
 
-      // Render Minions (随从) with Frustum Culling
+      // Render Minions (随从) with Frustum Culling & Shadows
       for (const m of game.minions) {
         if (m.x >= minX && m.x <= maxX && m.y >= minY && m.y <= maxY) {
+          const rx = m.kind === 'shinsu' ? 44 : 26;
+          const ry = m.kind === 'shinsu' ? 22 : 13;
+          this.drawGroundShadow(m.x, m.y + 3, rx, ry, 0.4);
           this.drawMinion(m, t);
         }
       }
 
-      // Render Enemies with Frustum Culling
+      // Render Enemies with Frustum Culling & Authentic Ground Shadows
       for (const e of game.enemies) {
         if (e.x < minX || e.x > maxX || e.y < minY || e.y > maxY) {
           continue;
         }
-        const motion = e.windup > 0 ? 'attack' : t - e.hitAt < 0.17 ? 'hurt' : 'walk';
         const isBoss = e.kind.startsWith('boss');
+        const rx = isBoss ? 68 : e.elite ? 44 : 28;
+        const ry = isBoss ? 32 : e.elite ? 20 : 13;
+        this.drawGroundShadow(e.x, e.y + 3, rx, ry, isBoss ? 0.48 : 0.4);
+
+        const motion = e.windup > 0 ? 'attack' : t - e.hitAt < 0.17 ? 'hurt' : 'walk';
         const scale = isBoss ? 1.6 : e.elite ? 1.3 : 1;
         this.actor(`enemy-${e.id}`, e.kind, motion, e.dir, e.x, e.y, t - e.born, e.y, 1, scale);
 
@@ -813,11 +854,13 @@ class BattleScene extends Phaser.Scene {
         }
       }
 
-      // Render Drops with Frustum Culling
+      // Render Drops with Frustum Culling, Ground Shadows, Health Potions & Tiered Gold
       for (const d of game.drops) {
         if (d.x < minX || d.x > maxX || d.y < minY || d.y > maxY) {
           continue;
         }
+        this.drawGroundShadow(d.x, d.y + 3, 14, 7, 0.3);
+
         if (d.item) {
           // Legendary Equipment Drop: Golden/Violet Pillar of Light & Ground Halo
           const isHighTier = (d.item.tier ?? 1) >= 3;
@@ -846,12 +889,48 @@ class BattleScene extends Phaser.Scene {
           this.gfx.fillStyle(0xd97706, 1).fillRect(d.x - 9, d.y - 10, 18, 5);
           // Golden Trim & Keyhole
           this.gfx.fillStyle(0xfde047, 1).fillRect(d.x - 2, d.y - 5, 4, 5);
-        } else {
-          // Authentic Mir 2 Gold Coin Sprite (item/金币（小）)
-          const drawn = this.draw(`drop-${d.id}`, 'item/金币（小）', d.x, d.y, d.y, 1, 1, false);
+        } else if (d.isHeal) {
+          // Health Potion Drop (少量血瓶: 小/大金创药)
+          const isBig = d.healType === 'big';
+          this.gfx.lineStyle(1.5, 0xef4444, 0.75 + 0.25 * Math.sin(t * 8)).strokeEllipse(d.x, d.y + 2, isBig ? 18 : 14, isBig ? 9 : 7);
+          this.gfx.fillStyle(0xdc2626, 0.22).fillEllipse(d.x, d.y + 2, isBig ? 18 : 14, isBig ? 9 : 7);
+          const drawn = this.draw(`drop-${d.id}`, 'item/金创药（小）', d.x, d.y - (isBig ? 4 : 2), d.y, 1, isBig ? 1.45 : 1.0, false);
           if (!drawn) {
-            this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x, d.y, 4);
-            this.gfx.fillStyle(0xfde047, 1).fillCircle(d.x, d.y, 2);
+            this.gfx.fillStyle(0xdc2626, 0.95).fillCircle(d.x, d.y - 4, isBig ? 6 : 4.5);
+            this.gfx.fillStyle(0xf87171, 1).fillCircle(d.x - 1, d.y - 5, isBig ? 2.5 : 1.8);
+            this.gfx.fillStyle(0x94a3b8, 1).fillRect(d.x - 2, d.y - (isBig ? 10 : 8), 4, 3);
+          }
+        } else {
+          // Authentic Mir 2 Gold Coin Sprites by Tier
+          const amt = d.gold ?? 10;
+          if (amt <= 30) {
+            // Small gold pile (single coin scatter)
+            const drawn = this.draw(`drop-${d.id}`, 'item/金币（小）', d.x, d.y, d.y, 1, 0.88, false);
+            if (!drawn) {
+              this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x, d.y, 3.5);
+              this.gfx.fillStyle(0xfde047, 1).fillCircle(d.x, d.y, 2);
+            }
+          } else if (amt <= 120) {
+            // Medium gold pile (two overlapping coin clusters)
+            const drawn1 = this.draw(`drop-${d.id}-1`, 'item/金币（小）', d.x - 3, d.y, d.y, 1, 1.1, false);
+            const drawn2 = this.draw(`drop-${d.id}-2`, 'item/金币（小）', d.x + 3, d.y - 1, d.y + 0.1, 1, 1.05, false);
+            if (!drawn1 && !drawn2) {
+              this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x - 2, d.y, 4.5);
+              this.gfx.fillStyle(0xfacc15, 0.95).fillCircle(d.x + 3, d.y - 1, 4);
+            }
+            this.gfx.lineStyle(1, 0xfde047, 0.5).strokeEllipse(d.x, d.y + 2, 14, 7);
+          } else {
+            // Giant / Heaping gold pile (large pyramid stack of gold + shimmering aura)
+            this.gfx.fillStyle(0xf59e0b, 0.25).fillRect(d.x - 2, d.y - 28, 4, 28);
+            this.gfx.lineStyle(1.5, 0xfacc15, 0.75 + 0.25 * Math.sin(t * 6)).strokeEllipse(d.x, d.y + 2, 20, 10);
+            const drawn1 = this.draw(`drop-${d.id}-1`, 'item/金币（小）', d.x - 5, d.y, d.y, 1, 1.35, false);
+            const drawn2 = this.draw(`drop-${d.id}-2`, 'item/金币（小）', d.x + 5, d.y, d.y, 1, 1.35, false);
+            const drawn3 = this.draw(`drop-${d.id}-3`, 'item/金币（小）', d.x, d.y - 4, d.y + 0.2, 1, 1.45, false);
+            if (!drawn1 && !drawn2 && !drawn3) {
+              this.gfx.fillStyle(0xf59e0b, 0.95).fillCircle(d.x - 4, d.y, 5);
+              this.gfx.fillStyle(0xf59e0b, 0.95).fillCircle(d.x + 4, d.y, 5);
+              this.gfx.fillStyle(0xfacc15, 1).fillCircle(d.x, d.y - 4, 5.5);
+            }
           }
         }
       }
@@ -885,20 +964,32 @@ class BattleScene extends Phaser.Scene {
         }
       }
 
-      // Render Area Effects (Laser, Firewall, Ice Storm, Slashes)
+      // Render Area Effects (Laser, Firewall, Ice Storm, Slashes, Hellfire)
       for (const f of game.effects) {
         const progress = Math.max(0, Math.min(1, 1 - f.life / f.total));
         if (f.kind === 'firewall') {
-          // Natural flame cycle ~8 FPS (not hyperactive 80 FPS)
+          // Natural flame cycle ~8 FPS
           const fireAnimTime = (f.total - f.life) * 0.8;
-          // Cluster of flame pillars covering the expanded firewall area
-          const cluster = [
-            [0, 0, 1.3],
-            [-46, 12, 1.15],
-            [46, 12, 1.15],
-            [-24, -22, 1.05],
-            [24, -22, 1.05],
-          ];
+          // Cluster of flame pillars (9 pillars if evolved, 5 if normal)
+          const cluster = f.evolved
+            ? [
+                [0, 0, 1.45],
+                [-52, 14, 1.25],
+                [52, 14, 1.25],
+                [-28, -26, 1.15],
+                [28, -26, 1.15],
+                [-65, -12, 1.1],
+                [65, -12, 1.1],
+                [0, 36, 1.2],
+                [0, -42, 1.15],
+              ]
+            : [
+                [0, 0, 1.3],
+                [-46, 12, 1.15],
+                [46, 12, 1.15],
+                [-24, -22, 1.05],
+                [24, -22, 1.05],
+              ];
           for (let ci = 0; ci < cluster.length; ci++) {
             const [ox, oy, sc] = cluster[ci];
             const drawn = this.drawAnim(
@@ -910,31 +1001,71 @@ class BattleScene extends Phaser.Scene {
               f.y + oy,
               0.95,
               sc,
-              true
+              true,
+              f.evolved ? 0xffdf66 : undefined
             );
             if (!drawn) {
               this.gfx.fillStyle(0xea580c, 0.45);
-              this.gfx.fillCircle(f.x + ox, f.y + oy, 32);
+              this.gfx.fillCircle(f.x + ox, f.y + oy, 32 * sc);
               this.gfx.fillStyle(0xfacc15, 0.75);
-              this.gfx.fillCircle(f.x + ox, f.y + oy, 16);
+              this.gfx.fillCircle(f.x + ox, f.y + oy, 16 * sc);
             }
           }
+          if (f.evolved) {
+            this.gfx.lineStyle(2, 0xf59e0b, 0.5 + 0.3 * Math.sin(t * 8));
+            this.gfx.strokeCircle(f.x, f.y, f.radius);
+          }
         } else if (f.kind === 'hellfire') {
-          // Wizard Hellfire: Linear piercing flame cone
-          const drawn = this.drawAnim(`effect-${f.id}`, 'hellfire', progress, f.x, f.y, f.y + 10, 1, 1.35, false);
-          if (!drawn && f.angle !== undefined) {
-            const ex = f.x + Math.cos(f.angle) * f.radius;
-            const ey = f.y + Math.sin(f.angle) * f.radius;
-            this.gfx.lineStyle(12, 0xea580c, 0.85);
-            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
-            this.gfx.lineStyle(4, 0xfde047, 1);
-            this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+          // Wizard Hellfire: Long directional roaring fire blast across screen
+          const angle = f.angle ?? ((game.player.dir - 2) * Math.PI) / 4;
+          const length = f.radius;
+          const steps = f.evolved ? 9 : 6;
+
+          // Blazing core beam line propagating forward
+          const headDist = Math.min(length, length * Math.min(1, progress * 2.2));
+          const hx = f.x + Math.cos(angle) * headDist;
+          const hy = f.y + Math.sin(angle) * headDist;
+          this.gfx.lineStyle(f.evolved ? 24 : 16, 0xea580c, (1 - progress * 0.5) * 0.7);
+          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, hx, hy));
+          this.gfx.lineStyle(f.evolved ? 12 : 7, 0xf97316, 0.88 * (1 - progress * 0.3));
+          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, hx, hy));
+          this.gfx.lineStyle(f.evolved ? 5 : 2.5, 0xfef08a, 1 - progress * 0.2);
+          this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, hx, hy));
+
+          // Multi-burst flame eruption along trajectory
+          for (let si = 0; si < steps; si++) {
+            const burstDist = 35 + si * ((length - 35) / Math.max(1, steps - 1));
+            const bx = f.x + Math.cos(angle) * burstDist;
+            const by = f.y + Math.sin(angle) * burstDist;
+            const startT = (si / steps) * 0.45;
+            if (progress >= startT && progress <= startT + 0.55) {
+              const stepP = (progress - startT) / 0.55;
+              const frameIdx = Math.min(5, Math.floor(stepP * 6));
+              const scale = (f.evolved ? 1.45 : 1.15) * (1 + si * 0.04);
+              const drawn = this.draw(
+                `effect-${f.id}-${si}`,
+                `hellfire/${frameIdx}`,
+                bx,
+                by,
+                by + 10,
+                1 - stepP * 0.4,
+                scale,
+                false,
+                f.evolved ? 0xffdf66 : undefined
+              );
+              if (!drawn) {
+                this.gfx.fillStyle(0xea580c, 0.65 * (1 - stepP));
+                this.gfx.fillCircle(bx, by, (f.evolved ? 24 : 18) * (1 + stepP * 0.4));
+                this.gfx.fillStyle(0xfacc15, 0.9 * (1 - stepP));
+                this.gfx.fillCircle(bx, by, (f.evolved ? 12 : 8) * (1 - stepP * 0.3));
+              }
+            }
           }
         } else if (f.kind === 'holy_armor') {
-          // Taoist Holy Armor one-shot cast effect (plays once, ~0.8s)
+          // Taoist Holy Armor one-shot cast effect
           this.drawAnim(`effect-${f.id}`, 'armor', progress, f.x, f.y, f.y + 2, 0.95, 1, false);
         } else if (f.kind === 'spirit_shield') {
-          // Taoist Spirit Shield one-shot cast effect (plays once, ~0.8s)
+          // Taoist Spirit Shield one-shot cast effect
           this.drawAnim(`effect-${f.id}`, 'ghost', progress, f.x, f.y, f.y + 2, 0.95, 1, false);
         } else if (f.kind === 'lightning') {
           const drawn = this.drawAnim(`effect-${f.id}`, 'lightning', progress, f.x, f.y, f.y + 10, 1, 1, false);
@@ -947,22 +1078,57 @@ class BattleScene extends Phaser.Scene {
             this.gfx.fillCircle(f.x, f.y, 18);
           }
         } else if (f.kind === 'laser') {
-          const drawn = this.drawAnim(`effect-${f.id}`, `beam/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, 1, false);
-          if (!drawn && f.angle !== undefined) {
+          const drawn = this.drawAnim(`effect-${f.id}`, `beam/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, f.evolved ? 1.6 : 1, false);
+          if (f.angle !== undefined) {
             const ex = f.x + Math.cos(f.angle) * f.radius;
             const ey = f.y + Math.sin(f.angle) * f.radius;
-            this.gfx.lineStyle(6, 0x38bdf8, 0.8);
+            const beamW = f.evolved ? 20 : 6;
+            const coreW = f.evolved ? 6 : 2;
+            this.gfx.lineStyle(beamW, 0x38bdf8, 0.75 * (1 - progress * 0.4));
             this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
-            this.gfx.lineStyle(2, 0xffffff, 1);
+            this.gfx.lineStyle(coreW, 0xffffff, 1);
             this.gfx.strokeLineShape(new Phaser.Geom.Line(f.x, f.y, ex, ey));
+            if (f.evolved) {
+              for (let bi = 1; bi <= 4; bi++) {
+                const seg = (bi / 5) * f.radius;
+                const bx = f.x + Math.cos(f.angle) * seg;
+                const by = f.y + Math.sin(f.angle) * seg;
+                this.gfx.fillStyle(0xffffff, 0.9);
+                this.gfx.fillCircle(bx, by, 5);
+                this.gfx.fillStyle(0x7dd3fc, 0.5);
+                this.gfx.fillCircle(bx, by, 10);
+              }
+            }
           }
         } else if (f.kind === 'ice_storm') {
-          const drawn = this.drawAnim(`effect-${f.id}`, 'ice', progress, f.x, f.y, f.y + 10, 1, 1.2, false);
+          // Dynamic scaling with radius & evolved status
+          const scale = (f.radius / 110) * (f.evolved ? 1.6 : 1.2);
+          const drawn = this.drawAnim(`effect-${f.id}`, 'ice', progress, f.x, f.y, f.y + 10, 0.95, scale, false);
           if (!drawn) {
             this.gfx.fillStyle(0x38bdf8, 0.35);
             this.gfx.fillCircle(f.x, f.y, f.radius);
             this.gfx.lineStyle(2, 0xe0f2fe, 0.8);
             this.gfx.strokeCircle(f.x, f.y, f.radius * (f.life / f.total));
+          }
+          if (f.evolved) {
+            // Evolved Ice Storm: Giant Blizzard Vortex & Orbiting Ice Shards
+            this.gfx.fillStyle(0x0284c7, 0.22 * (f.life / f.total));
+            this.gfx.fillCircle(f.x, f.y, f.radius);
+            this.gfx.lineStyle(3, 0x7dd3fc, 0.85 * (f.life / f.total));
+            this.gfx.strokeCircle(f.x, f.y, f.radius * (0.88 + 0.12 * Math.sin(t * 12)));
+            this.gfx.lineStyle(1.5, 0xffffff, 0.95 * (f.life / f.total));
+            this.gfx.strokeCircle(f.x, f.y, f.radius * 0.55);
+
+            for (let ci = 0; ci < 6; ci++) {
+              const ang = progress * Math.PI * 6 + (ci * Math.PI) / 3;
+              const dist = f.radius * (0.35 + 0.55 * (ci % 2 === 0 ? 0.9 : 0.6));
+              const ix = f.x + Math.cos(ang) * dist;
+              const iy = f.y + Math.sin(ang) * dist;
+              this.gfx.fillStyle(0xffffff, 0.95);
+              this.gfx.fillCircle(ix, iy, 3.5);
+              this.gfx.fillStyle(0x38bdf8, 0.6);
+              this.gfx.fillCircle(ix, iy, 7);
+            }
           }
         } else if (f.kind === 'holy_word') {
           const drawn = this.drawAnim(`effect-${f.id}`, 'holy', progress, f.x, f.y, f.y + 10, 1, 1, false);
@@ -971,22 +1137,54 @@ class BattleScene extends Phaser.Scene {
             this.gfx.fillCircle(f.x, f.y, 30);
           }
         } else if (f.kind === 'half_moon_sweep') {
-          const drawn = this.drawAnim(`effect-${f.id}`, `cleave/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, 1.2, false);
-          if (!drawn) {
+          const sc = (f.radius / 90) * (f.evolved ? 1.5 : 1.2);
+          const drawn = this.drawAnim(`effect-${f.id}`, `cleave/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, sc, false);
+          if (f.evolved) {
+            this.gfx.lineStyle(4, 0x93c5fd, 0.9 * (1 - progress));
+            this.gfx.strokeCircle(f.x, f.y, f.radius);
+            this.gfx.lineStyle(2, 0xffffff, 1 - progress);
+            this.gfx.strokeCircle(f.x, f.y, f.radius * 0.92);
+          } else if (!drawn) {
             this.gfx.lineStyle(4, 0x93c5fd, 0.9);
             this.gfx.strokeCircle(f.x, f.y, f.radius);
           }
         } else if (f.kind === 'fire_slash') {
-          const drawn = this.drawAnim(`effect-${f.id}`, `firesword/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, 1.3, false);
-          if (!drawn) {
+          const sc = (f.radius / 60) * (f.evolved ? 1.6 : 1.3);
+          const drawn = this.drawAnim(`effect-${f.id}`, `firesword/${game.player.dir}`, progress, f.x, f.y, f.y + 10, 1, sc, false);
+          if (f.evolved) {
+            this.gfx.fillStyle(0xef4444, 0.45 * (1 - progress));
+            this.gfx.fillCircle(f.x, f.y, f.radius);
+            this.gfx.lineStyle(4, 0xfacc15, 0.95 * (1 - progress));
+            this.gfx.strokeCircle(f.x, f.y, f.radius * progress);
+          } else if (!drawn) {
             this.gfx.lineStyle(6, 0xef4444, 0.9);
             this.gfx.strokeCircle(f.x, f.y, f.radius);
           }
+        } else if (f.kind === 'thunderwave') {
+          const drawn = this.drawAnim(`effect-${f.id}`, 'repulse', progress, f.x, f.y, f.y + 10, 1, f.radius / 120, false, 0x38bdf8);
+          const curR = f.radius * Math.min(1, progress * 1.5);
+          this.gfx.lineStyle(f.evolved ? 4 : 2.5, 0x38bdf8, 0.9 * (1 - progress));
+          this.gfx.strokeCircle(f.x, f.y, curR);
+          this.gfx.lineStyle(f.evolved ? 2 : 1, 0xffffff, 1 - progress);
+          this.gfx.strokeCircle(f.x, f.y, curR * 0.85);
+          const boltCount = f.evolved ? 8 : 4;
+          for (let bi = 0; bi < boltCount; bi++) {
+            const ang = (bi * Math.PI * 2) / boltCount + progress * 0.5;
+            const lx1 = f.x + Math.cos(ang) * (curR * 0.2);
+            const ly1 = f.y + Math.sin(ang) * (curR * 0.2);
+            const lx2 = f.x + Math.cos(ang) * curR;
+            const ly2 = f.y + Math.sin(ang) * curR;
+            this.gfx.lineStyle(f.evolved ? 2.5 : 1.5, 0x7dd3fc, 0.85 * (1 - progress));
+            this.gfx.strokeLineShape(new Phaser.Geom.Line(lx1, ly1, lx2, ly2));
+          }
         } else if (f.kind === 'ring_of_fire') {
-          const drawn = this.drawAnim(`effect-${f.id}`, 'repulse', progress, f.x, f.y, f.y + 10, 1, 1.2, false);
-          if (!drawn) {
-            this.gfx.lineStyle(3, 0xf97316, 0.9);
-            this.gfx.strokeCircle(f.x, f.y, f.radius * (1 - f.life / f.total));
+          const sc = (f.radius / 120) * (f.evolved ? 1.5 : 1.2);
+          const drawn = this.drawAnim(`effect-${f.id}`, 'repulse', progress, f.x, f.y, f.y + 10, 1, sc, false);
+          this.gfx.lineStyle(f.evolved ? 5 : 3, 0xf97316, 0.9 * (1 - progress));
+          this.gfx.strokeCircle(f.x, f.y, f.radius * (1 - f.life / f.total));
+          if (f.evolved) {
+            this.gfx.lineStyle(2, 0xfacc15, 1 - progress);
+            this.gfx.strokeCircle(f.x, f.y, f.radius * (1 - f.life / f.total) * 0.85);
           }
         } else if (f.kind === 'poison_cloud') {
           const drawn = this.drawAnim(`effect-${f.id}`, 'poison', progress, f.x, f.y, f.y + 10, 1, 1, false);
@@ -1074,12 +1272,63 @@ class BattleScene extends Phaser.Scene {
 
       // Player Shields & Buff Auras
       if (t < game.player.shieldUntil) {
-        const drawn = this.drawAnim('player-shield', 'shield', t * 5, game.player.x, game.player.y, game.player.y + 2, 0.9, 1, true);
-        if (!drawn) {
-          this.gfx.lineStyle(2.5, 0xfacc15, 0.85);
-          this.gfx.strokeCircle(game.player.x, game.player.y - 10, 26);
-          this.gfx.fillStyle(0xfef08a, 0.15);
-          this.gfx.fillCircle(game.player.x, game.player.y - 10, 26);
+        const isGolden = (game.shieldStyle ?? 'golden') === 'golden';
+        if (isGolden) {
+          // Authentic Mir 2 Classic Golden Eggshell Magic Shield (金黄蛋壳盾)
+          const tint = 0xffe277;
+          const drawn = this.drawAnim(
+            'player-shield',
+            'shield',
+            t * 5,
+            game.player.x,
+            game.player.y,
+            game.player.y + 2,
+            0.92,
+            1.05,
+            true,
+            tint
+          );
+
+          // Golden eggshell aura & orbital energy rings
+          const px = game.player.x;
+          const py = game.player.y - 12;
+          this.gfx.fillStyle(0xfef08a, 0.16 + 0.05 * Math.sin(t * 7));
+          this.gfx.fillEllipse(px, py, 34, 46);
+
+          this.gfx.lineStyle(2.5, 0xf59e0b, 0.85);
+          this.gfx.strokeEllipse(px, py, 36 + 2 * Math.cos(t * 5), 48 + 2 * Math.sin(t * 5));
+
+          this.gfx.lineStyle(1.5, 0xfde047, 0.9);
+          this.gfx.strokeEllipse(px, py, 38, 50);
+
+          for (let ri = 0; ri < 4; ri++) {
+            const ang = t * 3.5 + (ri * Math.PI) / 2;
+            const ox = px + Math.cos(ang) * 28;
+            const oy = py + Math.sin(ang) * 22;
+            this.gfx.fillStyle(0xfffbeb, 0.95);
+            this.gfx.fillCircle(ox, oy, 2.5);
+            this.gfx.fillStyle(0xfacc15, 0.5);
+            this.gfx.fillCircle(ox, oy, 5);
+          }
+        } else {
+          // Cyan Shield (幽蓝护体盾)
+          const drawn = this.drawAnim(
+            'player-shield',
+            'shield',
+            t * 5,
+            game.player.x,
+            game.player.y,
+            game.player.y + 2,
+            0.9,
+            1,
+            true
+          );
+          if (!drawn) {
+            this.gfx.lineStyle(2.5, 0x38bdf8, 0.85);
+            this.gfx.strokeCircle(game.player.x, game.player.y - 10, 26);
+            this.gfx.fillStyle(0x7dd3fc, 0.15);
+            this.gfx.fillCircle(game.player.x, game.player.y - 10, 26);
+          }
         }
       }
       if (t < game.player.holyArmorUntil) {

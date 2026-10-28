@@ -1622,6 +1622,24 @@ export function App() {
                 >
                   替身灰盒: {game.debugAssets ? '【已开启】' : '【已关闭】'}
                 </button>
+
+                <button
+                  className="sandbox-btn active"
+                  onClick={() => game.toggleShieldStyle()}
+                >
+                  魔法盾样式: {game.shieldStyle === 'golden' ? '金黄蛋壳盾 (经典)' : '幽蓝护体盾'}
+                </button>
+
+                <button
+                  className="sandbox-btn"
+                  onClick={() => {
+                    game.player.shieldUntil = game.clock + 30;
+                    game.emit();
+                    sound.playLevelUp();
+                  }}
+                >
+                  触发魔法盾 (30秒)
+                </button>
               </div>
             )}
 

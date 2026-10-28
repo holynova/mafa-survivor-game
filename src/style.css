@@ -88,6 +88,8 @@ body, html {
   backdrop-filter: blur(4px);
   z-index: 50;
   padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .panel {
@@ -98,7 +100,53 @@ body, html {
   padding: 24px;
   max-width: 680px;
   width: 100%;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  margin: auto;
   color: #e2e8f0;
+}
+
+/* Custom Retro Mir 2 Dark Gold Scrollbars */
+.panel::-webkit-scrollbar,
+.modal-container::-webkit-scrollbar,
+.sandbox-panel::-webkit-scrollbar,
+.shop-panel::-webkit-scrollbar,
+.mir2-equip-modal-panel::-webkit-scrollbar,
+.compendium-modal::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.panel::-webkit-scrollbar-track,
+.modal-container::-webkit-scrollbar-track,
+.sandbox-panel::-webkit-scrollbar-track,
+.shop-panel::-webkit-scrollbar-track,
+.mir2-equip-modal-panel::-webkit-scrollbar-track,
+.compendium-modal::-webkit-scrollbar-track {
+  background: rgba(12, 18, 14, 0.85);
+  border-radius: 3px;
+}
+
+.panel::-webkit-scrollbar-thumb,
+.modal-container::-webkit-scrollbar-thumb,
+.sandbox-panel::-webkit-scrollbar-thumb,
+.shop-panel::-webkit-scrollbar-thumb,
+.mir2-equip-modal-panel::-webkit-scrollbar-thumb,
+.compendium-modal::-webkit-scrollbar-thumb {
+  background: #5a4b2c;
+  border-radius: 3px;
+  border: 1px solid #85612f;
+}
+
+.panel::-webkit-scrollbar-thumb:hover,
+.modal-container::-webkit-scrollbar-thumb:hover,
+.sandbox-panel::-webkit-scrollbar-thumb:hover,
+.shop-panel::-webkit-scrollbar-thumb:hover,
+.mir2-equip-modal-panel::-webkit-scrollbar-thumb:hover,
+.compendium-modal::-webkit-scrollbar-thumb:hover {
+  background: #b8974a;
 }
 
 .gold-panel {
@@ -654,6 +702,11 @@ body, html {
 /* UPGRADE MODAL */
 .upgrade-panel {
   max-width: 760px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  margin: auto;
   text-align: center;
 }
 
@@ -816,6 +869,11 @@ body, html {
 /* SHOP MODAL */
 .shop-panel {
   max-width: 820px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  margin: auto;
 }
 
 .shop-header {
@@ -1379,6 +1437,11 @@ body, html {
 /* Talent Shrine Modal */
 .talent-panel {
   max-width: 720px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  margin: auto;
 }
 
 .talent-header {
@@ -2399,6 +2462,11 @@ body, html {
 
 .sandbox-panel {
   max-width: 640px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  margin: auto;
   background: #14171a;
   border: 2px solid #0284c7;
   box-shadow: 0 0 24px rgba(2, 132, 199, 0.25);
@@ -2843,9 +2911,33 @@ body, html {
 .mir2-equip-modal-panel {
   max-width: 780px !important;
   width: 95%;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+  margin: auto;
   background: #111712 !important;
   border: 2px solid #85612f !important;
   box-shadow: 0 0 25px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(217, 119, 6, 0.2) !important;
+}
+
+@media (max-height: 750px) {
+  .panel {
+    padding: 14px 18px;
+  }
+  .main-title {
+    font-size: 24px;
+    margin-bottom: 2px;
+  }
+  .subtitle {
+    margin-bottom: 12px;
+  }
+  .mir2-char-panel {
+    gap: 10px;
+  }
+  .doll-center-preview {
+    height: 190px !important;
+  }
 }
 
 .mir2-char-panel {

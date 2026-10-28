@@ -151,6 +151,9 @@ export interface Drop extends Entity {
   born: number;
   item?: Item;
   isChest?: boolean;
+  isHeal?: boolean;
+  healType?: 'small' | 'big';
+  healAmount?: number;
 }
 
 export interface Fx extends Entity {
@@ -169,6 +172,7 @@ export interface Fx extends Entity {
     | 'half_moon_sweep'
     | 'fire_slash'
     | 'savage_trail'
+    | 'thunderwave'
     | 'spirit_shield'
     | 'holy_armor';
   life: number;
@@ -176,6 +180,7 @@ export interface Fx extends Entity {
   radius: number;
   angle?: number;
   width?: number;
+  evolved?: boolean;
 }
 
 export interface Floating extends Entity {

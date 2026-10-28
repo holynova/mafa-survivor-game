@@ -490,6 +490,10 @@ export class Game {
   bossKilled = false;
   damageDealt: Record<string, number> = {};
   revived = false;
+  shieldStyle: 'golden' | 'cyan' =
+    typeof localStorage !== 'undefined' && localStorage.getItem('mir2_shield_style') === 'cyan'
+      ? 'cyan'
+      : 'golden';
 
   player = {
     x: WORLD.w / 2,
@@ -980,6 +984,25 @@ export class Game {
       y: this.player ? this.player.y - 45 : WORLD.h / 2,
       text: this.debugAssets ? '【替身灰盒: 开启】' : '【替身灰盒: 关闭】',
       color: this.debugAssets ? '#38bdf8' : '#94a3b8',
+      life: 1.2,
+    });
+    this.emit();
+  }
+
+  toggleShieldStyle() {
+    this.shieldStyle = this.shieldStyle === 'golden' ? 'cyan' : 'golden';
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('mir2_shield_style', this.shieldStyle);
+      } catch {}
+    }
+    sound.playClick();
+    this.floating.push({
+      id: ++this.id,
+      x: this.player ? this.player.x : WORLD.w / 2,
+      y: this.player ? this.player.y - 45 : WORLD.h / 2,
+      text: this.shieldStyle === 'golden' ? '【盾效: 金黄蛋壳盾】' : '【盾效: 幽蓝护体盾】',
+      color: this.shieldStyle === 'golden' ? '#facc15' : '#38bdf8',
       life: 1.2,
     });
     this.emit();
@@ -1887,6 +1910,21 @@ export class Game {
             });
           }
 
+          if (d.isHeal) {
+            const healVal = d.healAmount ?? (d.healType === 'big' ? 75 : 35);
+            this.player.hp = Math.min(this.maxHP, this.player.hp + healVal);
+            sound.playHeal();
+            this.floating.push({
+              id: ++this.id,
+              x: this.player.x,
+              y: this.player.y - 50,
+              text: `+${healVal} HP`,
+              color: '#4ade80',
+              life: 1.1,
+              type: 'heal',
+            });
+          }
+
           if (d.item) {
             const item = d.item;
             this.acquiredEquipments.add(item.id);
@@ -2159,6 +2197,7 @@ export class Game {
         life: duration,
         total: duration,
         radius: r,
+        evolved: s.evolved,
       });
       sound.playFirewall();
     } else if (s.id === 'hellfire') {
@@ -2166,7 +2205,7 @@ export class Game {
       const angle = targets.length
         ? Math.atan2(targets[0].y - this.player.y, targets[0].x - this.player.x)
         : ((this.player.dir - 2) * Math.PI) / 4;
-      const length = 320 * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100);
+      const length = (s.evolved ? 550 : 360) * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100);
       this.effects.push({
         id: ++this.id,
         kind: 'hellfire',
@@ -2176,6 +2215,7 @@ export class Game {
         total: 0.75,
         radius: length,
         angle,
+        evolved: s.evolved,
       });
       const damage = this.calcDamage('wizard', 16, s);
       for (const e of this.enemies) {
@@ -2187,7 +2227,7 @@ export class Game {
           const a = Math.atan2(dy, dx);
           let diff = Math.abs(a - angle);
           while (diff > Math.PI) diff = Math.abs(diff - Math.PI * 2);
-          if (diff < 0.45 || dist < 45) {
+          if (diff < (s.evolved ? 0.6 : 0.45) || dist < 45) {
             this.hit(e, damage, 'hellfire');
             e.burnAt = this.clock + 0.6;
           }
@@ -2210,6 +2250,7 @@ export class Game {
         total: 0.4,
         radius: length,
         angle,
+        evolved: s.evolved,
       });
       const baseDmg = s.evolved ? 32 : 16;
       for (const e of targets) {
@@ -2227,15 +2268,16 @@ export class Game {
       if (!targets.length) return;
       sound.playIceStorm();
       const center = targets[0];
-      const r = (s.evolved ? 165 : 110) * (1 + s.radius / 100);
+      const r = (s.evolved ? 180 : 110) * (1 + s.radius / 100);
       this.effects.push({
         id: ++this.id,
         kind: 'ice_storm',
         x: center.x,
         y: center.y,
-        life: 0.65,
-        total: 0.65,
+        life: 0.75,
+        total: 0.75,
         radius: r,
+        evolved: s.evolved,
       });
       if (s.evolved) {
         // Vortex pull towards storm center
@@ -2260,7 +2302,8 @@ export class Game {
           y: this.player.y,
           life: 0.35,
           total: 0.35,
-          radius: 120,
+          radius: s.evolved ? 180 : 120,
+          evolved: s.evolved,
         });
         for (const e of close) {
           if (!e.kind.startsWith('boss')) {
@@ -2299,17 +2342,18 @@ export class Game {
         this.hit(target, this.calcDamage('wizard', 20, s), 'holy_word');
       }
     } else if (s.id === 'thunderwave') {
-      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 140);
-      if (close.length >= 2) {
+      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < (s.evolved ? 240 : 140));
+      if (close.length >= (s.evolved ? 1 : 2)) {
         sound.playLightning();
         this.effects.push({
           id: ++this.id,
-          kind: 'ring_of_fire',
+          kind: 'thunderwave',
           x: this.player.x,
           y: this.player.y,
-          life: 0.4,
-          total: 0.4,
-          radius: 140,
+          life: 0.45,
+          total: 0.45,
+          radius: s.evolved ? 240 : 140,
+          evolved: s.evolved,
         });
         for (const e of close) {
           this.hit(e, this.calcDamage('wizard', 13, s), 'thunderwave');
@@ -2507,6 +2551,7 @@ export class Game {
         total: 0.35,
         radius,
         angle: s.evolved ? 0 : angle,
+        evolved: s.evolved,
       });
       const baseDmg = s.evolved ? 24 : 11;
       for (const e of targets) {
@@ -2574,7 +2619,8 @@ export class Game {
             y: target.y,
             life: 0.45,
             total: 0.45,
-            radius: s.evolved ? 80 : 60,
+            radius: s.evolved ? 120 : 60,
+            evolved: s.evolved,
           });
           this.hit(target, this.calcDamage('warrior', baseDmg, s), 'fire_swordplay');
         }
@@ -2713,7 +2759,22 @@ export class Game {
         });
       }
 
-      // Boss special ground drops: guaranteed equipment drop + treasure chest!
+      // Ground Health Potion drops
+      if (!isBoss && !e.elite && this.drops.length < 300 && this.rng.next() < 0.07) {
+        this.drops.push({
+          id: ++this.id,
+          x: e.x + (this.rng.next() * 16 - 8),
+          y: e.y + (this.rng.next() * 16 - 8),
+          exp: 0,
+          gold: 0,
+          born: this.clock,
+          isHeal: true,
+          healType: 'small',
+          healAmount: 35,
+        });
+      }
+
+      // Boss special ground drops: guaranteed equipment drop + treasure chest + big health potion!
       if (isBoss) {
         let bossDropItem = getRandomDropEquipment(
           this.heroClass,
@@ -2742,8 +2803,32 @@ export class Game {
           born: this.clock,
           isChest: true,
         });
+        this.drops.push({
+          id: ++this.id,
+          x: e.x + (this.rng.next() * 26 - 13),
+          y: e.y + (this.rng.next() * 26 - 13),
+          exp: 0,
+          gold: 0,
+          born: this.clock,
+          isHeal: true,
+          healType: 'big',
+          healAmount: 75,
+        });
       } else if (e.elite) {
-        // Elite special ground drops: 45% equipment drop, 30% treasure chest
+        // Elite special ground drops: 45% equipment drop, 30% treasure chest, 28% big health potion
+        if (this.rng.next() < 0.28) {
+          this.drops.push({
+            id: ++this.id,
+            x: e.x + (this.rng.next() * 20 - 10),
+            y: e.y + (this.rng.next() * 20 - 10),
+            exp: 0,
+            gold: 0,
+            born: this.clock,
+            isHeal: true,
+            healType: 'big',
+            healAmount: 75,
+          });
+        }
         const roll = this.rng.next();
         if (roll < 0.45) {
           const minTier = this.wave >= 8 ? 2 : 1;
