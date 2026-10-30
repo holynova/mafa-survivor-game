@@ -121,9 +121,16 @@ export const sellPrice = (paid: number, base: number): number =>
   Math.max(0, Math.floor(paid > 0 ? Math.min(paid * 0.5, base * 0.5) : base * 0.3));
 
 /**
- * Experience needed for next level: 12 + 8 * level
+ * Experience needed for next level:
+ * Smooth progressive curve to prevent early level spam and ensure balanced pacing.
+ * - Lv.1 -> Lv.2: ~46 exp (requires ~15-20 early monsters in wave 1)
+ * - Lv.2 -> Lv.3: ~75 exp (reached around end of wave 1 / start of wave 2)
+ * - Lv.3 -> Lv.4: ~111 exp (reached during wave 2)
+ * - Lv.4 -> Lv.5: ~154 exp (reached during wave 3)
+ * - Late levels scale smoothly up to 1000-2500 exp matching wave swarm density.
  */
-export const expNeeded = (level: number): number => 12 + 8 * level;
+export const expNeeded = (level: number): number =>
+  Math.round(25 + 16 * level + 5 * Math.pow(level, 1.85));
 
 /**
  * Spatial partition grid for high-performance entity proximity queries.

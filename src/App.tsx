@@ -2121,11 +2121,11 @@ export function App() {
                         key={slotIdx}
                         className={`mir2-quick-slot active-slot skill-${skill.id}`}
                         style={{ left: `${17 + 42 * slotIdx}px`, top: '6px' }}
-                        title={`${def.name} (Lv.${skill.rank})\n${def.description}`}
+                        title={`${def.name} (${skill.evolved ? '极阶 · 终极演化' : `Lv.${skill.rank}`})\n${def.description}`}
                       >
                         <Icon frame={def.asset} />
                         <span className="slot-key">{slotIdx + 1}</span>
-                        <span className="slot-rank">{skill.rank}</span>
+                        <span className="slot-rank">{skill.evolved ? '极' : skill.rank}</span>
                         {skill.cd > 0 && (
                           <div
                             className="mir2-cd-sweep"
@@ -2295,7 +2295,7 @@ export function App() {
                       <Icon frame={def.asset} />
                       <div>
                         <div className="replace-skill-title">{def.name}</div>
-                        <div className="replace-skill-lvl">当前 Lv.{s.rank}</div>
+                        <div className="replace-skill-lvl">当前 {s.evolved ? '极阶 · 终极演化' : `Lv.${s.rank}`}</div>
                       </div>
                     </div>
                     <p className="replace-skill-desc">{def.description}</p>

@@ -2039,12 +2039,19 @@ export class Game {
     const angle = this.rng.next() * Math.PI * 2;
     const dist = 420 + this.rng.next() * 150;
     const isBoss = m.id.startsWith('boss');
-    const elite =
+    const effectiveWave = this.mode === 'trial' ? 1 + (this.wave - 1) * 3.6 : this.wave;
+    const budget = WAVE_BUDGET[this.wave - 1] ?? 400;
+    const isEliteSpawn =
       !isBoss &&
-      this.wave >= 4 &&
-      this.spawned === Math.floor(WAVE_BUDGET[this.wave - 1] / 2);
-    const waveMult = 1 + (this.wave - 1) * 0.12;
-    const hp = Math.round(m.hp * (elite ? 4 : 1) * waveMult);
+      ((this.wave >= 4 && this.spawned === Math.floor(budget * 0.5)) ||
+        (this.wave >= 8 &&
+          (this.spawned === Math.floor(budget * 0.25) ||
+            this.spawned === Math.floor(budget * 0.75))));
+
+    const waveHpMult = Math.pow(1 + (effectiveWave - 1) * 0.22, 1.75);
+    const hp = Math.max(10, Math.round(m.hp * (isEliteSpawn ? 3.5 : 1) * waveHpMult));
+    const dmgMult = 1 + (effectiveWave - 1) * 0.20;
+    const damage = Math.max(1, Math.round(m.damage * (isEliteSpawn ? 1.4 : 1) * dmgMult));
 
     this.enemies.push({
       id: ++this.id,
@@ -2055,15 +2062,15 @@ export class Game {
       hp,
       maxHp: hp,
       speed: m.speed * (1 + this.wave * 0.02),
-      damage: Math.round(m.damage * (1 + (this.wave - 1) * 0.1)),
-      exp: m.exp * (elite ? 5 : 1),
+      damage,
+      exp: m.exp * (isEliteSpawn ? 4 : 1),
       dir: 4,
       windup: 0,
       attackCD: 0,
       shootCD: 0,
       hitAt: -1,
       burnAt: 0,
-      elite,
+      elite: isEliteSpawn,
       born: this.clock,
       aiType: m.aiType,
       undead: m.undead,
@@ -2951,58 +2958,13 @@ export class Game {
     const availableSkills = SKILLS.filter(
       (s) => base.allowedSkills.includes(s.id) && !this.skills.some((a) => a.id === s.id)
     );
-    const candidates: Upgrade[] = [];
 
-    // Offer new skill: if slots < 6 or allow replacement if slots >= 6
-    if (availableSkills.length) {
-      const newSkill = this.rng.pick(availableSkills);
-      const isReplace = this.skills.length >= 6;
-      candidates.push({
-        id: `learn-${newSkill.id}`,
-        kind: 'skill',
-        skill: newSkill.id,
-        name: isReplace ? `替换习得 · ${newSkill.name}` : `习得 · ${newSkill.name}`,
-        description: isReplace
-          ? `【技能槽已满 6/6】选择后可替换遗忘当前一个已有技能。${newSkill.description}`
-          : newSkill.description,
-        value: 0,
-      });
-    }
-
-    // Offer skill enhancements for existing skills with rank < 3
-    for (const s of this.skills.filter((s) => s.rank < 3)) {
-      const def = getSkill(s.id);
-      const branches = SKILL_ENHANCEMENTS[s.id];
-      if (branches && branches.length) {
-        for (const b of branches) {
-          candidates.push({
-            id: `${s.id}-${b.suffix}`,
-            kind: 'skill',
-            skill: s.id,
-            name: `${def.name} · ${b.name}`,
-            description: b.desc(s.rank + 1),
-            field: b.field,
-            value: b.value,
-          });
-        }
-      } else {
-        candidates.push({
-          id: `${s.id}-power`,
-          kind: 'skill',
-          skill: s.id,
-          name: `${def.name} · 威力突破`,
-          description: `升至 Lv.${s.rank + 1}，技能伤害额外提高 25%。`,
-          field: 'power',
-          value: 25,
-        });
-      }
-    }
-
-    // Offer skill evolutions for existing skills with rank >= 3 and !evolved
+    // 1. Evolution candidates: for skills that reached rank >= 3 and not yet evolved
+    const evolutionChoices: Upgrade[] = [];
     for (const s of this.skills.filter((s) => s.rank >= 3 && !s.evolved)) {
       const evo = SKILL_EVOLUTIONS[s.id];
       if (evo) {
-        candidates.push({
+        evolutionChoices.push({
           id: `evo-${s.id}`,
           kind: 'skill',
           skill: s.id,
@@ -3014,14 +2976,55 @@ export class Game {
       }
     }
 
-    const list: Upgrade[] = [];
-    if (candidates.length) {
-      list.push(candidates.shift()!);
-      const more = this.rng.shuffle(candidates);
-      if (more.length) list.push(more[0]);
+    // 2. Learn new skill candidates
+    const learnChoices: Upgrade[] = [];
+    if (availableSkills.length > 0) {
+      const isReplace = this.skills.length >= 6;
+      for (const newSkill of this.rng.shuffle(availableSkills).slice(0, 2)) {
+        learnChoices.push({
+          id: `learn-${newSkill.id}`,
+          kind: 'skill',
+          skill: newSkill.id,
+          name: isReplace ? `替换习得 · ${newSkill.name}` : `习得 · ${newSkill.name}`,
+          description: isReplace
+            ? `【技能槽已满 6/6】选择后可替换遗忘当前一个已有技能。${newSkill.description}`
+            : newSkill.description,
+          value: 0,
+        });
+      }
     }
 
-    // Stat options
+    // 3. Enhancement candidates for existing skills with rank < 3
+    const enhancementChoices: Upgrade[] = [];
+    for (const s of this.skills.filter((s) => s.rank < 3)) {
+      const def = getSkill(s.id);
+      const branches = SKILL_ENHANCEMENTS[s.id];
+      if (branches && branches.length) {
+        for (const b of branches) {
+          enhancementChoices.push({
+            id: `${s.id}-${b.suffix}`,
+            kind: 'skill',
+            skill: s.id,
+            name: `${def.name} · ${b.name}`,
+            description: b.desc(s.rank + 1),
+            field: b.field,
+            value: b.value,
+          });
+        }
+      } else {
+        enhancementChoices.push({
+          id: `${s.id}-power`,
+          kind: 'skill',
+          skill: s.id,
+          name: `${def.name} · 威力突破`,
+          description: `升至 Lv.${s.rank + 1}，技能伤害额外提高 25%。`,
+          field: 'power',
+          value: 25,
+        });
+      }
+    }
+
+    // 4. Stat options
     const statPool: Upgrade[] = [
       {
         id: 'stat-atk',
@@ -3073,17 +3076,58 @@ export class Game {
       },
     ];
 
-    const validStats = statPool.filter(
-      (c) =>
-        effective(c.stat!, (this.stats[c.stat!] ?? 0) + c.value) >
-        (this.stats[c.stat!] ?? 0)
+    const validStats = this.rng.shuffle(
+      statPool.filter(
+        (c) =>
+          effective(c.stat!, (this.stats[c.stat!] ?? 0) + c.value) >
+          (this.stats[c.stat!] ?? 0)
+      )
     );
 
-    for (const c of this.rng.shuffle(validStats)) {
-      if (list.length < 3) list.push(c);
+    const list: Upgrade[] = [];
+
+    // Priority 1: If evolution is unlocked and available, guarantee 1 evolution card
+    if (evolutionChoices.length > 0) {
+      list.push(this.rng.pick(evolutionChoices));
     }
 
-    return list;
+    // Priority 2: Offer a new skill if not full or randomly
+    if (learnChoices.length > 0 && list.length < 3) {
+      if (this.skills.length < 6 || (list.length === 0 && this.rng.next() < 0.3)) {
+        list.push(this.rng.pick(learnChoices));
+      }
+    }
+
+    // Priority 3: Offer 1-2 branch upgrades for unmaxed skills
+    if (enhancementChoices.length > 0 && list.length < 3) {
+      const shuffledEnhancements = this.rng.shuffle(enhancementChoices);
+      for (const enh of shuffledEnhancements) {
+        if (!list.some((existing) => existing.id === enh.id)) {
+          list.push(enh);
+          if (list.length >= 2) break; // Leave room for stats
+        }
+      }
+    }
+
+    // Priority 4: Fill with stats
+    for (const stat of validStats) {
+      if (list.length >= 3) break;
+      if (!list.some((existing) => existing.id === stat.id)) {
+        list.push(stat);
+      }
+    }
+
+    // Priority 5: Fallbacks if still fewer than 3 choices
+    const allRemaining = [...learnChoices, ...enhancementChoices, ...validStats];
+    for (const item of this.rng.shuffle(allRemaining)) {
+      if (list.length >= 3) break;
+      if (!list.some((existing) => existing.id === item.id)) {
+        list.push(item);
+      }
+    }
+
+    // Shuffle the final 3 choices so card positions are varied
+    return this.rng.shuffle(list).slice(0, 3);
   }
 
   choose(id: string, replaceSkillId?: SkillId) {
@@ -3097,6 +3141,7 @@ export class Game {
       if (c.isEvolution) {
         if (s && !s.evolved) {
           s.evolved = true;
+          s.rank = 4;
           const evo = SKILL_EVOLUTIONS[s.id];
           if (evo?.apply) {
             evo.apply(s);

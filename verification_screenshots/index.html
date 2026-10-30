@@ -349,7 +349,8 @@
         <p class="header-sub">在线生产环境 (GitHub Pages) 真机渲染截图 · 944px 视口高度无溢出核验</p>
       </div>
       <div class="stat-pills">
-        <div class="stat-pill success"><strong>37 / 37</strong> 场景全量通过</div>
+        <div class="stat-pill success"><strong>40 / 40</strong> 场景全量通过</div>
+        <div class="stat-pill success"><strong>3 大</strong> 平滑难度节奏核验</div>
         <div class="stat-pill success"><strong>12 / 12</strong> 传奇弹框 9-slice 重构</div>
         <div class="stat-pill success"><strong>100%</strong> 弹窗 0 视口溢出</div>
         <div class="stat-pill"><strong>6 大</strong> 质变系统实机核验</div>
@@ -357,7 +358,8 @@
     </div>
 
     <div class="filter-bar">
-      <button class="filter-btn active" onclick="filterCat('all', this)">全部场景 (37)</button>
+      <button class="filter-btn active" onclick="filterCat('all', this)">全部场景 (40)</button>
+      <button class="filter-btn" onclick="filterCat('pacing', this)" style="border-color: #38bdf8; color: #38bdf8; font-weight: bold;">★ 平滑难度与节奏 (3)</button>
       <button class="filter-btn" onclick="filterCat('mir2-modal', this)" style="border-color: #ffd700; color: #ffd700; font-weight: bold;">★ 传奇1.76弹框大改 (12)</button>
       <button class="filter-btn" onclick="filterCat('lobby', this)">出征大厅与三职 (4)</button>
       <button class="filter-btn" onclick="filterCat('codex', this)">藏经阁与秘籍 (8)</button>
@@ -371,8 +373,68 @@
 <main>
   <div class="grid" id="galleryGrid">
     
-    <div class="card" data-cat="mir2-modal" data-idx="0">
+    <div class="card" data-cat="pacing" data-idx="0">
       <div class="card-thumb-wrap" onclick="openLightbox(0)">
+        <img class="card-thumb" src="./26_wave1_paced_combat.png" alt="第1波稳健实机 · 经验曲线平滑" loading="lazy" />
+        <div class="card-zoom-hint">点击全屏大图查看</div>
+      </div>
+      <div class="card-body">
+        <div class="card-header-row">
+          <span class="card-badge">平滑难度与升级节奏</span>
+          <span class="card-id">#P01</span>
+        </div>
+        <h3 class="card-title">第1波稳健实机 · 经验曲线平滑</h3>
+        <p class="card-desc">重构经验曲线为渐进式多项式算法，首波需击杀15-20只怪物方可升至2级，体验平稳沉浸。</p>
+        <div class="card-audit">
+          <span class="audit-icon">[审计合格]</span>
+          <span class="audit-text">首波35怪, 升级需46经验, 第1波仅升至2级, 告别秒升级与频繁弹框</span>
+        </div>
+      </div>
+    </div>
+    
+
+    <div class="card" data-cat="pacing" data-idx="1">
+      <div class="card-thumb-wrap" onclick="openLightbox(1)">
+        <img class="card-thumb" src="./27_level2_paced_upgrade_choices.png" alt="2级三选一 · 阶梯式进阶构筑" loading="lazy" />
+        <div class="card-zoom-hint">点击全屏大图查看</div>
+      </div>
+      <div class="card-body">
+        <div class="card-header-row">
+          <span class="card-badge">平滑难度与升级节奏</span>
+          <span class="card-id">#P02</span>
+        </div>
+        <h3 class="card-title">2级三选一 · 阶梯式进阶构筑</h3>
+        <p class="card-desc">技能需升至3级后才可觉醒终极演化，2级三选一提供健康的进阶分支与属性选项，彻底消除开局质变秒通关。</p>
+        <div class="card-audit">
+          <span class="audit-icon">[审计合格]</span>
+          <span class="audit-text">展示1技能分支+1属性增幅+1新技能, 未满3级坚决不提前出现终极演化</span>
+        </div>
+      </div>
+    </div>
+    
+
+    <div class="card" data-cat="pacing" data-idx="2">
+      <div class="card-thumb-wrap" onclick="openLightbox(2)">
+        <img class="card-thumb" src="./28_wave4_elite_combat.png" alt="第4波精英战 · 指数级血量与伤害压制" loading="lazy" />
+        <div class="card-zoom-hint">点击全屏大图查看</div>
+      </div>
+      <div class="card-body">
+        <div class="card-header-row">
+          <span class="card-badge">平滑难度与升级节奏</span>
+          <span class="card-id">#P03</span>
+        </div>
+        <h3 class="card-title">第4波精英战 · 指数级血量与伤害压制</h3>
+        <p class="card-desc">波次怪生命与伤害全面采用渐进式增长，Boss与高阶怪物需要持续走位与构筑配合，战斗充满紧张感与成就感。</p>
+        <div class="card-audit">
+          <span class="audit-icon">[审计合格]</span>
+          <span class="audit-text">怪血量按波次指数递增, 精英3.5倍血量, 12波Boss拥8000+血量, 具备真实周旋深度</span>
+        </div>
+      </div>
+    </div>
+    
+
+    <div class="card" data-cat="mir2-modal" data-idx="3">
+      <div class="card-thumb-wrap" onclick="openLightbox(3)">
         <img class="card-thumb" src="./01_mir2_lobby_panel.png" alt="Mir2大厅 · 传奇1.76青铜雕龙画框" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -391,8 +453,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="1">
-      <div class="card-thumb-wrap" onclick="openLightbox(1)">
+    <div class="card" data-cat="mir2-modal" data-idx="4">
+      <div class="card-thumb-wrap" onclick="openLightbox(4)">
         <img class="card-thumb" src="./02_mir2_talent_shrine_modal.png" alt="天赋神龛 · 上古青石龙纹石质弹框" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -411,8 +473,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="2">
-      <div class="card-thumb-wrap" onclick="openLightbox(2)">
+    <div class="card" data-cat="mir2-modal" data-idx="5">
+      <div class="card-thumb-wrap" onclick="openLightbox(5)">
         <img class="card-thumb" src="./03_mir2_chapter_unlock_modal.png" alt="章节解锁 · 矿洞古墓弹框" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -431,8 +493,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="3">
-      <div class="card-thumb-wrap" onclick="openLightbox(3)">
+    <div class="card" data-cat="mir2-modal" data-idx="6">
+      <div class="card-thumb-wrap" onclick="openLightbox(6)">
         <img class="card-thumb" src="./04_mir2_compendium_codex_modal.png" alt="玛法藏经阁 · 传世武学神兵图鉴" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -451,8 +513,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="4">
-      <div class="card-thumb-wrap" onclick="openLightbox(4)">
+    <div class="card" data-cat="mir2-modal" data-idx="7">
+      <div class="card-thumb-wrap" onclick="openLightbox(7)">
         <img class="card-thumb" src="./05_mir2_gameplay_guide_modal.png" alt="玩法秘籍 · 盟重遗卷指南说明" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -471,8 +533,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="5">
-      <div class="card-thumb-wrap" onclick="openLightbox(5)">
+    <div class="card" data-cat="mir2-modal" data-idx="8">
+      <div class="card-thumb-wrap" onclick="openLightbox(8)">
         <img class="card-thumb" src="./06_mir2_sandbox_modal.png" alt="开发者测试沙盒 · 快速调优控制台" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -491,8 +553,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="6">
-      <div class="card-thumb-wrap" onclick="openLightbox(6)">
+    <div class="card" data-cat="mir2-modal" data-idx="9">
+      <div class="card-thumb-wrap" onclick="openLightbox(9)">
         <img class="card-thumb" src="./07_mir2_f10_equipment_modal.png" alt="勇士神装与八格面板 (F10)" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -511,8 +573,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="7">
-      <div class="card-thumb-wrap" onclick="openLightbox(7)">
+    <div class="card" data-cat="mir2-modal" data-idx="10">
+      <div class="card-thumb-wrap" onclick="openLightbox(10)">
         <img class="card-thumb" src="./08_mir2_upgrade_3choices_modal.png" alt="境界晋升 · 绝学参悟三选一" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -531,8 +593,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="8">
-      <div class="card-thumb-wrap" onclick="openLightbox(8)">
+    <div class="card" data-cat="mir2-modal" data-idx="11">
+      <div class="card-thumb-wrap" onclick="openLightbox(11)">
         <img class="card-thumb" src="./09_mir2_replace_skill_modal.png" alt="技能领悟 · 技能替换遗忘弹框" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -551,8 +613,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="9">
-      <div class="card-thumb-wrap" onclick="openLightbox(9)">
+    <div class="card" data-cat="mir2-modal" data-idx="12">
+      <div class="card-thumb-wrap" onclick="openLightbox(12)">
         <img class="card-thumb" src="./10_mir2_merchant_shop_modal.png" alt="比奇行脚商人 · 波次补给黑市" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -571,8 +633,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="10">
-      <div class="card-thumb-wrap" onclick="openLightbox(10)">
+    <div class="card" data-cat="mir2-modal" data-idx="13">
+      <div class="card-thumb-wrap" onclick="openLightbox(13)">
         <img class="card-thumb" src="./11_mir2_pause_modal.png" alt="游戏暂停 · 战况总览与设置菜单" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -591,8 +653,8 @@
     </div>
     
 
-    <div class="card" data-cat="mir2-modal" data-idx="11">
-      <div class="card-thumb-wrap" onclick="openLightbox(11)">
+    <div class="card" data-cat="mir2-modal" data-idx="14">
+      <div class="card-thumb-wrap" onclick="openLightbox(14)">
         <img class="card-thumb" src="./12_mir2_victory_result_modal.png" alt="玛法凯旋 / 喋血荒野 · 战局结算终板" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -611,8 +673,8 @@
     </div>
     
 
-    <div class="card" data-cat="lobby" data-idx="12">
-      <div class="card-thumb-wrap" onclick="openLightbox(12)">
+    <div class="card" data-cat="lobby" data-idx="15">
+      <div class="card-thumb-wrap" onclick="openLightbox(15)">
         <img class="card-thumb" src="./01_lobby_wizard.png" alt="出征大厅 · 法师界面" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -631,8 +693,8 @@
     </div>
     
 
-    <div class="card" data-cat="lobby" data-idx="13">
-      <div class="card-thumb-wrap" onclick="openLightbox(13)">
+    <div class="card" data-cat="lobby" data-idx="16">
+      <div class="card-thumb-wrap" onclick="openLightbox(16)">
         <img class="card-thumb" src="./02_lobby_taoist.png" alt="出征大厅 · 道士切换" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -651,8 +713,8 @@
     </div>
     
 
-    <div class="card" data-cat="lobby" data-idx="14">
-      <div class="card-thumb-wrap" onclick="openLightbox(14)">
+    <div class="card" data-cat="lobby" data-idx="17">
+      <div class="card-thumb-wrap" onclick="openLightbox(17)">
         <img class="card-thumb" src="./03_lobby_warrior.png" alt="出征大厅 · 战士切换" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -671,8 +733,8 @@
     </div>
     
 
-    <div class="card" data-cat="lobby" data-idx="15">
-      <div class="card-thumb-wrap" onclick="openLightbox(15)">
+    <div class="card" data-cat="lobby" data-idx="18">
+      <div class="card-thumb-wrap" onclick="openLightbox(18)">
         <img class="card-thumb" src="./04_lobby_all_chapters.png" alt="章节选择 · 全七大关卡一览" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -691,8 +753,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="16">
-      <div class="card-thumb-wrap" onclick="openLightbox(16)">
+    <div class="card" data-cat="codex" data-idx="19">
+      <div class="card-thumb-wrap" onclick="openLightbox(19)">
         <img class="card-thumb" src="./05_talents_shrine.png" alt="结晶祭坛 · 永久天赋神龛" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -711,8 +773,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="17">
-      <div class="card-thumb-wrap" onclick="openLightbox(17)">
+    <div class="card" data-cat="codex" data-idx="20">
+      <div class="card-thumb-wrap" onclick="openLightbox(20)">
         <img class="card-thumb" src="./06_compendium_skills.png" alt="玛法藏经阁 · 全系技能图鉴" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -731,8 +793,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="18">
-      <div class="card-thumb-wrap" onclick="openLightbox(18)">
+    <div class="card" data-cat="codex" data-idx="21">
+      <div class="card-thumb-wrap" onclick="openLightbox(21)">
         <img class="card-thumb" src="./07_compendium_weapons.png" alt="玛法藏经阁 · 全系神兵图鉴" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -751,8 +813,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="19">
-      <div class="card-thumb-wrap" onclick="openLightbox(19)">
+    <div class="card" data-cat="codex" data-idx="22">
+      <div class="card-thumb-wrap" onclick="openLightbox(22)">
         <img class="card-thumb" src="./08_compendium_armors.png" alt="玛法藏经阁 · 防具饰品与特戒图鉴" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -771,8 +833,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="20">
-      <div class="card-thumb-wrap" onclick="openLightbox(20)">
+    <div class="card" data-cat="codex" data-idx="23">
+      <div class="card-thumb-wrap" onclick="openLightbox(23)">
         <img class="card-thumb" src="./09_guide_rules.png" alt="玩法秘籍 · 基础规则与波次机制" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -791,8 +853,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="21">
-      <div class="card-thumb-wrap" onclick="openLightbox(21)">
+    <div class="card" data-cat="codex" data-idx="24">
+      <div class="card-thumb-wrap" onclick="openLightbox(24)">
         <img class="card-thumb" src="./10_guide_classes.png" alt="玩法秘籍 · 三职精要" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -811,8 +873,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="22">
-      <div class="card-thumb-wrap" onclick="openLightbox(22)">
+    <div class="card" data-cat="codex" data-idx="25">
+      <div class="card-thumb-wrap" onclick="openLightbox(25)">
         <img class="card-thumb" src="./11_guide_stats.png" alt="玩法秘籍 · 属性与特戒机制" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -831,8 +893,8 @@
     </div>
     
 
-    <div class="card" data-cat="codex" data-idx="23">
-      <div class="card-thumb-wrap" onclick="openLightbox(23)">
+    <div class="card" data-cat="codex" data-idx="26">
+      <div class="card-thumb-wrap" onclick="openLightbox(26)">
         <img class="card-thumb" src="./12_guide_controls.png" alt="玩法秘籍 · 操作键位与存档" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -851,8 +913,8 @@
     </div>
     
 
-    <div class="card" data-cat="battle" data-idx="24">
-      <div class="card-thumb-wrap" onclick="openLightbox(24)">
+    <div class="card" data-cat="battle" data-idx="27">
+      <div class="card-thumb-wrap" onclick="openLightbox(27)">
         <img class="card-thumb" src="./13_battle_active_hud_and_shadows.png" alt="实机战斗 · HUD与地面柔和阴影" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -871,8 +933,8 @@
     </div>
     
 
-    <div class="card" data-cat="battle" data-idx="25">
-      <div class="card-thumb-wrap" onclick="openLightbox(25)">
+    <div class="card" data-cat="battle" data-idx="28">
+      <div class="card-thumb-wrap" onclick="openLightbox(28)">
         <img class="card-thumb" src="./14_battle_ground_potions_and_tiered_gold.png" alt="地面掉落 · 真实血瓶与三阶金币堆" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -891,8 +953,8 @@
     </div>
     
 
-    <div class="card" data-cat="battle" data-idx="26">
-      <div class="card-thumb-wrap" onclick="openLightbox(26)">
+    <div class="card" data-cat="battle" data-idx="29">
+      <div class="card-thumb-wrap" onclick="openLightbox(29)">
         <img class="card-thumb" src="./15_battle_potion_pickup_healing.png" alt="拾取血瓶 · 治愈飘字与血球回升" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -911,8 +973,8 @@
     </div>
     
 
-    <div class="card" data-cat="skills" data-idx="27">
-      <div class="card-thumb-wrap" onclick="openLightbox(27)">
+    <div class="card" data-cat="skills" data-idx="30">
+      <div class="card-thumb-wrap" onclick="openLightbox(30)">
         <img class="card-thumb" src="./16_battle_golden_eggshell_shield.png" alt="法师魔法盾 · 经典金黄蛋壳盾" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -931,8 +993,8 @@
     </div>
     
 
-    <div class="card" data-cat="skills" data-idx="28">
-      <div class="card-thumb-wrap" onclick="openLightbox(28)">
+    <div class="card" data-cat="skills" data-idx="31">
+      <div class="card-thumb-wrap" onclick="openLightbox(31)">
         <img class="card-thumb" src="./17_battle_cyan_shield.png" alt="法师魔法盾 · 幽蓝护体盾形态" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -951,8 +1013,8 @@
     </div>
     
 
-    <div class="card" data-cat="skills" data-idx="29">
-      <div class="card-thumb-wrap" onclick="openLightbox(29)">
+    <div class="card" data-cat="skills" data-idx="32">
+      <div class="card-thumb-wrap" onclick="openLightbox(32)">
         <img class="card-thumb" src="./18_battle_long_hellfire_beam.png" alt="技能质变 · 550px 贯穿巨型地狱火" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -971,8 +1033,8 @@
     </div>
     
 
-    <div class="card" data-cat="skills" data-idx="30">
-      <div class="card-thumb-wrap" onclick="openLightbox(30)">
+    <div class="card" data-cat="skills" data-idx="33">
+      <div class="card-thumb-wrap" onclick="openLightbox(33)">
         <img class="card-thumb" src="./19_battle_evolved_icestorm_blizzard.png" alt="技能质变 · 180px 觉醒暴风雪冰咆哮" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -991,8 +1053,8 @@
     </div>
     
 
-    <div class="card" data-cat="modals" data-idx="31">
-      <div class="card-thumb-wrap" onclick="openLightbox(31)">
+    <div class="card" data-cat="modals" data-idx="34">
+      <div class="card-thumb-wrap" onclick="openLightbox(34)">
         <img class="card-thumb" src="./20_upgrade_3choices_modal.png" alt="升级三选一 · 技能质变选择卡牌" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -1011,8 +1073,8 @@
     </div>
     
 
-    <div class="card" data-cat="modals" data-idx="32">
-      <div class="card-thumb-wrap" onclick="openLightbox(32)">
+    <div class="card" data-cat="modals" data-idx="35">
+      <div class="card-thumb-wrap" onclick="openLightbox(35)">
         <img class="card-thumb" src="./21_f10_character_equipment_modal.png" alt="F10 面板 · 原版八格神装与属性" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -1031,8 +1093,8 @@
     </div>
     
 
-    <div class="card" data-cat="modals" data-idx="33">
-      <div class="card-thumb-wrap" onclick="openLightbox(33)">
+    <div class="card" data-cat="modals" data-idx="36">
+      <div class="card-thumb-wrap" onclick="openLightbox(36)">
         <img class="card-thumb" src="./22_merchant_shop_modal.png" alt="行脚商人 · 波次间歇神装货架" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -1051,8 +1113,8 @@
     </div>
     
 
-    <div class="card" data-cat="modals" data-idx="34">
-      <div class="card-thumb-wrap" onclick="openLightbox(34)">
+    <div class="card" data-cat="modals" data-idx="37">
+      <div class="card-thumb-wrap" onclick="openLightbox(37)">
         <img class="card-thumb" src="./23_pause_menu_modal.png" alt="系统暂停 · 战况统计与音频调优" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -1071,8 +1133,8 @@
     </div>
     
 
-    <div class="card" data-cat="modals" data-idx="35">
-      <div class="card-thumb-wrap" onclick="openLightbox(35)">
+    <div class="card" data-cat="modals" data-idx="38">
+      <div class="card-thumb-wrap" onclick="openLightbox(38)">
         <img class="card-thumb" src="./24_sandbox_console_modal.png" alt="开发者沙盒 · 快速调优控制台 (~ / F1)" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -1091,8 +1153,8 @@
     </div>
     
 
-    <div class="card" data-cat="modals" data-idx="36">
-      <div class="card-thumb-wrap" onclick="openLightbox(36)">
+    <div class="card" data-cat="modals" data-idx="39">
+      <div class="card-thumb-wrap" onclick="openLightbox(39)">
         <img class="card-thumb" src="./25_boss_battle_and_victory.png" alt="首领战斩杀 · 玛法凯旋胜利结算" loading="lazy" />
         <div class="card-zoom-hint">点击全屏大图查看</div>
       </div>
@@ -1135,7 +1197,7 @@
 </div>
 
 <script>
-  const ITEMS = [{"id": "M01", "file": "01_mir2_lobby_panel.png", "title": "Mir2大厅 · 传奇1.76青铜雕龙画框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 904px / 944px (完全容纳, 9-slice青铜画框, 双龙黑珠顶额, 3D凸起按钮)", "desc": "彻底去除现代网页圆角，采用传奇原版青铜浮雕双龙顶额与沉香木底板。"}, {"id": "M02", "file": "02_mir2_talent_shrine_modal.png", "title": "天赋神龛 · 上古青石龙纹石质弹框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 517px / 944px (完全容纳, 9-slice青石画框, 铜质红叉关闭钮, 烫金宋体)", "desc": "青石龙纹九宫格神龛，右上角配原版红叉关闭钮，古朴典雅。"}, {"id": "M03", "file": "03_mir2_chapter_unlock_modal.png", "title": "章节解锁 · 矿洞古墓弹框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 350px / 944px (完全容纳, 9-slice青铜画框, 双龙顶额, 铜铸按键)", "desc": "紧凑型关卡解锁弹框，内嵌沉入式结晶消耗面板与复古按钮。"}, {"id": "M04", "file": "04_mir2_compendium_codex_modal.png", "title": "玛法藏经阁 · 传世武学神兵图鉴", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 904px / 944px (完全容纳, 9-slice青石龙纹画框, 纯正宋体, 深色卷轴卡)", "desc": "全景藏经阁界面，暗金金属分页标签，卷轴式技能卡片与独立金铜滚动条。"}, {"id": "M05", "file": "05_mir2_gameplay_guide_modal.png", "title": "玩法秘籍 · 盟重遗卷指南说明", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 678px / 944px (完全容纳, 9-slice青铜画框, 4大金属标签, 铜条按键卡)", "desc": "传奇风格规则指南，羊皮卷色调文字排版与铜框键位说明。"}, {"id": "M06", "file": "06_mir2_sandbox_modal.png", "title": "开发者测试沙盒 · 快速调优控制台", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 564px / 944px (完全容纳, 9-slice青铜画框, 彻底告别现代蓝色边框)", "desc": "将原先现代平淡的蓝色开发者控制台全面重铸为传奇古典青铜铁甲风格。"}, {"id": "M07", "file": "07_mir2_f10_equipment_modal.png", "title": "勇士神装与八格面板 (F10)", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 520px / 944px (完全容纳, 1.76 原版八格装备外框与战斗属性一览)", "desc": "完美复刻端游F10界面，红木内衬，武器衣服头盔项链手镯戒指一目了然。"}, {"id": "M08", "file": "08_mir2_upgrade_3choices_modal.png", "title": "境界晋升 · 绝学参悟三选一", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 412px / 944px (完全容纳, 秘卷式深色卡片, [1][2][3]金边按键标识)", "desc": "三选一技能升级弹框，立体凸起金刻按键，选卡浮动光晕与质变专属金龙光晕。"}, {"id": "M09", "file": "09_mir2_replace_skill_modal.png", "title": "技能领悟 · 技能替换遗忘弹框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 559px / 944px (完全容纳, 6槽位遗忘选择面板, 铜铸红叉关闭钮)", "desc": "技能槽达上限时弹出，深色原版武学卡片陈列，提供明确的遗忘替换选择。"}, {"id": "M10", "file": "10_mir2_merchant_shop_modal.png", "title": "比奇行脚商人 · 波次补给黑市", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 805px / 944px (完全容纳, 4栏位货架卡片, 八格装备联动与回购折价)", "desc": "波次通关补给界面，立体购买与锁定按钮，支持底部八格装备即时折价出售。"}, {"id": "M11", "file": "11_mir2_pause_modal.png", "title": "游戏暂停 · 战况总览与设置菜单", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 904px / 944px (完全容纳, 即时战斗属性网格, 穿戴神装展示, 金色滑块)", "desc": "战斗暂停界面，沉入式战绩统计、八格神装预览、被动卷轴与立体金属操作按钮。"}, {"id": "M12", "file": "12_mir2_victory_result_modal.png", "title": "玛法凯旋 / 喋血荒野 · 战局结算终板", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 478px / 944px (完全容纳, 5联统计格, 技能输出伤害柱状图, 种子复制)", "desc": "斩杀Boss通关或力战至终局的战绩结算大板，双龙顶额与烫金凯旋铭文。"}, {"id": "01", "file": "01_lobby_wizard.png", "title": "出征大厅 · 法师界面", "cat": "lobby", "catName": "出征大厅与三职", "audit": "高度: 850px / 944px (完全容纳, 留白94px, overflow-y: auto)", "desc": "法师职业立绘、初始属性展示、全章节选关列表与核心出征入口。"}, {"id": "02", "file": "02_lobby_taoist.png", "title": "出征大厅 · 道士切换", "cat": "lobby", "catName": "出征大厅与三职", "audit": "高度: 850px / 944px (完全容纳)", "desc": "道士立绘、道术攻击成长、火符与神兽特技即时切换反馈。"}, {"id": "03", "file": "03_lobby_warrior.png", "title": "出征大厅 · 战士切换", "cat": "lobby", "catName": "出征大厅与三职", "audit": "高度: 850px / 944px (完全容纳)", "desc": "战士厚重铠甲立绘、高防高血参数与近战剑法说明。"}, {"id": "04", "file": "04_lobby_all_chapters.png", "title": "章节选择 · 全七大关卡一览", "cat": "lobby", "catName": "出征大厅与三职", "audit": "关卡网格完整排列，全部解锁且支持平滑选择", "desc": "比奇、矿洞、祖玛、石墓、盟重、苍月、赤月峡谷七大关卡与首领一览。"}, {"id": "05", "file": "05_talents_shrine.png", "title": "结晶祭坛 · 永久天赋神龛", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 473px / 944px (完全容纳, 居中留白471px)", "desc": "体魄、强攻、疾步、幸运等天赋加成计算与结晶消耗结算。"}, {"id": "06", "file": "06_compendium_skills.png", "title": "玛法藏经阁 · 全系技能图鉴", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 831px / 944px (完全容纳, overflow-y: auto)", "desc": "三职业所有主动/被动技能列表、质变条件与觉醒羁绊解析。"}, {"id": "07", "file": "07_compendium_weapons.png", "title": "玛法藏经阁 · 全系神兵图鉴", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 831px / 944px (完全容纳)", "desc": "裁决之杖、骨玉权杖、龙纹剑、嗜魂法杖、屠龙等全系神兵属性。"}, {"id": "08", "file": "08_compendium_armors.png", "title": "玛法藏经阁 · 防具饰品与特戒图鉴", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 831px / 944px (完全容纳)", "desc": "恶魔长袍、战神盔甲、红魔/记忆套装属性与复活/麻痹/护身三大特戒。"}, {"id": "09", "file": "09_guide_rules.png", "title": "玩法秘籍 · 基础规则与波次机制", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "12波次推进机制、首领决战、掉落吸附规则指南。"}, {"id": "10", "file": "10_guide_classes.png", "title": "玩法秘籍 · 三职精要", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "法师爆发风筝、道士双防续航与神兽抗怪、战士高防割草解析。"}, {"id": "11", "file": "11_guide_stats.png", "title": "玩法秘籍 · 属性与特戒机制", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "攻/法/道上下限机制、幸运9刀刀最大伤害、三大特戒触发说明。"}, {"id": "12", "file": "12_guide_controls.png", "title": "玩法秘籍 · 操作键位与存档", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "WASD操作、F10装备、ESC暂停、快捷调试与本地/云端存档导入导出。"}, {"id": "13", "file": "13_battle_active_hud_and_shadows.png", "title": "实机战斗 · HUD与地面柔和阴影", "cat": "battle", "catName": "实机战斗与掉落", "audit": "800x133复古主控台、红蓝太极血球、怪物与角色原版柔和椭圆阴影", "desc": "英雄与魔物脚下真实半透明椭圆投影，自然融入地形。"}, {"id": "14", "file": "14_battle_ground_potions_and_tiered_gold.png", "title": "地面掉落 · 真实血瓶与三阶金币堆", "cat": "battle", "catName": "实机战斗与掉落", "audit": "小红瓶(+35)、大红瓶(+75)呼吸光；小堆/中堆/巨型金山三档清晰可辨", "desc": "掉落物区分小/大红药水与金币量级，视觉层级分明。"}, {"id": "15", "file": "15_battle_potion_pickup_healing.png", "title": "拾取血瓶 · 治愈飘字与血球回升", "cat": "battle", "catName": "实机战斗与掉落", "audit": "角色头顶弹出绿色柔和飘字 +35 HP，气血即时恢复", "desc": "触碰血瓶即时触发治疗与视觉数值反馈。"}, {"id": "16", "file": "16_battle_golden_eggshell_shield.png", "title": "法师魔法盾 · 经典金黄蛋壳盾", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "原版金黄蛋壳轮廓、高亮金光与顺逆双层能量旋转环", "desc": "还原玩家记忆中的热血传奇经典金黄色法师魔法盾形态。"}, {"id": "17", "file": "17_battle_cyan_shield.png", "title": "法师魔法盾 · 幽蓝护体盾形态", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "幽蓝冷光能量罩与外散粒子，支持沙盒自由切换", "desc": "提供可自由切换的幽蓝版本，满足不同画风偏好。"}, {"id": "18", "file": "18_battle_long_hellfire_beam.png", "title": "技能质变 · 550px 贯穿巨型地狱火", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "550像素全屏纵深贯穿烈焰长廊，多层火核与焦痕扩散", "desc": "解决地狱火质变后视觉效果不明显问题，呈现极具冲击力的烈焰火柱。"}, {"id": "19", "file": "19_battle_evolved_icestorm_blizzard.png", "title": "技能质变 · 180px 觉醒暴风雪冰咆哮", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "180像素超大范围极寒风暴、外圈轨道冰棱结晶与地面冻结裂纹", "desc": "解决冰咆哮范围质变视觉无变化问题，呈现全屏暴风雪旋涡。"}, {"id": "20", "file": "20_upgrade_3choices_modal.png", "title": "升级三选一 · 技能质变选择卡牌", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 376px / 944px (完全容纳, 留白568px, 支持[1/2/3]快捷键)", "desc": "局内升级技能卡牌横向排布，金色质变徽记标明成长方向。"}, {"id": "21", "file": "21_f10_character_equipment_modal.png", "title": "F10 面板 · 原版八格神装与属性", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 614px / 944px (完全容纳, 留白330px)", "desc": "原版八格装备栏位、幸运9最大伤害机制与红魔套装激活展示。"}, {"id": "22", "file": "22_merchant_shop_modal.png", "title": "行脚商人 · 波次间歇神装货架", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 791px / 944px (完全容纳, 留白153px)", "desc": "波次清剿结算，货架陈列装备、特戒、祝福油，支持锁仓与刷新。"}, {"id": "23", "file": "23_pause_menu_modal.png", "title": "系统暂停 · 战况统计与音频调优", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 850px / 944px (完全容纳, 留白94px)", "desc": "暂停展示出征战况、持有技能、音效与音乐音量无级调节。"}, {"id": "24", "file": "24_sandbox_console_modal.png", "title": "开发者沙盒 · 快速调优控制台 (~ / F1)", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 497px / 944px (完全容纳, 留白447px)", "desc": "支持一键无敌、0冷却、跳波、Boss直传与魔法盾黄/蓝形态一键切换。"}, {"id": "25", "file": "25_boss_battle_and_victory.png", "title": "首领战斩杀 · 玛法凯旋胜利结算", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 527px / 944px (完全容纳, 留白417px)", "desc": "决战斩杀终极Boss后的凯旋面板，展示生存时间、击杀榜、结晶与技能DPS排行。"}];
+  const ITEMS = [{"id": "P01", "file": "26_wave1_paced_combat.png", "title": "第1波稳健实机 · 经验曲线平滑", "cat": "pacing", "catName": "平滑难度与升级节奏", "audit": "首波35怪, 升级需46经验, 第1波仅升至2级, 告别秒升级与频繁弹框", "desc": "重构经验曲线为渐进式多项式算法，首波需击杀15-20只怪物方可升至2级，体验平稳沉浸。"}, {"id": "P02", "file": "27_level2_paced_upgrade_choices.png", "title": "2级三选一 · 阶梯式进阶构筑", "cat": "pacing", "catName": "平滑难度与升级节奏", "audit": "展示1技能分支+1属性增幅+1新技能, 未满3级坚决不提前出现终极演化", "desc": "技能需升至3级后才可觉醒终极演化，2级三选一提供健康的进阶分支与属性选项，彻底消除开局质变秒通关。"}, {"id": "P03", "file": "28_wave4_elite_combat.png", "title": "第4波精英战 · 指数级血量与伤害压制", "cat": "pacing", "catName": "平滑难度与升级节奏", "audit": "怪血量按波次指数递增, 精英3.5倍血量, 12波Boss拥8000+血量, 具备真实周旋深度", "desc": "波次怪生命与伤害全面采用渐进式增长，Boss与高阶怪物需要持续走位与构筑配合，战斗充满紧张感与成就感。"}, {"id": "M01", "file": "01_mir2_lobby_panel.png", "title": "Mir2大厅 · 传奇1.76青铜雕龙画框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 904px / 944px (完全容纳, 9-slice青铜画框, 双龙黑珠顶额, 3D凸起按钮)", "desc": "彻底去除现代网页圆角，采用传奇原版青铜浮雕双龙顶额与沉香木底板。"}, {"id": "M02", "file": "02_mir2_talent_shrine_modal.png", "title": "天赋神龛 · 上古青石龙纹石质弹框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 517px / 944px (完全容纳, 9-slice青石画框, 铜质红叉关闭钮, 烫金宋体)", "desc": "青石龙纹九宫格神龛，右上角配原版红叉关闭钮，古朴典雅。"}, {"id": "M03", "file": "03_mir2_chapter_unlock_modal.png", "title": "章节解锁 · 矿洞古墓弹框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 350px / 944px (完全容纳, 9-slice青铜画框, 双龙顶额, 铜铸按键)", "desc": "紧凑型关卡解锁弹框，内嵌沉入式结晶消耗面板与复古按钮。"}, {"id": "M04", "file": "04_mir2_compendium_codex_modal.png", "title": "玛法藏经阁 · 传世武学神兵图鉴", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 904px / 944px (完全容纳, 9-slice青石龙纹画框, 纯正宋体, 深色卷轴卡)", "desc": "全景藏经阁界面，暗金金属分页标签，卷轴式技能卡片与独立金铜滚动条。"}, {"id": "M05", "file": "05_mir2_gameplay_guide_modal.png", "title": "玩法秘籍 · 盟重遗卷指南说明", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 678px / 944px (完全容纳, 9-slice青铜画框, 4大金属标签, 铜条按键卡)", "desc": "传奇风格规则指南，羊皮卷色调文字排版与铜框键位说明。"}, {"id": "M06", "file": "06_mir2_sandbox_modal.png", "title": "开发者测试沙盒 · 快速调优控制台", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 564px / 944px (完全容纳, 9-slice青铜画框, 彻底告别现代蓝色边框)", "desc": "将原先现代平淡的蓝色开发者控制台全面重铸为传奇古典青铜铁甲风格。"}, {"id": "M07", "file": "07_mir2_f10_equipment_modal.png", "title": "勇士神装与八格面板 (F10)", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 520px / 944px (完全容纳, 1.76 原版八格装备外框与战斗属性一览)", "desc": "完美复刻端游F10界面，红木内衬，武器衣服头盔项链手镯戒指一目了然。"}, {"id": "M08", "file": "08_mir2_upgrade_3choices_modal.png", "title": "境界晋升 · 绝学参悟三选一", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 412px / 944px (完全容纳, 秘卷式深色卡片, [1][2][3]金边按键标识)", "desc": "三选一技能升级弹框，立体凸起金刻按键，选卡浮动光晕与质变专属金龙光晕。"}, {"id": "M09", "file": "09_mir2_replace_skill_modal.png", "title": "技能领悟 · 技能替换遗忘弹框", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 559px / 944px (完全容纳, 6槽位遗忘选择面板, 铜铸红叉关闭钮)", "desc": "技能槽达上限时弹出，深色原版武学卡片陈列，提供明确的遗忘替换选择。"}, {"id": "M10", "file": "10_mir2_merchant_shop_modal.png", "title": "比奇行脚商人 · 波次补给黑市", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 805px / 944px (完全容纳, 4栏位货架卡片, 八格装备联动与回购折价)", "desc": "波次通关补给界面，立体购买与锁定按钮，支持底部八格装备即时折价出售。"}, {"id": "M11", "file": "11_mir2_pause_modal.png", "title": "游戏暂停 · 战况总览与设置菜单", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 904px / 944px (完全容纳, 即时战斗属性网格, 穿戴神装展示, 金色滑块)", "desc": "战斗暂停界面，沉入式战绩统计、八格神装预览、被动卷轴与立体金属操作按钮。"}, {"id": "M12", "file": "12_mir2_victory_result_modal.png", "title": "玛法凯旋 / 喋血荒野 · 战局结算终板", "cat": "mir2-modal", "catName": "传奇1.76弹框重构", "audit": "高度: 478px / 944px (完全容纳, 5联统计格, 技能输出伤害柱状图, 种子复制)", "desc": "斩杀Boss通关或力战至终局的战绩结算大板，双龙顶额与烫金凯旋铭文。"}, {"id": "01", "file": "01_lobby_wizard.png", "title": "出征大厅 · 法师界面", "cat": "lobby", "catName": "出征大厅与三职", "audit": "高度: 850px / 944px (完全容纳, 留白94px, overflow-y: auto)", "desc": "法师职业立绘、初始属性展示、全章节选关列表与核心出征入口。"}, {"id": "02", "file": "02_lobby_taoist.png", "title": "出征大厅 · 道士切换", "cat": "lobby", "catName": "出征大厅与三职", "audit": "高度: 850px / 944px (完全容纳)", "desc": "道士立绘、道术攻击成长、火符与神兽特技即时切换反馈。"}, {"id": "03", "file": "03_lobby_warrior.png", "title": "出征大厅 · 战士切换", "cat": "lobby", "catName": "出征大厅与三职", "audit": "高度: 850px / 944px (完全容纳)", "desc": "战士厚重铠甲立绘、高防高血参数与近战剑法说明。"}, {"id": "04", "file": "04_lobby_all_chapters.png", "title": "章节选择 · 全七大关卡一览", "cat": "lobby", "catName": "出征大厅与三职", "audit": "关卡网格完整排列，全部解锁且支持平滑选择", "desc": "比奇、矿洞、祖玛、石墓、盟重、苍月、赤月峡谷七大关卡与首领一览。"}, {"id": "05", "file": "05_talents_shrine.png", "title": "结晶祭坛 · 永久天赋神龛", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 473px / 944px (完全容纳, 居中留白471px)", "desc": "体魄、强攻、疾步、幸运等天赋加成计算与结晶消耗结算。"}, {"id": "06", "file": "06_compendium_skills.png", "title": "玛法藏经阁 · 全系技能图鉴", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 831px / 944px (完全容纳, overflow-y: auto)", "desc": "三职业所有主动/被动技能列表、质变条件与觉醒羁绊解析。"}, {"id": "07", "file": "07_compendium_weapons.png", "title": "玛法藏经阁 · 全系神兵图鉴", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 831px / 944px (完全容纳)", "desc": "裁决之杖、骨玉权杖、龙纹剑、嗜魂法杖、屠龙等全系神兵属性。"}, {"id": "08", "file": "08_compendium_armors.png", "title": "玛法藏经阁 · 防具饰品与特戒图鉴", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 831px / 944px (完全容纳)", "desc": "恶魔长袍、战神盔甲、红魔/记忆套装属性与复活/麻痹/护身三大特戒。"}, {"id": "09", "file": "09_guide_rules.png", "title": "玩法秘籍 · 基础规则与波次机制", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "12波次推进机制、首领决战、掉落吸附规则指南。"}, {"id": "10", "file": "10_guide_classes.png", "title": "玩法秘籍 · 三职精要", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "法师爆发风筝、道士双防续航与神兽抗怪、战士高防割草解析。"}, {"id": "11", "file": "11_guide_stats.png", "title": "玩法秘籍 · 属性与特戒机制", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "攻/法/道上下限机制、幸运9刀刀最大伤害、三大特戒触发说明。"}, {"id": "12", "file": "12_guide_controls.png", "title": "玩法秘籍 · 操作键位与存档", "cat": "codex", "catName": "藏经阁与秘籍", "audit": "高度: 602px / 944px (完全容纳)", "desc": "WASD操作、F10装备、ESC暂停、快捷调试与本地/云端存档导入导出。"}, {"id": "13", "file": "13_battle_active_hud_and_shadows.png", "title": "实机战斗 · HUD与地面柔和阴影", "cat": "battle", "catName": "实机战斗与掉落", "audit": "800x133复古主控台、红蓝太极血球、怪物与角色原版柔和椭圆阴影", "desc": "英雄与魔物脚下真实半透明椭圆投影，自然融入地形。"}, {"id": "14", "file": "14_battle_ground_potions_and_tiered_gold.png", "title": "地面掉落 · 真实血瓶与三阶金币堆", "cat": "battle", "catName": "实机战斗与掉落", "audit": "小红瓶(+35)、大红瓶(+75)呼吸光；小堆/中堆/巨型金山三档清晰可辨", "desc": "掉落物区分小/大红药水与金币量级，视觉层级分明。"}, {"id": "15", "file": "15_battle_potion_pickup_healing.png", "title": "拾取血瓶 · 治愈飘字与血球回升", "cat": "battle", "catName": "实机战斗与掉落", "audit": "角色头顶弹出绿色柔和飘字 +35 HP，气血即时恢复", "desc": "触碰血瓶即时触发治疗与视觉数值反馈。"}, {"id": "16", "file": "16_battle_golden_eggshell_shield.png", "title": "法师魔法盾 · 经典金黄蛋壳盾", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "原版金黄蛋壳轮廓、高亮金光与顺逆双层能量旋转环", "desc": "还原玩家记忆中的热血传奇经典金黄色法师魔法盾形态。"}, {"id": "17", "file": "17_battle_cyan_shield.png", "title": "法师魔法盾 · 幽蓝护体盾形态", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "幽蓝冷光能量罩与外散粒子，支持沙盒自由切换", "desc": "提供可自由切换的幽蓝版本，满足不同画风偏好。"}, {"id": "18", "file": "18_battle_long_hellfire_beam.png", "title": "技能质变 · 550px 贯穿巨型地狱火", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "550像素全屏纵深贯穿烈焰长廊，多层火核与焦痕扩散", "desc": "解决地狱火质变后视觉效果不明显问题，呈现极具冲击力的烈焰火柱。"}, {"id": "19", "file": "19_battle_evolved_icestorm_blizzard.png", "title": "技能质变 · 180px 觉醒暴风雪冰咆哮", "cat": "skills", "catName": "技能质变与魔法盾", "audit": "180像素超大范围极寒风暴、外圈轨道冰棱结晶与地面冻结裂纹", "desc": "解决冰咆哮范围质变视觉无变化问题，呈现全屏暴风雪旋涡。"}, {"id": "20", "file": "20_upgrade_3choices_modal.png", "title": "升级三选一 · 技能质变选择卡牌", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 376px / 944px (完全容纳, 留白568px, 支持[1/2/3]快捷键)", "desc": "局内升级技能卡牌横向排布，金色质变徽记标明成长方向。"}, {"id": "21", "file": "21_f10_character_equipment_modal.png", "title": "F10 面板 · 原版八格神装与属性", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 614px / 944px (完全容纳, 留白330px)", "desc": "原版八格装备栏位、幸运9最大伤害机制与红魔套装激活展示。"}, {"id": "22", "file": "22_merchant_shop_modal.png", "title": "行脚商人 · 波次间歇神装货架", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 791px / 944px (完全容纳, 留白153px)", "desc": "波次清剿结算，货架陈列装备、特戒、祝福油，支持锁仓与刷新。"}, {"id": "23", "file": "23_pause_menu_modal.png", "title": "系统暂停 · 战况统计与音频调优", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 850px / 944px (完全容纳, 留白94px)", "desc": "暂停展示出征战况、持有技能、音效与音乐音量无级调节。"}, {"id": "24", "file": "24_sandbox_console_modal.png", "title": "开发者沙盒 · 快速调优控制台 (~ / F1)", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 497px / 944px (完全容纳, 留白447px)", "desc": "支持一键无敌、0冷却、跳波、Boss直传与魔法盾黄/蓝形态一键切换。"}, {"id": "25", "file": "25_boss_battle_and_victory.png", "title": "首领战斩杀 · 玛法凯旋胜利结算", "cat": "modals", "catName": "系统交互与弹窗", "audit": "高度: 527px / 944px (完全容纳, 留白417px)", "desc": "决战斩杀终极Boss后的凯旋面板，展示生存时间、击杀榜、结晶与技能DPS排行。"}];
   let currentIdx = 0;
 
   function filterCat(cat, btn) {

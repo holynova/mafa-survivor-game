@@ -84,10 +84,10 @@ describe('Rules & Formula Engine', () => {
     expect(sellPrice(0, 100)).toBe(30);  // paid 0, 30% of base = 30
   });
 
-  it('expNeeded scales: 12 + 8 * level', () => {
-    expect(expNeeded(1)).toBe(20);
-    expect(expNeeded(2)).toBe(28);
-    expect(expNeeded(5)).toBe(52);
+  it('expNeeded scales with smooth progressive curve', () => {
+    expect(expNeeded(1)).toBe(46);
+    expect(expNeeded(2)).toBe(75);
+    expect(expNeeded(5)).toBe(203);
   });
 
   it('Rng produces deterministic sequences from seed', () => {
