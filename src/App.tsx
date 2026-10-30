@@ -481,8 +481,28 @@ export function App() {
     setProfile(next);
   };
 
+  useEffect(() => {
+    (window as any).__OPEN_TALENTS__ = () => setShowTalents(true);
+    (window as any).__OPEN_UNLOCK_MODAL__ = (chap: MapChapter) => setUnlockModal(chap);
+    (window as any).__OPEN_COMPENDIUM__ = () => setShowCompendium(true);
+    (window as any).__OPEN_GUIDE__ = () => setShowGuide(true);
+    (window as any).__OPEN_SANDBOX__ = () => setShowSandbox(true);
+    (window as any).__OPEN_EQUIP__ = () => setShowEquipModal(true);
+    (window as any).__SET_REPLACE_CHOICE__ = (choice: Upgrade) => setReplaceTargetChoice(choice);
+  }, []);
+
   return (
-    <div className="game-overlay">
+    <div
+      className="game-overlay"
+      style={{
+        '--mir-ui-frame': `url(${assetUrl('assets/mir/ui/mir2_frame_9slice.png')})`,
+        '--mir-ui-stone': `url(${assetUrl('assets/mir/ui/mir2_stone_9slice.png')})`,
+        '--mir-ui-dragon': `url(${assetUrl('assets/mir/ui/mir2_dragon_relief.png')})`,
+        '--mir-ui-crest': `url(${assetUrl('assets/mir/ui/mainbar_title.png')})`,
+        '--mir-ui-close': `url(${assetUrl('assets/mir/ui/btn_close.png')})`,
+        '--mir-ui-close-down': `url(${assetUrl('assets/mir/ui/btn_close_down.png')})`,
+      } as React.CSSProperties}
+    >
       {/* ASSET PRELOAD OVERLAY: Blocks lobby until 100% complete and cached */}
       {preloadState.phase !== 'complete' && (
         <AssetLoadingOverlay
@@ -512,10 +532,12 @@ export function App() {
               backgroundSize: 'cover',
             }}
           >
+            <div className="mir2-header-crest" />
             <div className="title-header">
               <span className="badge-legend">经典 1.76 语汇 · 战法道三职业肉鸽</span>
               <h1 className="main-title">玛法幸存者</h1>
               <p className="subtitle">比奇荒野 · 废弃矿洞 · 祖玛神庙</p>
+              <div className="mir2-divider" />
 
               {profile && (
                 <div className="crystal-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
@@ -798,10 +820,20 @@ export function App() {
       {/* TALENT SHRINE MODAL */}
       {showTalents && profile && (
         <div className="modal-container talent-modal">
-          <div className="panel gold-panel talent-panel">
+          <div className="panel gold-panel talent-panel mir2-stone-modal-panel">
+            <button
+              className="mir2-close-btn"
+              onClick={() => {
+                sound.playClick();
+                setShowTalents(false);
+              }}
+              title="完成退出 (ESC)"
+            />
+            <div className="mir2-header-crest" />
             <div className="talent-header">
               <h2>玛法结晶祭坛 · 永久天赋</h2>
               <p>消耗每局击杀 Boss 与通关获得的玛法结晶，永久强化战力</p>
+              <div className="mir2-divider" />
               <div className="crystal-balance">
                 持有结晶: <strong>{profile.crystals}</strong>
               </div>
@@ -864,8 +896,18 @@ export function App() {
       {/* CHAPTER UNLOCK MODAL */}
       {unlockModal && profile && (
         <div className="modal-container chapter-unlock-modal">
-          <div className="panel gold-panel unlock-panel">
+          <div className="panel gold-panel unlock-panel" style={{ position: 'relative' }}>
+            <button
+              className="mir2-close-btn"
+              onClick={() => {
+                sound.playClick();
+                setUnlockModal(null);
+              }}
+              title="返回 (ESC)"
+            />
+            <div className="mir2-header-crest" />
             <h2>章节解锁 · {CHAPTERS[unlockModal].name}</h2>
+            <div className="mir2-divider" />
             <div className="unlock-theme-box">【{CHAPTERS[unlockModal].theme}】</div>
             <p className="unlock-description">{CHAPTERS[unlockModal].description}</p>
             <div className="unlock-cost-box">
@@ -908,22 +950,23 @@ export function App() {
       {/* COMPENDIUM MODAL (玛法图鉴 · 藏经阁) */}
       {showCompendium && (
         <div className="modal-container compendium-modal">
-          <div className="panel gold-panel compendium-panel">
+          <div className="panel gold-panel compendium-panel mir2-stone-modal-panel">
+            <button
+              className="mir2-close-btn compendium-close-btn"
+              onClick={() => {
+                sound.playClick();
+                setShowCompendium(false);
+              }}
+              title="关闭 (ESC)"
+            />
+            <div className="mir2-header-crest" />
             <div className="compendium-header">
               <div className="compendium-title-row">
                 <h2>玛法图鉴 · 藏经阁</h2>
                 <span className="compendium-subtitle">收录传奇 1.76 经典武学绝技与神兵宝甲</span>
               </div>
-              <button
-                className="compendium-close-btn"
-                onClick={() => {
-                  sound.playClick();
-                  setShowCompendium(false);
-                }}
-              >
-                返回
-              </button>
             </div>
+            <div className="mir2-divider" />
 
             {/* MAIN TAB SWITCHER */}
             <div className="compendium-nav">
@@ -1193,22 +1236,23 @@ export function App() {
       {showGuide && (
         <div className="modal-container guide-modal">
           <div className="panel gold-panel guide-panel">
+            <button
+              className="mir2-close-btn guide-close-btn"
+              onClick={() => {
+                sound.playClick();
+                setShowGuide(false);
+                setGuideMsg(null);
+              }}
+              title="关闭 (ESC)"
+            />
+            <div className="mir2-header-crest" />
             <div className="guide-header">
               <div className="guide-title-row">
-                <h2>玛法秘籍 · 游戏说明</h2>
+                <h2>玛法秘籍 · 盟重遗卷</h2>
                 <span className="guide-subtitle">传奇 1.76 基础法则、职业精要与键位设置</span>
               </div>
-              <button
-                className="guide-close-btn"
-                onClick={() => {
-                  sound.playClick();
-                  setShowGuide(false);
-                  setGuideMsg(null);
-                }}
-              >
-                返回
-              </button>
             </div>
+            <div className="mir2-divider" />
 
             {/* GUIDE NAV TABS */}
             <div className="guide-nav">
@@ -1504,18 +1548,19 @@ export function App() {
       {showSandbox && (
         <div className="modal-container sandbox-modal">
           <div className="panel sandbox-panel">
+            <button
+              className="mir2-close-btn guide-close-btn"
+              onClick={() => {
+                sound.playClick();
+                setShowSandbox(false);
+              }}
+              title="关闭 (ESC)"
+            />
+            <div className="mir2-header-crest" />
             <div className="sandbox-header">
               <h2>开发者测试沙盒 · 快速调优控制台</h2>
-              <button
-                className="guide-close-btn"
-                onClick={() => {
-                  sound.playClick();
-                  setShowSandbox(false);
-                }}
-              >
-                关闭 (ESC)
-              </button>
             </div>
+            <div className="mir2-divider" />
 
             <div className="sandbox-desc">
               【提示】开启测试工具后该局游戏将自动标记为沙盒测试，退出时不计入正式排行榜或历史战绩，支持波次跳转、全技能满级与神装调测！
@@ -1953,27 +1998,20 @@ export function App() {
       {showEquipModal && (
         <div className="modal-container equip-modal">
           <div className="panel gold-panel mir2-equip-modal-panel">
-            <div className="upgrade-header" style={{ marginBottom: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2>玛法大陆 · 勇士装备与属性 (F10)</h2>
-                <button
-                  className="guide-close-btn"
-                  style={{
-                    backgroundImage: `url(${assetUrl('assets/mir/ui/btn_close.png')})`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                    paddingLeft: '28px',
-                  }}
-                  onClick={() => {
-                    sound.playClick();
-                    setShowEquipModal(false);
-                  }}
-                >
-                  关闭 (ESC/F10)
-                </button>
-              </div>
+            <button
+              className="mir2-close-btn"
+              onClick={() => {
+                sound.playClick();
+                setShowEquipModal(false);
+              }}
+              title="关闭 (ESC/F10)"
+            />
+            <div className="mir2-header-crest" />
+            <div className="upgrade-header" style={{ marginBottom: '10px' }}>
+              <h2>玛法大陆 · 勇士神装与八格面板 (F10)</h2>
               <p>传奇 1.76 原版八格装备栏布局与人物即时战斗属性一览</p>
             </div>
+            <div className="mir2-divider" />
 
             <Mir2EquipmentView game={g} />
           </div>
@@ -2179,10 +2217,12 @@ export function App() {
       {g.phase === 'upgrade' && (
         <div className="modal-container upgrade-modal">
           <div className="panel gold-panel upgrade-panel">
+            <div className="mir2-header-crest" />
             <div className="upgrade-header">
-              <h2>境界晋升 · 技能与属性选择 (Lv.{g.level})</h2>
+              <h2>境界晋升 · 绝学参悟 (Lv.{g.level})</h2>
               <p>请选择一项技能或属性强化（按键盘 1、2、3 快速选择）</p>
             </div>
+            <div className="mir2-divider" />
 
             <div className="choices-grid">
               {g.choices.map((c: Upgrade, idx: number) => (
@@ -2228,13 +2268,23 @@ export function App() {
       {/* REPLACE SKILL MODAL (When full 6 skills) */}
       {replaceTargetChoice && (
         <div className="modal-container replace-skill-modal">
-          <div className="panel gold-panel upgrade-panel" style={{ maxWidth: '720px' }}>
+          <div className="panel gold-panel upgrade-panel replace-skill-panel" style={{ maxWidth: '720px' }}>
+            <button
+              className="mir2-close-btn"
+              onClick={() => {
+                sound.playClick();
+                setReplaceTargetChoice(null);
+              }}
+              title="取消 (ESC)"
+            />
+            <div className="mir2-header-crest" />
             <div className="upgrade-header">
               <h2>技能领悟 · 技能替换</h2>
               <p style={{ color: '#facc15' }}>
                 当前技能槽已达上限 (6/6)，习得新技能【{getSkill(replaceTargetChoice.skill!).name}】需选择遗忘替换当前一个技能：
               </p>
             </div>
+            <div className="mir2-divider" />
 
             <div className="replace-skills-grid">
               {g.skills.map((s) => {
@@ -2284,6 +2334,7 @@ export function App() {
       {g.phase === 'shop' && (
         <div className="modal-container shop-modal">
           <div className="panel gold-panel shop-panel">
+            <div className="mir2-header-crest" />
             <div className="shop-header">
               <h2>第 {g.wave} 波清剿完成 · 比奇行脚商人</h2>
               <div className="shop-gold-info">
@@ -2299,6 +2350,7 @@ export function App() {
                 <span>本波收益: +{g.lastWaveGold} (含未拾取50%折算)</span>
               </div>
             </div>
+            <div className="mir2-divider" />
 
             {/* Shop Offers Grid */}
             <div className="shop-offers-grid">
@@ -2406,7 +2458,17 @@ export function App() {
       {g.phase === 'paused' && (
         <div className="modal-container pause-modal">
           <div className="panel gold-panel pause-panel">
+            <button
+              className="mir2-close-btn"
+              onClick={() => {
+                sound.playClick();
+                game.pause();
+              }}
+              title="继续战斗 (ESC)"
+            />
+            <div className="mir2-header-crest" />
             <h2>游戏暂停</h2>
+            <div className="mir2-divider" />
             <div className="pause-stats-summary">
               <p>出征职业: {g.base.name} ({g.base.role})</p>
               <p>当前章节: {CHAPTERS[g.chapter]?.name} · 第 {g.wave} / {g.maxWaves} 波</p>
@@ -2581,6 +2643,7 @@ export function App() {
       {(g.phase === 'won' || g.phase === 'dead') && g.result && (
         <div className="modal-container result-modal">
           <div className={`panel gold-panel result-panel ${g.result.won ? 'victory' : 'defeat'}`}>
+            <div className="mir2-header-crest" />
             <div className="result-header">
               <h1>
                 {g.result.won
@@ -2593,6 +2656,7 @@ export function App() {
                   : '力战至最后一刻，倒在无穷无尽的魔物狂潮之中...'}
               </p>
             </div>
+            <div className="mir2-divider" />
 
             <div className="result-stats-grid">
               <div className="stat-card">
