@@ -2148,24 +2148,54 @@ export class Game {
     if (s.id === 'fireball' || s.id === 'great_fireball') {
       if (!targets.length) return;
       const count = 1 + s.count;
+      const isGreat = s.id === 'great_fireball';
       for (const e of targets.slice(0, count)) {
         const dx = e.x - this.player.x;
         const dy = e.y - this.player.y;
-        const dist = Math.hypot(dx, dy);
-        const speed = (s.id === 'great_fireball' ? 420 : 360) * (1 + (this.stats.projectile_speed ?? 0) / 100);
+        const dist = Math.hypot(dx, dy) || 1;
+        const speed = (isGreat ? 440 : 360) * (1 + (this.stats.projectile_speed ?? 0) / 100);
         this.projectiles.push({
           id: ++this.id,
-          kind: 'fireball',
+          kind: isGreat ? 'great_fireball' : 'fireball',
           x: this.player.x,
           y: this.player.y - 20,
           vx: (dx / dist) * speed,
           vy: (dy / dist) * speed,
-          damage: this.calcDamage('wizard', s.id === 'great_fireball' ? 10 : 5, s),
+          damage: this.calcDamage('wizard', isGreat ? 14 : 5, s),
           life: 2.2,
           dir: ((Math.round(Math.atan2(dy, dx) / (Math.PI / 8)) + 4) % 16 + 16) % 16,
         });
       }
-      sound.playFireball();
+      if (isGreat) {
+        sound.playBigFireball();
+      } else {
+        sound.playFireball();
+      }
+    } else if (s.id === 'firebang') {
+      if (!targets.length) return;
+      const center = targets[0];
+      const r = (s.evolved ? 160 : 95) * (1 + s.radius / 100) * (1 + (this.stats.skill_radius ?? 0) / 100);
+      sound.playExplosion();
+      this.effects.push({
+        id: ++this.id,
+        kind: 'firebang',
+        x: center.x,
+        y: center.y,
+        life: 0.55,
+        total: 0.55,
+        radius: r,
+        evolved: s.evolved,
+      });
+      const baseDmg = s.evolved ? 28 : 14;
+      const dmg = this.calcDamage('wizard', baseDmg, s);
+      this.hash.forEachNearby(center.x, center.y, r, (e) => {
+        if (e.hp > 0) {
+          this.hit(e, dmg, 'firebang');
+          if (s.evolved) {
+            e.burnAt = this.clock + 2.0;
+          }
+        }
+      });
     } else if (s.id === 'lightning') {
       if (!targets.length) return;
       const count = s.evolved ? Math.max(5, 2 + s.count) : (1 + s.count);
@@ -2241,13 +2271,24 @@ export class Game {
         }
       }
     } else if (s.id === 'shield') {
+      if (this.clock < this.player.shieldUntil - 1.0) return;
       this.player.shieldUntil = this.clock + Math.min(6, 5 * (1 + s.duration / 100));
       sound.playShield();
+      this.effects.push({
+        id: ++this.id,
+        kind: 'shield_cast',
+        x: this.player.x,
+        y: this.player.y,
+        life: 0.6,
+        total: 0.6,
+        radius: 35,
+      });
     } else if (s.id === 'laser') {
       if (!targets.length) return;
       sound.playLaser();
-      const angle = ((this.player.dir - 2) * Math.PI) / 4;
-      const length = s.evolved ? 850 : 550;
+      const angle = Math.atan2(targets[0].y - this.player.y, targets[0].x - this.player.x);
+      this.player.dir = this.direction(targets[0].x - this.player.x, targets[0].y - this.player.y);
+      const length = (s.evolved ? 850 : 550) * (1 + (this.stats.skill_radius ?? 0) / 100);
       this.effects.push({
         id: ++this.id,
         kind: 'laser',
@@ -2299,27 +2340,30 @@ export class Game {
         if (e.hp > 0) this.hit(e, this.calcDamage('wizard', s.evolved ? 28 : 17, s), 'ice_storm');
       });
     } else if (s.id === 'ring_of_fire') {
-      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 110);
-      if (close.length > 0) {
-        sound.playFirewall();
-        this.effects.push({
-          id: ++this.id,
-          kind: 'ring_of_fire',
-          x: this.player.x,
-          y: this.player.y,
-          life: 0.35,
-          total: 0.35,
-          radius: s.evolved ? 180 : 120,
-          evolved: s.evolved,
-        });
-        for (const e of close) {
-          if (!e.kind.startsWith('boss')) {
-            const dx = e.x - this.player.x;
-            const dy = e.y - this.player.y;
-            const dist = Math.hypot(dx, dy) || 1;
-            e.x += (dx / dist) * 75;
-            e.y += (dy / dist) * 75;
-          }
+      const radius = (s.evolved ? 180 : 110) * (1 + s.radius / 100);
+      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < radius);
+      if (!close.length) return;
+      sound.playRepel();
+      this.effects.push({
+        id: ++this.id,
+        kind: 'ring_of_fire',
+        x: this.player.x,
+        y: this.player.y,
+        life: 0.35,
+        total: 0.35,
+        radius,
+        evolved: s.evolved,
+      });
+      for (const e of close) {
+        if (!e.kind.startsWith('boss')) {
+          const dx = e.x - this.player.x;
+          const dy = e.y - this.player.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          e.x += (dx / dist) * (s.evolved ? 110 : 75);
+          e.y += (dy / dist) * (s.evolved ? 110 : 75);
+        }
+        if (s.evolved) {
+          this.hit(e, this.calcDamage('wizard', 16, s), 'ring_of_fire');
         }
       }
     } else if (s.id === 'teleport') {
@@ -2342,35 +2386,46 @@ export class Game {
         total: 0.5,
         radius: 40,
       });
-      sound.playLightning();
+      sound.playHolyWord();
       if (target.undead && !target.kind.startsWith('boss') && this.rng.next() < 0.35) {
         this.hit(target, target.hp, 'holy_word'); // instant kill
       } else {
         this.hit(target, this.calcDamage('wizard', 20, s), 'holy_word');
       }
     } else if (s.id === 'thunderwave') {
-      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < (s.evolved ? 240 : 140));
-      if (close.length >= (s.evolved ? 1 : 2)) {
-        sound.playLightning();
-        this.effects.push({
-          id: ++this.id,
-          kind: 'thunderwave',
-          x: this.player.x,
-          y: this.player.y,
-          life: 0.45,
-          total: 0.45,
-          radius: s.evolved ? 240 : 140,
-          evolved: s.evolved,
-        });
-        for (const e of close) {
-          this.hit(e, this.calcDamage('wizard', 13, s), 'thunderwave');
-        }
+      const radius = (s.evolved ? 240 : 140) * (1 + s.radius / 100);
+      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < radius);
+      if (close.length < (s.evolved ? 1 : 2)) return;
+      sound.playHellThunder();
+      this.effects.push({
+        id: ++this.id,
+        kind: 'thunderwave',
+        x: this.player.x,
+        y: this.player.y,
+        life: 0.45,
+        total: 0.45,
+        radius,
+        evolved: s.evolved,
+      });
+      for (const e of close) {
+        this.hit(e, this.calcDamage('wizard', 13, s), 'thunderwave');
       }
     } else if (s.id === 'entice') {
       const charmable = targets.filter((e) => !e.kind.startsWith('boss') && !e.elite);
       const petCount = this.minions.filter((m) => m.kind === 'enticed').length;
-      if (charmable.length && petCount < 3 && this.rng.next() < 0.3) {
-        const victim = charmable[0];
+      if (!charmable.length || petCount >= (s.evolved ? 4 : 3)) return;
+      const victim = charmable[0];
+      sound.play('charm', 0.6);
+      this.effects.push({
+        id: ++this.id,
+        kind: 'charm',
+        x: victim.x,
+        y: victim.y,
+        life: 0.8,
+        total: 0.8,
+        radius: 40,
+      });
+      if (this.rng.next() < (s.evolved ? 0.65 : 0.35)) {
         victim.hp = 0; // consumed
         sound.playSummon();
         this.minions.push({
@@ -2379,10 +2434,10 @@ export class Game {
           name: victim.name,
           x: victim.x,
           y: victim.y,
-          hp: 60,
-          maxHp: 60,
-          damage: 12,
-          speed: 150,
+          hp: 80 * (s.evolved ? 2 : 1),
+          maxHp: 80 * (s.evolved ? 2 : 1),
+          damage: 15 * (s.evolved ? 2 : 1),
+          speed: 160,
           dir: 4,
           attackCD: 0,
           attackRange: 40,
@@ -2414,20 +2469,21 @@ export class Game {
       }
       sound.playSoulFireball();
     } else if (s.id === 'heal_self') {
-      if (this.player.hp < this.maxHP) {
-        sound.playHeal();
-        const healAmt = 22 + Math.round((this.stats.sc_flat ?? 0) * 1.0);
-        this.player.hp = Math.min(this.maxHP, this.player.hp + healAmt);
-        this.floating.push({
-          id: ++this.id,
-          x: this.player.x,
-          y: this.player.y - 40,
-          text: `+${healAmt}`,
-          color: '#4ade80',
-          life: 0.8,
-        });
-      }
+      if (this.player.hp >= this.maxHP) return;
+      sound.playHeal();
+      const healAmt = 22 + Math.round((this.stats.sc_flat ?? 0) * 1.0);
+      this.player.hp = Math.min(this.maxHP, this.player.hp + healAmt);
+      this.floating.push({
+        id: ++this.id,
+        x: this.player.x,
+        y: this.player.y - 40,
+        text: `+${healAmt}`,
+        color: '#4ade80',
+        life: 0.8,
+      });
     } else if (s.id === 'mass_heal') {
+      const needHeal = this.player.hp < this.maxHP || this.minions.some((m) => m.hp < m.maxHp);
+      if (!needHeal) return;
       sound.playHeal();
       const healAmt = 32 + Math.round((this.stats.sc_flat ?? 0) * 1.4);
       this.player.hp = Math.min(this.maxHP, this.player.hp + healAmt);
@@ -2458,56 +2514,56 @@ export class Game {
     } else if (s.id === 'summon_skeleton') {
       const maxLimit = s.evolved ? 2 : (s.summonLimit ?? 1);
       const skelCount = this.minions.filter((m) => m.kind === 'skeleton').length;
-      if (skelCount < maxLimit) {
-        sound.playSummon();
-        const bonusHP = 1 + (this.stats.summon_hp_pct ?? 0) / 100;
-        const bonusDMG = 1 + (this.stats.summon_damage_pct ?? 0) / 100;
-        const hpMultiplier = s.evolved ? 2.0 : 1.0;
-        const dmgMultiplier = s.evolved ? 2.0 : 1.0;
-        this.minions.push({
-          id: ++this.id,
-          kind: 'skeleton',
-          name: s.evolved ? '狂暴双尊骷髅' : '变异骷髅',
-          x: this.player.x + 35,
-          y: this.player.y + 35,
-          hp: Math.round(75 * bonusHP * hpMultiplier),
-          maxHp: Math.round(75 * bonusHP * hpMultiplier),
-          damage: Math.round(11 * bonusDMG * dmgMultiplier),
-          speed: s.evolved ? 210 : 175,
-          dir: 4,
-          attackCD: 0,
-          attackRange: 42,
-          targetId: null,
-        });
-      }
+      if (skelCount >= maxLimit) return;
+      sound.playSummon();
+      const bonusHP = 1 + (this.stats.summon_hp_pct ?? 0) / 100;
+      const bonusDMG = 1 + (this.stats.summon_damage_pct ?? 0) / 100;
+      const hpMultiplier = s.evolved ? 2.0 : 1.0;
+      const dmgMultiplier = s.evolved ? 2.0 : 1.0;
+      this.minions.push({
+        id: ++this.id,
+        kind: 'skeleton',
+        name: s.evolved ? '狂暴双尊骷髅' : '变异骷髅',
+        x: this.player.x + 35,
+        y: this.player.y + 35,
+        hp: Math.round(75 * bonusHP * hpMultiplier),
+        maxHp: Math.round(75 * bonusHP * hpMultiplier),
+        damage: Math.round(11 * bonusDMG * dmgMultiplier),
+        speed: s.evolved ? 210 : 175,
+        dir: 4,
+        attackCD: 0,
+        attackRange: 42,
+        targetId: null,
+      });
     } else if (s.id === 'summon_shinsu') {
       const shinsuCount = this.minions.filter((m) => m.kind === 'shinsu').length;
-      if (shinsuCount < 1) {
-        sound.playSummon();
-        const bonusHP = 1 + (this.stats.summon_hp_pct ?? 0) / 100;
-        const bonusDMG = 1 + (this.stats.summon_damage_pct ?? 0) / 100;
-        const hpMult = s.evolved ? 2.2 : 1.0;
-        const dmgMult = s.evolved ? 2.0 : 1.0;
-        this.minions.push({
-          id: ++this.id,
-          kind: 'shinsu',
-          name: s.evolved ? '7级至尊烈焰圣兽' : '烈焰神兽',
-          x: this.player.x - 45,
-          y: this.player.y + 40,
-          hp: Math.round(230 * bonusHP * hpMult),
-          maxHp: Math.round(230 * bonusHP * hpMult),
-          damage: Math.round(21 * bonusDMG * dmgMult),
-          speed: s.evolved ? 220 : 190,
-          dir: 4,
-          attackCD: 0,
-          attackRange: s.evolved ? 120 : 90,
-          targetId: null,
-        });
-      }
+      if (shinsuCount >= 1) return;
+      sound.playSummon();
+      const bonusHP = 1 + (this.stats.summon_hp_pct ?? 0) / 100;
+      const bonusDMG = 1 + (this.stats.summon_damage_pct ?? 0) / 100;
+      const hpMult = s.evolved ? 2.2 : 1.0;
+      const dmgMult = s.evolved ? 2.0 : 1.0;
+      this.minions.push({
+        id: ++this.id,
+        kind: 'shinsu',
+        name: s.evolved ? '7级至尊烈焰圣兽' : '烈焰神兽',
+        x: this.player.x - 45,
+        y: this.player.y + 40,
+        hp: Math.round(230 * bonusHP * hpMult),
+        maxHp: Math.round(230 * bonusHP * hpMult),
+        damage: Math.round(21 * bonusDMG * dmgMult),
+        speed: s.evolved ? 220 : 190,
+        dir: 4,
+        attackCD: 0,
+        attackRange: s.evolved ? 120 : 90,
+        targetId: null,
+      });
     } else if (s.id === 'stealth' || s.id === 'mass_stealth') {
+      if (this.clock < this.player.stealthUntil - 0.5) return;
       this.player.stealthUntil = this.clock + 5.0;
       sound.playHeal();
     } else if (s.id === 'spirit_shield') {
+      if (this.clock < this.player.spiritShieldUntil - 0.5) return;
       this.player.spiritShieldUntil = this.clock + 7.0;
       this.effects.push({
         id: ++this.id,
@@ -2521,6 +2577,7 @@ export class Game {
       this.recompute();
       sound.playShield();
     } else if (s.id === 'holy_armor') {
+      if (this.clock < this.player.holyArmorUntil - 0.5) return;
       this.player.holyArmorUntil = this.clock + 7.0;
       this.effects.push({
         id: ++this.id,
@@ -2546,9 +2603,11 @@ export class Game {
 
     // --- WARRIOR SKILLS ---
     else if (s.id === 'half_moon') {
+      const radius = s.evolved ? 180 : 110;
+      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) <= radius);
+      if (!close.length) return;
       sound.playHalfMoon();
       const angle = ((this.player.dir - 2) * Math.PI) / 4;
-      const radius = s.evolved ? 180 : 110;
       this.effects.push({
         id: ++this.id,
         kind: 'half_moon_sweep',
@@ -2561,7 +2620,7 @@ export class Game {
         evolved: s.evolved,
       });
       const baseDmg = s.evolved ? 24 : 11;
-      for (const e of targets) {
+      for (const e of close) {
         const edx = e.x - this.player.x;
         const edy = e.y - this.player.y;
         const eDist = Math.hypot(edx, edy);
@@ -2575,16 +2634,25 @@ export class Game {
       }
     } else if (s.id === 'slashing_swordplay') {
       if (!targets.length) return;
-      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 65);
-      if (close.length) {
-        sound.playSwordSlash();
-        this.hit(close[0], this.calcDamage('warrior', 12, s), 'slashing_swordplay');
-      }
+      const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < 75);
+      if (!close.length) return;
+      sound.playSwordSlash();
+      this.hit(close[0], this.calcDamage('warrior', 12, s), 'slashing_swordplay');
     } else if (s.id === 'piercing_swordplay') {
       if (!targets.length) return;
-      sound.playSwordSlash();
-      const angle = ((this.player.dir - 2) * Math.PI) / 4;
       const thrustDist = s.evolved ? 450 : 130;
+      const angle = ((this.player.dir - 2) * Math.PI) / 4;
+      const inFront = targets.some((e) => {
+        const edx = e.x - this.player.x;
+        const edy = e.y - this.player.y;
+        const eDist = Math.hypot(edx, edy);
+        const eAngle = Math.atan2(edy, edx);
+        let diff = Math.abs(eAngle - angle);
+        if (diff > Math.PI) diff = 2 * Math.PI - diff;
+        return eDist <= thrustDist && diff < (s.evolved ? 0.6 : 0.45);
+      });
+      if (!inFront) return;
+      sound.playSwordSlash();
       const baseDmg = s.evolved ? 35 : 17;
       if (s.evolved) {
         this.effects.push({
@@ -2612,25 +2680,24 @@ export class Game {
       }
     } else if (s.id === 'fire_swordplay') {
       if (!targets.length) return;
-      const reach = s.evolved ? 110 : 75;
+      const reach = s.evolved ? 120 : 80;
       const close = targets.filter((e) => Math.hypot(e.x - this.player.x, e.y - this.player.y) < reach);
-      if (close.length) {
-        sound.playFireSword();
-        const baseDmg = s.evolved ? 65 : 30;
-        const hitTargets = s.evolved ? close : [close[0]];
-        for (const target of hitTargets) {
-          this.effects.push({
-            id: ++this.id,
-            kind: 'fire_slash',
-            x: target.x,
-            y: target.y,
-            life: 0.45,
-            total: 0.45,
-            radius: s.evolved ? 120 : 60,
-            evolved: s.evolved,
-          });
-          this.hit(target, this.calcDamage('warrior', baseDmg, s), 'fire_swordplay');
-        }
+      if (!close.length) return;
+      sound.playFireSword();
+      const baseDmg = s.evolved ? 65 : 30;
+      const hitTargets = s.evolved ? close : [close[0]];
+      for (const target of hitTargets) {
+        this.effects.push({
+          id: ++this.id,
+          kind: 'fire_slash',
+          x: target.x,
+          y: target.y,
+          life: 0.45,
+          total: 0.45,
+          radius: s.evolved ? 120 : 60,
+          evolved: s.evolved,
+        });
+        this.hit(target, this.calcDamage('warrior', baseDmg, s), 'fire_swordplay');
       }
     } else if (s.id === 'savage_charge') {
       sound.playCharge();

@@ -116,6 +116,10 @@ class BattleScene extends Phaser.Scene {
       if (game.phase === 'upgrade' && ['1', '2', '3'].includes(e.key)) {
         const c = game.choices[Number(e.key) - 1];
         if (c) game.choose(c.id);
+      } else if (game.phase === 'battle' && ['1', '2', '3', '4', '5', '6'].includes(e.key)) {
+        const idx = Number(e.key) - 1;
+        const s = game.skills[idx];
+        if (s && s.cd <= 0.05) game.cast(s);
       }
     });
 
@@ -953,6 +957,14 @@ class BattleScene extends Phaser.Scene {
             this.gfx.fillStyle(0x38bdf8, 0.95).fillRect(p.x - 4, p.y - 4, 8, 8);
             this.gfx.fillStyle(0xffffff, 1).fillCircle(p.x, p.y, 2);
           }
+        } else if (p.kind === 'great_fireball') {
+          // Authentic Wizard Great Fireball (Larger, brighter, distinct sound & anim)
+          const dir16 = p.dir ?? 0;
+          const drawn = this.drawAnim(`proj-${p.id}`, `bigfireball/${dir16}`, t * 14, p.x, p.y, p.y + 5, 1, 1.25, true);
+          if (!drawn) {
+            this.gfx.fillStyle(0xf97316, 0.95).fillCircle(p.x, p.y, 11);
+            this.gfx.fillStyle(0xfef08a, 1).fillCircle(p.x, p.y, 6);
+          }
         } else {
           // Authentic Wizard Fireball
           const dir16 = p.dir ?? 0;
@@ -1192,6 +1204,26 @@ class BattleScene extends Phaser.Scene {
             this.gfx.fillStyle(0x22c55e, 0.35);
             this.gfx.fillCircle(f.x, f.y, f.radius);
           }
+        } else if (f.kind === 'firebang') {
+          // Wizard Firebang (爆裂火焰 3x3 AoE)
+          const sc = (f.radius / 95) * (f.evolved ? 1.45 : 1.15);
+          const drawn = this.drawAnim(`effect-${f.id}`, 'explosion', progress, f.x, f.y, f.y + 10, 1, sc, false);
+          if (!drawn || f.evolved) {
+            this.gfx.fillStyle(0xea580c, 0.45 * (1 - progress));
+            this.gfx.fillCircle(f.x, f.y, f.radius);
+            this.gfx.lineStyle(f.evolved ? 4 : 2, 0xfacc15, 0.9 * (1 - progress));
+            this.gfx.strokeCircle(f.x, f.y, f.radius * (0.4 + 0.6 * progress));
+            this.gfx.fillStyle(0xfef08a, 0.8 * (1 - progress));
+            this.gfx.fillCircle(f.x, f.y, f.radius * 0.35 * (1 - progress));
+          }
+        } else if (f.kind === 'charm') {
+          // Wizard Entice / Charm (诱惑之光)
+          this.drawAnim(`effect-${f.id}`, 'charm', progress, f.x, f.y, f.y + 10, 1, 1, false);
+          this.gfx.lineStyle(2, 0x38bdf8, 0.8 * (1 - progress));
+          this.gfx.strokeCircle(f.x, f.y, 25 * progress);
+        } else if (f.kind === 'shield_cast') {
+          // Wizard Mana Shield cast flash
+          this.drawAnim(`effect-${f.id}`, 'shield', progress, f.x, f.y, f.y + 10, 1, 1.25, false);
         }
       }
 

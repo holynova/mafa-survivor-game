@@ -416,6 +416,14 @@ export function App() {
             game.choose(c.id);
           }
         }
+      } else if (game.phase === 'battle') {
+        const keyNum = parseInt(e.key, 10);
+        if (keyNum >= 1 && keyNum <= 6) {
+          const sk = game.skills[keyNum - 1];
+          if (sk && sk.cd <= 0.05) {
+            game.cast(sk);
+          }
+        }
       }
     };
     window.addEventListener('keydown', handleKey);
@@ -2120,8 +2128,13 @@ export function App() {
                       <div
                         key={slotIdx}
                         className={`mir2-quick-slot active-slot skill-${skill.id}`}
-                        style={{ left: `${17 + 42 * slotIdx}px`, top: '6px' }}
-                        title={`${def.name} (${skill.evolved ? '极阶 · 终极演化' : `Lv.${skill.rank}`})\n${def.description}`}
+                        style={{ left: `${17 + 42 * slotIdx}px`, top: '6px', cursor: 'pointer' }}
+                        title={`${def.name} (${skill.evolved ? '极阶 · 终极演化' : `Lv.${skill.rank}`})\n${def.description}\n[按键 ${slotIdx + 1} 或点击施放]`}
+                        onClick={() => {
+                          if (game.phase === 'battle' && skill.cd <= 0.05) {
+                            game.cast(skill);
+                          }
+                        }}
                       >
                         <Icon frame={def.asset} />
                         <span className="slot-key">{slotIdx + 1}</span>

@@ -308,6 +308,14 @@ class SoundSystem {
     this.play('fireball', 0.55);
   }
 
+  playBigFireball() {
+    this.play('bigfireball', 0.65);
+  }
+
+  playExplosion() {
+    this.play('explosion', 0.65);
+  }
+
   playLightning() {
     this.play('lightning', 0.65);
   }

@@ -135,7 +135,7 @@ export interface Minion extends Entity {
 }
 
 export interface Projectile extends Entity {
-  kind?: 'fireball' | 'soul_fireball' | 'enemy_arrow' | 'enemy_poison' | 'shinsu_fire';
+  kind?: 'fireball' | 'great_fireball' | 'soul_fireball' | 'enemy_arrow' | 'enemy_poison' | 'shinsu_fire';
   vx: number;
   vy: number;
   damage: number;
@@ -161,6 +161,9 @@ export interface Fx extends Entity {
     | 'lightning'
     | 'firewall'
     | 'hellfire'
+    | 'firebang'
+    | 'charm'
+    | 'shield_cast'
     | 'hit'
     | 'cast'
     | 'laser'
