@@ -44,6 +44,7 @@ import {
   subscribePreload,
   getPreloadState,
   isAssetsReady,
+  forceCompletePreload,
   preloadAllAssets,
   framePositions,
   assetManifest,
@@ -86,6 +87,22 @@ export function AssetLoadingOverlay({
           <span className="asset-cache-badge">
             ◇ 资源加载进度: {state.loadedCount} / {state.totalCount} 项
           </span>
+          <button
+            className="asset-skip-btn"
+            style={{
+              padding: '3px 12px',
+              backgroundColor: '#3a2010',
+              color: '#f0c060',
+              border: '1px solid #c89b3c',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 'bold',
+            }}
+            onClick={() => forceCompletePreload()}
+          >
+            直接进入游戏 »
+          </button>
           {state.phase === 'error' ? (
             <button className="asset-retry-btn" onClick={onRetry}>
               载入异常，点击重试
