@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig(({ command, mode }) => ({
-  base: command === 'build' || mode === 'production' ? '/mafa-survivor-game/' : '/',
+  base: process.env.GITHUB_PAGES ? '/mafa-survivor-game/' : '/',
   clearScreen: false,
   server: {
     host: '127.0.0.1',

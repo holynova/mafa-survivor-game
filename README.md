@@ -1,99 +1,31 @@
-# 玛法幸存者 (Mafa Survivor)
+# Mafa Survivor / 玛法幸存者
 
-> 基于经典《热血传奇》1.76 三职业、技能、装备与怪物语汇的单机肉鸽幸存者游戏。
+基于经典《热血传奇》1.76 三职业（战法道）、33 项原版技能、装备特戒与魔物图鉴语汇的单机肉鸽幸存者游戏。玩家可自由构筑技能流派与被动宝物，在 15 分钟怪潮中迎战骷髅精灵、尸王与沃玛教主等经典 Boss。
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
-[![Phaser](https://img.shields.io/badge/Phaser-3.90-red.svg)](https://phaser.io/)
-[![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-7.0-646cff.svg)](https://vitejs.dev/)
-[![Vitest](https://img.shields.io/badge/Vitest-3.2-success.svg)](https://vitest.dev/)
+A standalone roguelite survivor game built on classic Legend of Mir 2 (1.76) mechanics, featuring the holy trinity of Warrior, Wizard, and Taoist, 33 authentic skills, classic special rings and gear affixes. Build devastating spell combinations across 12 monster waves and defeat legendary chapter bosses.
 
----
+![Project screenshot](./assets/screenshot.png)
 
-## 📖 游戏设计基线与架构规则
+## 在线体验 / Live Demo
 
-本项目严格遵循 [holynova/mafa-survivor](https://github.com/holynova/mafa-survivor) 中的《游戏设计文档（GDD）V1.0》（详见本地 [`docs/GDD.md`](docs/GDD.md)）。
+- [Cloudflare Demo](https://mafa-survivor-game.xiaosang.cc/)
+- [GitHub Repo](https://github.com/holynova/mafa-survivor-game)
 
-- **三职业经典语汇**：保留战法道经典职业辨识度与全部 33 项原版技能命名，坚决不自造原创雷火联动与虚构元素反应。
-- **幸存者肉鸽循环**：借鉴《土豆兄弟》分波次行脚商人、无格被动道具叠加与软硬上限截断机制。
-- **单局节奏**：12 波次 × 75 秒（共 15 分钟），11 次商店暂停；末波决战章节 Boss。支持 3 波次 × 35 秒的快速试炼模式。
-- **无限 MP 与独立冷却**：不设蓝量条，每个技能拥有独立冷却（CD）并自动施法；位移与保命技能支持手动/按键应急触发。
+<img src="./assets/qr.png" width="180" alt="扫码访问 Cloudflare 在线体验">
 
----
+## 本地运行 / Run locally
 
-## 🎮 完整系统实现清单
-
-### 1. 战法道三职业体系
-* **法师 (Wizard)**：远程高爆发群攻。拥有 14 项完整技能（火球术、抗拒火环、诱惑之光、地狱火、雷电术、大火球、瞬息移动、爆裂火焰、火墙、疾光电影、地狱雷光、魔法盾、圣言术、冰咆哮）。
-* **道士 (Taoist)**：召唤随从、持续续航与双色施毒。拥有 13 项完整技能（治愈术、精神力战法、施毒术、灵魂火符、召唤骷髅、隐身术、集体隐身术、幽灵盾、神圣战甲术、心灵启示、困魔咒、群体治疗术、召唤神兽）。
-* **战士 (Warrior)**：近战重甲与爆发剑气。拥有 6 项完整技能（基本剑术、攻杀剑术、刺杀剑术、半月弯刀、野蛮冲撞、烈火剑法）。
-
-### 2. 三大主题地图章节
-* **第一章：比奇荒野 (Bichon Wilderness)**：开阔平原怪潮，终极 Boss **骷髅精灵**（双刃突进劈斩）。
-* **第二章：废弃矿洞 (Abandoned Mine)**：阴暗矿道与不死系大军，终极 Boss **尸王**（链锤震地、唤醒僵尸军团）。
-* **第三章：祖玛神庙 (Zuma Temple)**：高抗性祖玛卫士与远程弓手，终极 Boss **沃玛教主**（狂暴电弧冲击）。
-
-### 3. 召唤仆从大军系统
-* **变异骷髅**：忠心追杀周围魔物，近身重斧劈砍。
-* **烈焰神兽**：极高身板抗击打，持续向魔物集群喷吐大范围高温烈火。
-* **诱惑宝宝**：法师以法力诱惑普通魔物倒戈成为守护仆从。
-
-### 4. 8 槽装备与经典特戒
-* 涵盖经典武器（骨玉权杖、裁决之杖、龙纹剑等）、战袍、头盔、项链、双手镯、双戒指。
-* 还原三大经典特戒核心原理：
-  * **麻痹戒指**：普攻/技能命中时 12% 几率石化麻痹目标 2 秒。
-  * **护身戒指**：直接减免 20% 承伤（受最高 65% 防御硬上限约束）。
-  * **复活戒指**：生命归零时原地复活并回复 50% 生命（每局限 1 次）。
-
-### 5. 局外成长：结晶祭坛天赋树
-* 击败 Boss 与通关结算获得 **玛法结晶 (Mafa Crystals)**。
-* 结晶祭坛提供 6 大永久天赋加点（强身术、神行术、聚灵术、财源滚滚、悟道心法、天人合一），支持全额一键返还洗点。
-
-### 6. 合规双模渲染与原生怀旧音效
-* **双模渲染引擎**：无素材时自动启动纯代码渲染的 **复古像素引擎 (Retro Canvas)**，绝不在开源仓库捆绑未授权外部大图；本地执行 `npm run assets:fetch` 后自动升级为历史原版切片。
-* **原生 Web Audio 合成器**：代码合成雷电霹雳、烈焰喷射、剑气挥砍、金币清脆叮当与升级乐段。
-
----
-
-## 🛠️ 快速启动
-
-### 1. 安装依赖
 ```bash
 npm install
-```
-
-### 2. 启动本地开发预览
-```bash
 npm run dev
 ```
-浏览器打开 `http://127.0.0.1:5180` 即可开始游玩。
 
-### 3. 运行自动化单元测试
-```bash
-npm test
-```
-执行全量规则测试与战法道战斗测试（18 项单元测试全部通过）。
+## 发布 / Deploy
 
-### 4. 生产环境构建打包
 ```bash
-npm run build
+npm run deploy
 ```
 
----
+Cloudflare Workers · Custom Domain: `mafa-survivor-game.xiaosang.cc`
 
-## ⌨️ 操作指南
-
-| 按键 / 操作 | 功能 |
-|---|---|
-| **W / A / S / D** 或 **方向键** | 角色 8 方向移动 |
-| **鼠标拖拽 / 触屏滑动** | 虚拟摇杆控制移动 |
-| **空格键 (Space)** | 手动触发应急技能（瞬息移动 / 野蛮冲撞） |
-| **键盘 1 / 2 / 3** | 升级三选一快速选择 |
-| **ESC / P 键** | 暂停 / 继续游戏 |
-| **右上角音效图标** | 切换音效静音 / 开启 |
-
----
-
-## 📜 许可说明
-
-本项目代码部分遵循 MIT 协议。本游戏仅用于单机技术演示与游戏架构学术研究，不包含公开发行的受版权保护商业资源。
+源码与部署配置使用同一个主分支；在本地手动发布，不创建 Cloudflare 专用分支或 GitHub Action。
