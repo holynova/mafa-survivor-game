@@ -8,7 +8,7 @@ A standalone roguelite survivor game built on classic Legend of Mir 2 (1.76) mec
 
 ## 在线体验 / Live Demo
 
-- [Cloudflare Demo](https://mafa-survivor-game.xiaosang.cc/)
+- [Cloudflare Demo](https://xiaosang.cc/mafa-survivor-game/)
 - [GitHub Repo](https://github.com/holynova/mafa-survivor-game)
 
 <img src="./assets/qr.png" width="180" alt="扫码访问 Cloudflare 在线体验">
@@ -26,6 +26,6 @@ npm run dev
 npm run deploy
 ```
 
-Cloudflare Workers · Custom Domain: `mafa-survivor-game.xiaosang.cc`
+Cloudflare Workers · Route: `xiaosang.cc/mafa-survivor-game/*`
 
 源码与部署配置使用同一个主分支；在本地手动发布，不创建 Cloudflare 专用分支或 GitHub Action。
