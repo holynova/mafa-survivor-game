@@ -310,7 +310,7 @@ body, html {
 .hero-role {
   font-size: 13px;
   font-weight: 700;
-  color: #38bdf8;
+  color: #facc15;
   margin-top: 4px;
 }
 
@@ -697,7 +697,7 @@ body, html {
 }
 
 .mir2-chat-tag {
-  color: #38bdf8;
+  color: #caa156;
   font-weight: 700;
 }
 
@@ -1618,7 +1618,7 @@ body, html {
 }
 
 .chap-theme-badge {
-  color: #38bdf8;
+  color: #caa156;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -2064,9 +2064,9 @@ body, html {
 }
 
 .sound-toggle-pause-btn {
-  background: #1e293b;
-  border-color: #38bdf8;
-  color: #38bdf8;
+  background: #241a10;
+  border-color: #caa156;
+  color: #caa156;
 }
 
 /* ==========================================================================
@@ -2686,6 +2686,12 @@ body, html {
   padding: 6px 12px;
   font-size: 13px;
   background: #27272a;
+}
+
+.abandon-run-btn.confirming,
+.danger-btn.confirming {
+  border-color: #f87171;
+  color: #fca5a5;
 }
 
 /* Sandbox Panel */

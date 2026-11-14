@@ -68,9 +68,9 @@ export function AssetLoadingOverlay({
   return (
     <div className="asset-loading-overlay">
       <div className="asset-loading-box">
-        <div className="asset-loading-title">玛法幸存者 · 核心资源预载入</div>
+        <div className="asset-loading-title">玛法幸存者 · 正在加载</div>
         <div className="asset-loading-subtitle">
-          正在预加载传奇 1.76 原版美术图集、比奇荒野地图与经典法术音效，并写入本地持久缓存
+          正在加载游戏画面与音效，第一次需要一点时间，之后打开就很快了
         </div>
 
         <div className="asset-progress-track">
@@ -108,7 +108,7 @@ export function AssetLoadingOverlay({
               载入异常，点击重试
             </button>
           ) : (
-            <span>持久缓存保护 · 免重复网络流量</span>
+            <span>加载一次后，下次打开更快</span>
           )}
         </div>
       </div>
@@ -397,6 +397,8 @@ export function App() {
   const [importText, setImportText] = useState('');
   const [guideMsg, setGuideMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeRunSnapshot, setActiveRunSnapshot] = useState<ActiveRunSnapshot | null>(null);
+  const [confirmAbandonRun, setConfirmAbandonRun] = useState(false);
+  const [confirmQuitRun, setConfirmQuitRun] = useState(false);
   const [showSandbox, setShowSandbox] = useState(false);
   const [showEquipModal, setShowEquipModal] = useState(false);
   const [replaceTargetChoice, setReplaceTargetChoice] = useState<Upgrade | null>(null);
@@ -559,7 +561,7 @@ export function App() {
           >
             <div className="mir2-header-crest" />
             <div className="title-header">
-              <span className="badge-legend">经典 1.76 语汇 · 战法道三职业肉鸽 · v0.1.0</span>
+              <span className="badge-legend">经典 1.76 语汇 · 战法道三职业肉鸽 · v0.1.1</span>
               <h1 className="main-title">玛法幸存者</h1>
               <p className="subtitle">比奇荒野 · 废弃矿洞 · 祖玛神庙</p>
               <div className="mir2-divider" />
@@ -567,29 +569,6 @@ export function App() {
               {profile && (
                 <div className="crystal-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                   <span>玛法结晶: <strong>{profile.crystals}</strong></span>
-                  <button
-                    className="test-crystal-btn"
-                    title="点击补充 100 玛法结晶做测试"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      sound.playGem();
-                      const updated = await addCrystals(100);
-                      setProfile(updated);
-                    }}
-                    style={{
-                      background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)',
-                      color: '#ffffff',
-                      border: '1px solid #60a5fa',
-                      borderRadius: '4px',
-                      padding: '2px 8px',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold',
-                      boxShadow: '0 0 6px rgba(37, 99, 235, 0.4)',
-                    }}
-                  >
-                    +100 测试结晶
-                  </button>
                 </div>
               )}
             </div>
@@ -604,7 +583,7 @@ export function App() {
                     {CHAPTERS[activeRunSnapshot.chapter]?.name ?? '比奇'} · 第 {activeRunSnapshot.wave} 波
                   </span>
                   <span className="banner-detail">
-                    存活 {Math.round(activeRunSnapshot.clock)}s · 击杀 {activeRunSnapshot.kills} · 金币 {activeRunSnapshot.gold}
+                    存活 {Math.round(activeRunSnapshot.clock)} 秒 · 击杀 {activeRunSnapshot.kills} · 金币 {activeRunSnapshot.gold}
                   </span>
                 </div>
                 <div className="active-run-actions">
@@ -619,14 +598,20 @@ export function App() {
                     恢复战局
                   </button>
                   <button
-                    className="secondary-btn abandon-run-btn"
+                    className={`secondary-btn abandon-run-btn${confirmAbandonRun ? ' confirming' : ''}`}
                     onClick={() => {
                       sound.playClick();
+                      if (!confirmAbandonRun) {
+                        setConfirmAbandonRun(true);
+                        setTimeout(() => setConfirmAbandonRun(false), 3000);
+                        return;
+                      }
+                      setConfirmAbandonRun(false);
                       Game.clearSavedActiveRun();
                       setActiveRunSnapshot(null);
                     }}
                   >
-                    放弃
+                    {confirmAbandonRun ? '确认放弃？' : '放弃'}
                   </button>
                 </div>
               </div>
@@ -676,8 +661,8 @@ export function App() {
                 </div>
                 <div className="hero-stats">
                   <div className="hero-stat-row">
-                    <span>生命基础: <strong>{CLASS_BASES[selectedClass].hp}</strong></span>
-                    <span>移动速度: <strong>{CLASS_BASES[selectedClass].speed} px/s</strong></span>
+                    <span>生命值: <strong>{CLASS_BASES[selectedClass].hp}</strong></span>
+                    <span>移动速度: <strong>{CLASS_BASES[selectedClass].speed}</strong></span>
                   </div>
                   <div className="hero-stat-row">
                     <span>物理防御: <strong>{CLASS_BASES[selectedClass].def}</strong></span>
@@ -732,7 +717,7 @@ export function App() {
                 disabled={!isAssetsReady()}
                 onClick={() => handleStart('normal')}
               >
-                <div className="btn-title">标准远征 (Normal)</div>
+                <div className="btn-title">标准远征</div>
                 <div className="btn-desc">
                   {isAssetsReady() ? '12 波次 × 75 秒 · 15 分钟决战章节 Boss' : '核心资源预载入中...'}
                 </div>
@@ -742,9 +727,9 @@ export function App() {
                 disabled={!isAssetsReady()}
                 onClick={() => handleStart('trial')}
               >
-                <div className="btn-title">快速试炼 (Trial)</div>
+                <div className="btn-title">快速试炼</div>
                 <div className="btn-desc">
-                  {isAssetsReady() ? '3 波次 × 35 秒 · 快速测试流派构筑' : '核心资源预载入中...'}
+                  {isAssetsReady() ? '3 波次 × 35 秒 · 快速试试技能搭配' : '核心资源预载入中...'}
                 </div>
               </button>
               <button
@@ -833,7 +818,7 @@ export function App() {
                     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                   </svg>
                   <span>开源仓库：holynova/mafa-survivor-game</span>
-                  <span style={{ color: '#888', marginLeft: '6px' }}>v0.1.0</span>
+                  <span style={{ color: '#888', marginLeft: '6px' }}>v0.1.1</span>
                 </a>
               </div>
             </div>
@@ -989,7 +974,7 @@ export function App() {
                   }
                 }}
               >
-                消耗结晶立即解锁
+                消耗结晶解锁
               </button>
             </div>
           </div>
@@ -1576,7 +1561,7 @@ export function App() {
                           }
                         }}
                       >
-                        立即导入恢复存档
+                        导入恢复存档
                       </button>
                     </div>
 
@@ -2196,7 +2181,7 @@ export function App() {
                   <div className="mir2-chat-line">
                     <span className="mir2-chat-tag">[战况]</span>
                     <span className="mir2-chat-highlight">【{CHAPTERS[g.chapter]?.name}】第 {g.wave}/{g.maxWaves} 波</span>
-                    <span className="mir2-chat-timer">剩余 {Math.max(0, Math.ceil(g.duration - g.waveTime))}s</span>
+                    <span className="mir2-chat-timer">剩余 {Math.max(0, Math.ceil(g.duration - g.waveTime))} 秒</span>
                   </div>
                   <div className="mir2-chat-line">
                     <span className="mir2-chat-tag">[斩获]</span>
@@ -2680,13 +2665,19 @@ export function App() {
                 重开本局 (相同种子)
               </button>
               <button
-                className="danger-btn"
+                className={`danger-btn${confirmQuitRun ? ' confirming' : ''}`}
                 onClick={() => {
                   sound.playClick();
+                  if (!confirmQuitRun) {
+                    setConfirmQuitRun(true);
+                    setTimeout(() => setConfirmQuitRun(false), 3000);
+                    return;
+                  }
+                  setConfirmQuitRun(false);
                   game.quitToLobby();
                 }}
               >
-                放弃并返回营地
+                {confirmQuitRun ? '确认放弃本局？' : '放弃并返回营地'}
               </button>
             </div>
           </div>
